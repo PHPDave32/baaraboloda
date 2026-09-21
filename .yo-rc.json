@@ -1,0 +1,33 @@
+{
+  "generator-jhipster": {
+    "applicationType": "monolith",
+    "authenticationType": "jwt",
+    "baseName": "baaraBoloda",
+    "buildTool": "maven",
+    "cacheProvider": "redis",
+    "clientFramework": "angular",
+    "clientTheme": "none",
+    "creationTimestamp": 1789991313593,
+    "databaseType": "sql",
+    "defaultCommand": "app",
+    "devDatabaseType": "mysql",
+    "enableHibernateCache": true,
+    "enableTranslation": true,
+    "entities": [],
+    "feignClient": null,
+    "jhipsterVersion": "9.4.0",
+    "jwtSecretKey": "MmY3NmY1ODVhNDkwMTA0MzcxOTY3OTI0MDliYmE2OWVmZjYxN2E3YWMzNDEyNGRjZTA3NDE4ZDY4NjMzYzliODgzNTNkYWE0MDJiZTMwNjFmYmYyZWViNzAxNmM3ODhjOWI4NDBlMjBiM2E0OGQ2NDgyOWVhMzJkNDhhZGNjODE=",
+    "languages": ["fr", "en"],
+    "microfrontend": null,
+    "microfrontends": [],
+    "nativeLanguage": "fr",
+    "packageName": "com.cratechnologie.baaraboloda",
+    "prodDatabaseType": "mysql",
+    "reactive": false,
+    "serverPort": null,
+    "serviceDiscoveryType": null,
+    "syncUserWithIdp": null,
+    "testFrameworks": ["gatling", "cucumber"],
+    "withAdminUi": true
+  }
+}
