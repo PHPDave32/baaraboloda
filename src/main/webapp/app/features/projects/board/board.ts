@@ -69,6 +69,54 @@ export default class Board implements OnInit {
 
   readonly moveTargetSprints = computed(() => this.sprints().filter(s => s.status !== 'COMPLETED'));
 
+  // ── Filtres & recherche ────────────────────────────────────────────────────
+  readonly searchTerm = signal('');
+  readonly filterAssignee = signal<number | 'ALL' | 'UNASSIGNED'>('ALL');
+  readonly filterPriority = signal<string | 'ALL'>('ALL');
+  readonly filterType = signal<string | 'ALL'>('ALL');
+
+  readonly hasActiveFilters = computed(
+    () =>
+      this.searchTerm().trim() !== '' || this.filterAssignee() !== 'ALL' || this.filterPriority() !== 'ALL' || this.filterType() !== 'ALL',
+  );
+
+  readonly filteredTasks = computed(() => this.tasks().filter(t => this.matchesFilters(t)));
+
+  readonly visibleTaskCount = computed(() => this.filteredTasks().length);
+
+  private matchesFilters(task: ITask): boolean {
+    const term = this.searchTerm().trim().toLowerCase();
+    if (term) {
+      const key = `${this.project()?.projectKey ?? ''}-${task.id}`.toLowerCase();
+      const inTitle = (task.title ?? '').toLowerCase().includes(term);
+      const inKey = key.includes(term);
+      if (!inTitle && !inKey) return false;
+    }
+
+    const assignee = this.filterAssignee();
+    if (assignee === 'UNASSIGNED') {
+      if (task.assignee) return false;
+    } else if (assignee !== 'ALL') {
+      if (task.assignee?.id !== assignee) return false;
+    }
+
+    if (this.filterPriority() !== 'ALL' && task.priority !== this.filterPriority()) return false;
+    if (this.filterType() !== 'ALL' && task.type !== this.filterType()) return false;
+
+    return true;
+  }
+
+  clearFilters(): void {
+    this.searchTerm.set('');
+    this.filterAssignee.set('ALL');
+    this.filterPriority.set('ALL');
+    this.filterType.set('ALL');
+  }
+
+  onAssigneeFilterChange(value: string): void {
+    this.filterAssignee.set(value === 'ALL' || value === 'UNASSIGNED' ? value : Number(value));
+  }
+
   private readonly route = inject(ActivatedRoute);
   private readonly workspaceService = inject(WorkspaceService);
   private readonly accountService = inject(AccountService);
@@ -241,7 +289,7 @@ export default class Board implements OnInit {
   }
 
   getTasksByStatus(status: BoardStatus): ITask[] {
-    return this.tasks()
+    return this.filteredTasks()
       .filter(t => t.status === status)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   }

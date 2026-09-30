@@ -46,6 +46,69 @@
     </div>
   </div>
 
+  <!-- Barre de filtres -->
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <div class="relative w-64 flex-shrink-0">
+      <svg
+        class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Rechercher une tâche…"
+        class="input-field w-full py-1.5 pl-9 text-sm"
+      />
+    </div>
+
+    <select
+      [ngModel]="filterAssignee()"
+      (ngModelChange)="onAssigneeFilterChange($event)"
+      class="input-field w-44 flex-shrink-0 py-1.5 text-sm"
+    >
+      <option value="ALL">Tous les assignés</option>
+      <option value="UNASSIGNED">Non assigné</option>
+      @for (member of projectMembers(); track member.id) {
+        <option [value]="member.id">{{ member.login }}</option>
+      }
+    </select>
+
+    <select [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)" class="input-field w-36 flex-shrink-0 py-1.5 text-sm">
+      <option value="ALL">Toutes priorités</option>
+      <option value="LOW">Faible</option>
+      <option value="MEDIUM">Moyenne</option>
+      <option value="HIGH">Haute</option>
+      <option value="CRITICAL">Critique</option>
+    </select>
+
+    <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)" class="input-field w-32 flex-shrink-0 py-1.5 text-sm">
+      <option value="ALL">Tous les types</option>
+      <option value="TASK">Tâche</option>
+      <option value="BUG">Bug</option>
+      <option value="STORY">Story</option>
+      <option value="EPIC">Épic</option>
+    </select>
+
+    @if (hasActiveFilters()) {
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-400 transition-colors hover:bg-gray-800 hover:text-gray-200"
+        title="Réinitialiser les filtres"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <span class="hidden lg:inline">Réinitialiser</span>
+      </button>
+    }
+  </div>
+
   @if (loading()) {
     <div class="flex items-center justify-center flex-1">
       <svg class="animate-spin w-6 h-6" style="color: #328cb1" fill="none" viewBox="0 0 24 24">

@@ -26,6 +26,63 @@
     <div class="mb-4 px-4 py-3 rounded-lg bg-red-950 border border-red-800 text-red-400 text-sm">{{ error }}</div>
   }
 
+  <!-- Barre de filtres -->
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <div class="relative w-64 flex-shrink-0">
+      <svg
+        class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher une tâche…" class="input-field w-full py-1.5 pl-9 text-sm" />
+    </div>
+
+    <select
+      [ngModel]="filterAssignee"
+      (ngModelChange)="onAssigneeFilterChange($event)"
+      class="input-field w-44 flex-shrink-0 py-1.5 text-sm"
+    >
+      <option value="ALL">Tous les assignés</option>
+      <option value="UNASSIGNED">Non assigné</option>
+      @for (member of projectMembers; track member.id) {
+        <option [value]="member.id">{{ member.login }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="filterPriority" class="input-field w-36 flex-shrink-0 py-1.5 text-sm">
+      <option value="ALL">Toutes priorités</option>
+      <option value="LOW">Faible</option>
+      <option value="MEDIUM">Moyenne</option>
+      <option value="HIGH">Haute</option>
+      <option value="CRITICAL">Critique</option>
+    </select>
+
+    <select [(ngModel)]="filterType" class="input-field w-32 flex-shrink-0 py-1.5 text-sm">
+      <option value="ALL">Tous les types</option>
+      <option value="TASK">Tâche</option>
+      <option value="BUG">Bug</option>
+      <option value="STORY">Story</option>
+      <option value="EPIC">Épic</option>
+    </select>
+
+    @if (hasActiveFilters) {
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+        title="Réinitialiser les filtres"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <span class="hidden lg:inline">Réinitialiser</span>
+      </button>
+    }
+  </div>
+
   <app-modal
     variant="danger"
     [isOpen]="showSprintAccessModal"
@@ -136,7 +193,7 @@
         <label class="block text-sm font-medium text-gray-400 mb-1.5">Description</label>
         <textarea formControlName="description" class="input-field resize-none h-20" placeholder="Description facultative..."></textarea>
       </div>
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-400 mb-1.5">Priorité</label>
           <select formControlName="priority" class="input-field">
@@ -155,22 +212,26 @@
             <option value="EPIC">Épic</option>
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Points</label>
-          <input type="number" formControlName="storyPoints" class="input-field" placeholder="0" min="0" />
-        </div>
       </div>
     </form>
   </app-modal>
 
-  <div class="space-y-4">
+  <div class="space-y-5">
     @for (sprint of sprints; track sprint.id) {
-      <div class="card overflow-hidden" (dragover)="onDragOver($event)" (drop)="onDropToSprint($event, sprint.id)">
-        <!-- HEADER DU SPRINT -->
-        <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between cursor-pointer" (click)="toggleSprint(sprint.id)">
-          <div class="flex items-center gap-3">
+      <section
+        class="rounded-xl border bg-white shadow-sm transition-all border-l-4"
+        [class]="sprintAccent(sprint.status)"
+        [class.ring-2]="dragOverSprintId === sprint.id"
+        [class.ring-\[#328cb1\]]="dragOverSprintId === sprint.id"
+        [class.border-slate-200]="dragOverSprintId !== sprint.id"
+        (dragover)="onSprintDragOver($event, sprint.id)"
+        (dragleave)="onDragLeaveZone()"
+        (drop)="onDropToSprint($event, sprint.id)"
+      >
+        <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <button type="button" class="flex items-center gap-2.5 min-w-0 text-left" (click)="toggleSprint(sprint.id)">
             <svg
-              class="w-4 h-4 text-gray-500 transition-transform"
+              class="w-4 h-4 text-slate-400 transition-transform flex-shrink-0"
               [class.rotate-90]="isExpanded(sprint.id)"
               fill="none"
               stroke="currentColor"
@@ -178,44 +239,58 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            <h3 class="font-semibold text-white">{{ sprint.name }}</h3>
-            <span [class]="'px-2 py-0.5 rounded text-xs font-medium ' + getSprintStatusColor(sprint.status ?? '')">
-              {{ sprint.status === 'PLANNED' ? 'Planifié' : sprint.status === 'ACTIVE' ? 'Actif' : 'Terminé' }}
+            <span class="font-semibold text-slate-800 truncate">{{ sprint.name }}</span>
+            <span [class]="'flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ' + getSprintStatusColor(sprint.status ?? '')">
+              {{ sprintStatusLabel(sprint.status) }}
             </span>
-            <span class="text-xs text-gray-500">
-              {{ fmtDate(sprint.startDate) | date: 'd MMM' }} → {{ fmtDate(sprint.endDate) | date: 'd MMM y' }}
-            </span>
-            @if (sprint.createdBy) {
-              <div class="hidden sm:flex items-center gap-1.5 pl-2 border-l border-gray-700">
-                <app-avatar [user]="sprint.createdBy" size="xs" />
-                <span class="text-xs text-gray-400 font-medium"> {{ sprint.createdBy.login }} </span>
+            @if (sprint.status === 'ACTIVE') {
+              <span class="relative flex h-2 w-2 flex-shrink-0">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+              </span>
+            }
+          </button>
+
+          <div class="flex items-center gap-3">
+            @if (getSprintTasks(sprint.id).length) {
+              <div class="hidden md:flex items-center gap-2">
+                <div class="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+                  <div class="h-full rounded-full bg-green-500 transition-all" [style.width.%]="sprintProgress(sprint.id)"></div>
+                </div>
+                <span class="text-xs text-slate-500 whitespace-nowrap">
+                  {{ doneCount(getSprintTasks(sprint.id)) }}/{{ getSprintTasks(sprint.id).length }}
+                  @if (totalPoints(getSprintTasks(sprint.id))) {
+                    · {{ totalPoints(getSprintTasks(sprint.id)) }} pts
+                  }
+                </span>
               </div>
             }
-          </div>
-          <div class="flex items-center gap-4">
-            <span class="text-xs text-gray-500">
-              {{ doneCount(getSprintTasks(sprint.id)) }}/{{ getSprintTasks(sprint.id).length }} terminé
-              @if (totalPoints(getSprintTasks(sprint.id))) {
-                · {{ totalPoints(getSprintTasks(sprint.id)) }}pts
-              }
-            </span>
-            <div class="flex gap-2" (click)="$event.stopPropagation()">
+
+            <div class="flex items-center gap-1.5">
               @if (sprint.status === 'PLANNED') {
                 @if (canEditSprint(sprint)) {
-                  <button (click)="openEditSprintForm(sprint)" class="btn-secondary text-xs px-3 py-1">Modifier</button>
+                  <button (click)="openEditSprintForm(sprint)" class="btn-secondary text-xs px-3 py-1.5">Modifier</button>
                 }
-                <button (click)="activateSprint(sprint)" class="btn-primary text-xs px-3 py-1">Démarrer</button>
+                <button (click)="activateSprint(sprint)" class="btn-primary text-xs px-3 py-1.5">Démarrer</button>
               }
               @if (sprint.status === 'ACTIVE') {
-                <a [routerLink]="['/projects', projectId, 'board']" class="btn-secondary text-xs px-3 py-1"> Tableau </a>
-                <button (click)="completeSprint(sprint)" class="btn-secondary text-xs px-3 py-1">Terminer</button>
+                <a [routerLink]="['/projects', projectId, 'board']" class="btn-secondary text-xs px-3 py-1.5">Tableau</a>
+                <button (click)="completeSprint(sprint)" class="btn-secondary text-xs px-3 py-1.5">Terminer</button>
               }
-              <button (click)="openTaskForm(sprint.id)" class="btn-secondary text-xs px-3 py-1">+ Tâche</button>
+              <button
+                (click)="openTaskForm(sprint.id)"
+                class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-[#d9eef6] hover:text-[#328cb1]"
+                title="Ajouter une tâche"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
               @if (canManageSprints) {
                 <button
                   (click)="deleteSprint(sprint.id)"
-                  class="p-1 rounded transition-colors text-gray-500 hover:text-red-500"
-                  title="Supprimer"
+                  class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  title="Supprimer le sprint"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -229,188 +304,188 @@
               }
             </div>
           </div>
+        </header>
+
+        <div class="px-5 pb-3 -mt-1 flex items-center gap-2 text-xs text-slate-400">
+          <span>{{ fmtDate(sprint.startDate) | date: 'd MMM' }} → {{ fmtDate(sprint.endDate) | date: 'd MMM y' }}</span>
+          @if (sprint.createdBy) {
+            <span class="hidden sm:inline-flex items-center gap-1.5"
+              >· <app-avatar [user]="sprint.createdBy" size="xs" /> {{ sprint.createdBy.login }}</span
+            >
+          }
         </div>
-        <!-- TÂCHES DU SPRINT -->
+
         @if (isExpanded(sprint.id)) {
-          <div class="divide-y divide-gray-800/50">
-            @for (task of getSprintTasks(sprint.id); track task.id) {
-              <!-- CARTE DE LA TÂCHE -->
-              <div
-                class="flex items-center gap-4 px-5 py-3 hover:bg-gray-800/40 transition-colors group"
-                [class.bg-red-700]="task.type === 'BUG'"
-                draggable="true"
-                (dragstart)="onDragStart($event, task)"
-              >
-                <svg class="w-4 h-4 text-gray-600 cursor-grab flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                </svg>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-0.5">
-                    <span class="text-xs text-gray-500 font-medium"> {{ project?.projectKey }}-{{ task.id }} </span>
-                    <app-badge [type]="'priority'" [value]="task.priority ?? ''" />
-                    <app-badge [type]="'status'" [value]="task.status ?? ''" />
-                  </div>
-                  <a
-                    [routerLink]="['/projects', projectId, 'tasks', task.id]"
-                    class="text-sm font-medium text-white hover:text-[#328cb1] transition-colors truncate block"
-                  >
-                    {{ task.title }}
-                  </a>
-                </div>
-                <!-- INFORMATIONS DE LA TÂCHE -->
-                <div class="flex items-center gap-3 flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-                  @if (task.reporter) {
-                    <div class="hidden sm:flex items-center gap-1.5">
-                      <app-avatar [user]="task.reporter" size="xs" /> <span class="text-xs text-gray-500"> {{ task.reporter.login }} </span>
-                    </div>
-                  }
-                  @if (task.storyPoints) {
-                    <span class="text-xs px-2 py-0.5 rounded font-medium" style="background: #e2e8f0; color: #475569">
-                      {{ task.storyPoints }}pts
-                    </span>
-                  }
-                  <button
-                    (click)="moveToBacklog(task)"
-                    title="Déplacer vers le backlog"
-                    class="text-xs px-2 py-1 rounded transition-colors font-medium"
-                    style="background: #e2e8f0; color: #475569"
-                    onmouseover="
-                      this.style.background = '#ffedd5';
-                      this.style.color = '#c2410c';
-                    "
-                    onmouseout="
-                      this.style.background = '#e2e8f0';
-                      this.style.color = '#475569';
-                    "
-                  >
-                    ↓ Backlog
-                  </button>
-                  @if (canManage) {
-                    <button
-                      (click)="deleteTask(task.id)"
-                      class="p-1 rounded transition-colors text-gray-500 hover:text-red-500"
-                      title="Supprimer"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 01-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  }
-                </div>
-              </div>
+          <div class="border-t border-slate-100">
+            @for (task of displayedSprintTasks(sprint.id); track task.id) {
+              <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ task: task, inSprint: true }" />
             }
-            <!-- AUCUNE TÂCHE -->
-            @if (!getSprintTasks(sprint.id).length) {
-              <div class="px-5 py-6 text-center text-gray-600 text-sm">
-                Aucune tâche — glissez depuis le backlog ou
-                <button (click)="openTaskForm(sprint.id)" style="color: #328cb1">ajoutez-en une</button>
-              </div>
+            @if (!displayedSprintTasks(sprint.id).length) {
+              @if (hasActiveFilters && getSprintTasks(sprint.id).length) {
+                <div class="px-5 py-6 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
+              } @else {
+                <div class="px-5 py-8 text-center">
+                  <p class="text-sm text-slate-400">Glissez une tâche ici depuis le backlog</p>
+                  <button (click)="openTaskForm(sprint.id)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">
+                    ou ajoutez-en une
+                  </button>
+                </div>
+              }
             }
           </div>
         }
-      </div>
+      </section>
     }
-    <div class="card overflow-hidden" (dragover)="onDragOver($event)" (drop)="onDropToBacklog($event)">
-      <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <h3 class="font-semibold text-white">Backlog</h3>
-          <span class="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">{{ backlogTasks.length }}</span>
+    <section
+      class="rounded-xl border bg-white shadow-sm transition-all border-l-4 border-l-slate-300"
+      [class.ring-2]="dragOverBacklog"
+      [class.ring-\[#328cb1\]]="dragOverBacklog"
+      [class.border-slate-200]="!dragOverBacklog"
+      (dragover)="onBacklogDragOver($event)"
+      (dragleave)="onDragLeaveZone()"
+      (drop)="onDropToBacklog($event)"
+    >
+      <header class="flex items-center justify-between px-5 py-4">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+          <h3 class="font-semibold text-slate-800">Backlog</h3>
+          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ backlogTasks.length }}</span>
         </div>
         <button
           (click)="openTaskForm(null)"
-          class="text-xs flex items-center gap-1 px-2 py-1 rounded transition-colors font-medium"
-          style="color: #328cb1; background: #d9eef6"
+          class="flex items-center gap-1.5 rounded-lg bg-[#d9eef6] px-3 py-1.5 text-xs font-medium text-[#328cb1] transition-colors hover:bg-[#c4e4f0]"
         >
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Ajouter une tâche
         </button>
+      </header>
+
+      <div class="border-t border-slate-100">
+        @for (task of displayedBacklogTasks; track task.id) {
+          <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ task: task, inSprint: false }" />
+        }
+        @if (!displayedBacklogTasks.length) {
+          @if (hasActiveFilters && backlogTasks.length) {
+            <div class="px-5 py-8 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
+          } @else {
+            <div class="px-5 py-10 text-center">
+              <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100">
+                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+              </div>
+              <p class="text-sm text-slate-500">Le backlog est vide.</p>
+              <button (click)="openTaskForm(null)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">Créer une tâche</button>
+            </div>
+          }
+        }
+      </div>
+    </section>
+  </div>
+
+  <ng-template #taskRow let-task="task" let-inSprint="inSprint">
+    <div
+      class="group relative flex items-center gap-3 px-5 py-3 transition-colors"
+      [class.bg-red-50]="task.type === 'BUG'"
+      [class.hover:bg-red-100]="task.type === 'BUG'"
+      [class.hover:bg-slate-50]="task.type !== 'BUG'"
+      [class.opacity-40]="draggingTaskId === task.id"
+      draggable="true"
+      (dragstart)="onDragStart($event, task)"
+      (dragend)="onDragEnd()"
+    >
+      @if (task.type === 'BUG') {
+        <span class="absolute left-0 top-0 h-full w-1 bg-red-400"></span>
+      }
+
+      <svg
+        class="w-4 h-4 flex-shrink-0 cursor-grab text-slate-300 opacity-0 transition-opacity group-hover:opacity-100"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+      </svg>
+
+      <div class="min-w-0 flex-1">
+        <div class="mb-0.5 flex flex-wrap items-center gap-2">
+          <span class="text-xs font-medium text-slate-400">{{ project?.projectKey }}-{{ task.id }}</span>
+          <app-badge [type]="'priority'" [value]="task.priority ?? ''" />
+          <app-badge [type]="'taskType'" [value]="task.type ?? ''" />
+          @if (inSprint) {
+            <app-badge [type]="'status'" [value]="task.status ?? ''" />
+          }
+        </div>
+        <a
+          [routerLink]="['/projects', projectId, 'tasks', task.id]"
+          class="block truncate text-sm font-medium text-slate-800 transition-colors hover:text-[#328cb1]"
+        >
+          {{ task.title }}
+        </a>
       </div>
 
-      <div class="divide-y divide-gray-800/50">
-        @for (task of backlogTasks; track task.id) {
-          <div
-            class="flex items-center gap-4 px-5 py-3 transition-colors group"
-            [class.bg-red-700]="task.type === 'BUG'"
-            [class.bg-gray-800/40]="task.type !== 'BUG'"
-            draggable="true"
-            (dragstart)="onDragStart($event, task)"
-          >
-            <svg class="w-4 h-4 text-gray-600 cursor-grab flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-            </svg>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-0.5">
-                <span class="text-xs text-gray-500 font-medium">{{ project?.projectKey }}-{{ task.id }}</span>
-                <app-badge [type]="'priority'" [value]="task.priority ?? ''" />
-                <app-badge [type]="'taskType'" [value]="task.type ?? ''" />
-              </div>
-              <a
-                [routerLink]="['/projects', projectId, 'tasks', task.id]"
-                class="text-sm font-medium text-white hover:text-[#328cb1] transition-colors truncate block"
-              >
-                {{ task.title }}
-              </a>
-            </div>
-            <div class="flex items-center gap-3 flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-              @if (task.reporter) {
-                <div class="hidden sm:flex items-center gap-1.5">
-                  <app-avatar [user]="task.reporter" size="xs" />
-                  <span class="text-xs text-gray-500">{{ task.reporter.login }}</span>
-                </div>
-              }
-              @if (task.storyPoints) {
-                <span class="text-xs px-2 py-0.5 rounded font-medium" style="background: #e2e8f0; color: #475569"
-                  >{{ task.storyPoints }}pts</span
-                >
-              }
-              @if (sprints.length) {
-                <select
-                  class="text-xs border rounded px-2 py-1 cursor-pointer"
-                  style="background: #f8fafc; color: #475569; border-color: #cbd5e1"
-                  (change)="moveToSprint(task, +$any($event.target).value)"
-                  (click)="$event.stopPropagation()"
-                >
-                  <option value="">→ Déplacer vers sprint</option>
-                  @for (sprint of sprints; track sprint.id) {
-                    @if (sprint.status !== 'COMPLETED') {
-                      <option [value]="sprint.id">{{ sprint.name }}</option>
-                    }
-                  }
-                </select>
-              }
-              @if (canManage) {
-                <button
-                  (click)="deleteTask(task.id)"
-                  class="p-1 rounded transition-colors text-gray-500 hover:text-red-500"
-                  title="Supprimer"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              }
-            </div>
+      <div class="flex flex-shrink-0 items-center gap-2">
+        @if (task.storyPoints) {
+          <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-600">{{ task.storyPoints }} pts</span>
+        }
+        @if (task.reporter) {
+          <div class="hidden items-center sm:flex" [title]="task.reporter.login ?? ''">
+            <app-avatar [user]="task.reporter" size="xs" />
           </div>
         }
-        @if (!backlogTasks.length) {
-          <div class="px-5 py-8 text-center text-gray-600 text-sm">
-            Aucune tâche dans le backlog.
-            <button (click)="openTaskForm(null)" class="hover:opacity-80 ml-1" style="color: #328cb1">Créer une tâche</button>
-          </div>
-        }
+
+        <div class="flex items-center gap-0.5 opacity-80 transition-opacity group-hover:opacity-100">
+          @if (inSprint) {
+            <button
+              (click)="moveToBacklog(task)"
+              title="Renvoyer au backlog"
+              class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-amber-50 hover:text-amber-600"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+          } @else if (sprints.length) {
+            <select
+              class="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600 outline-none transition focus:border-[#328cb1]"
+              (change)="moveToSprint(task, +$any($event.target).value)"
+              (click)="$event.stopPropagation()"
+            >
+              <option value="">Vers un sprint</option>
+              @for (sprint of sprints; track sprint.id) {
+                @if (sprint.status !== 'COMPLETED') {
+                  <option [value]="sprint.id">{{ sprint.name }}</option>
+                }
+              }
+            </select>
+          }
+          @if (canManage) {
+            <button
+              (click)="deleteTask(task.id)"
+              class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+              title="Supprimer la tâche"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          }
+        </div>
       </div>
     </div>
-  </div>
+  </ng-template>
 </div>

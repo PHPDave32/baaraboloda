@@ -1,7 +1,9 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+
+import { forkJoin, of } from 'rxjs';
 
 import { AccountService } from 'app/core/auth';
 import { IProject } from 'app/entities/project/project.model';
@@ -16,7 +18,7 @@ import { PlanningService } from '../planning.service';
 
 @Component({
   selector: 'jhi-project-backlog',
-  imports: [ReactiveFormsModule, RouterLink, DatePipe, BadgeComponent, AvatarComponent, ModalComponent],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DatePipe, NgTemplateOutlet, BadgeComponent, AvatarComponent, ModalComponent],
   templateUrl: './backlog.html',
 })
 export default class Backlog implements OnInit {
@@ -42,6 +44,15 @@ export default class Backlog implements OnInit {
   expandedSprints: Set<number> = new Set();
   /** true si l'utilisateur courant appartient au projet (membre/owner) ou est admin. */
   canManage = false;
+
+  dragOverSprintId: number | null = null;
+  dragOverBacklog = false;
+  draggingTaskId: number | null = null;
+
+  searchTerm = '';
+  filterAssignee: number | 'ALL' | 'UNASSIGNED' = 'ALL';
+  filterPriority: string | 'ALL' = 'ALL';
+  filterType: string | 'ALL' = 'ALL';
 
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
@@ -96,21 +107,29 @@ export default class Backlog implements OnInit {
     });
 
     this.planningService.getSprints(this.projectId).subscribe(sprints => {
-      this.sprints = sprints.sort((a: ISprint, b: ISprint) => {
+      this.sprints = [...sprints].sort((a: ISprint, b: ISprint) => {
         const dateA = a.createdAt ? new Date(String(a.createdAt)).getTime() : 0;
         const dateB = b.createdAt ? new Date(String(b.createdAt)).getTime() : 0;
         return dateB - dateA;
       });
-      const expanded = new Set<number>();
-      sprints.forEach((sprint: ISprint) => {
-        expanded.add(sprint.id);
-        this.planningService.getTasksBySprint(sprint.id).subscribe((tasks: ITask[]) => {
-          this.sprintTasks = new Map(this.sprintTasks).set(sprint.id, tasks);
+      this.expandedSprints = new Set(sprints.map(s => s.id));
+
+      if (!sprints.length) {
+        this.sprintTasks = new Map();
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // Charger toutes les tâches de sprint en une seule passe pour éviter
+      // les écrasements concurrents de la Map (source du "déplacement à faire deux fois").
+      forkJoin(sprints.map(sprint => (sprint.id ? this.planningService.getTasksBySprint(sprint.id) : of([] as ITask[])))).subscribe(
+        results => {
+          const map = new Map<number, ITask[]>();
+          sprints.forEach((sprint, i) => map.set(sprint.id, results[i] ?? []));
+          this.sprintTasks = map;
           this.cdr.detectChanges();
-        });
-      });
-      this.expandedSprints = expanded;
-      this.cdr.detectChanges();
+        },
+      );
     });
   }
 
@@ -133,6 +152,49 @@ export default class Backlog implements OnInit {
 
   getSprintTasks(sprintId: number): ITask[] {
     return this.sprintTasks.get(sprintId) ?? [];
+  }
+
+  get projectMembers(): any[] {
+    return this.project?.memberses ?? [];
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.searchTerm.trim() !== '' || this.filterAssignee !== 'ALL' || this.filterPriority !== 'ALL' || this.filterType !== 'ALL';
+  }
+
+  private matchesFilters(task: ITask): boolean {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
+      const key = `${this.project?.projectKey ?? ''}-${task.id}`.toLowerCase();
+      if (!(task.title ?? '').toLowerCase().includes(term) && !key.includes(term)) return false;
+    }
+    if (this.filterAssignee === 'UNASSIGNED') {
+      if (task.assignee) return false;
+    } else if (this.filterAssignee !== 'ALL') {
+      if (task.assignee?.id !== this.filterAssignee) return false;
+    }
+    if (this.filterPriority !== 'ALL' && task.priority !== this.filterPriority) return false;
+    if (this.filterType !== 'ALL' && task.type !== this.filterType) return false;
+    return true;
+  }
+
+  displayedSprintTasks(sprintId: number): ITask[] {
+    return this.getSprintTasks(sprintId).filter(t => this.matchesFilters(t));
+  }
+
+  get displayedBacklogTasks(): ITask[] {
+    return this.backlogTasks.filter(t => this.matchesFilters(t));
+  }
+
+  onAssigneeFilterChange(value: string): void {
+    this.filterAssignee = value === 'ALL' || value === 'UNASSIGNED' ? value : Number(value);
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.filterAssignee = 'ALL';
+    this.filterPriority = 'ALL';
+    this.filterType = 'ALL';
   }
 
   toggleSprint(id: number): void {
@@ -301,17 +363,57 @@ export default class Backlog implements OnInit {
   }
 
   moveToSprint(task: ITask, sprintId: number): void {
+    if (task.sprint?.id === sprintId) return;
+    const targetSprint = this.sprints.find(s => s.id === sprintId) ?? null;
+    this.applyLocalMove(task, targetSprint ? { id: sprintId, name: targetSprint.name } : { id: sprintId });
+
     this.planningService.updateTask(task, { sprintId }).subscribe({
-      next: () => this.loadAll(),
-      error: () => (this.error = 'Le déplacement a échoué.'),
+      error: () => {
+        this.error = 'Le déplacement a échoué.';
+        this.loadAll();
+      },
     });
   }
 
   moveToBacklog(task: ITask): void {
+    if (!task.sprint) return;
+    this.applyLocalMove(task, null);
+
     this.planningService.updateTask(task, { sprintId: null }).subscribe({
-      next: () => this.loadAll(),
-      error: () => (this.error = 'Le déplacement a échoué.'),
+      error: () => {
+        this.error = 'Le déplacement a échoué.';
+        this.loadAll();
+      },
     });
+  }
+
+  /** Déplace immédiatement la tâche entre backlog et sprints côté UI (mise à jour optimiste). */
+  private applyLocalMove(task: ITask, targetSprint: { id: number; name?: string | null } | null): void {
+    const fromSprintId = task.sprint?.id ?? null;
+
+    // Retirer de la source
+    if (fromSprintId != null) {
+      const current = this.sprintTasks.get(fromSprintId) ?? [];
+      this.sprintTasks = new Map(this.sprintTasks).set(
+        fromSprintId,
+        current.filter(t => t.id !== task.id),
+      );
+    } else {
+      this.backlogTasks = this.backlogTasks.filter(t => t.id !== task.id);
+    }
+
+    // Mettre à jour la tâche
+    const moved: ITask = { ...task, sprint: targetSprint as ITask['sprint'] };
+
+    // Ajouter à la cible
+    if (targetSprint) {
+      const dest = this.sprintTasks.get(targetSprint.id) ?? [];
+      this.sprintTasks = new Map(this.sprintTasks).set(targetSprint.id, [...dest, moved]);
+    } else {
+      this.backlogTasks = [...this.backlogTasks, moved];
+    }
+
+    this.cdr.detectChanges();
   }
 
   deleteTask(id: number): void {
@@ -429,32 +531,78 @@ export default class Backlog implements OnInit {
     return tasks.filter(t => t.status === 'DONE').length;
   }
 
-  onDragStart(event: DragEvent, task: ITask): void {
-    event.dataTransfer?.setData('taskId', String(task.id));
+  sprintProgress(sprintId: number): number {
+    const tasks = this.getSprintTasks(sprintId);
+    if (!tasks.length) return 0;
+    return Math.round((this.doneCount(tasks) / tasks.length) * 100);
   }
 
-  onDragOver(event: DragEvent): void {
+  sprintStatusLabel(status: string | null | undefined): string {
+    const labels: Record<string, string> = { PLANNED: 'Planifié', ACTIVE: 'Actif', COMPLETED: 'Terminé' };
+    return labels[status ?? ''] ?? 'Planifié';
+  }
+
+  sprintAccent(status: string | null | undefined): string {
+    const map: Record<string, string> = {
+      ACTIVE: 'border-l-green-500',
+      PLANNED: 'border-l-slate-300',
+      COMPLETED: 'border-l-[#328cb1]',
+    };
+    return map[status ?? ''] ?? 'border-l-slate-300';
+  }
+
+  onDragStart(event: DragEvent, task: ITask): void {
+    event.dataTransfer?.setData('taskId', String(task.id));
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+    this.draggingTaskId = task.id;
+  }
+
+  onDragEnd(): void {
+    this.draggingTaskId = null;
+    this.dragOverSprintId = null;
+    this.dragOverBacklog = false;
+  }
+
+  onSprintDragOver(event: DragEvent, sprintId: number): void {
     event.preventDefault();
-    (event.currentTarget as HTMLElement).classList.add('ring-2', 'ring-indigo-500/50');
+    this.dragOverSprintId = sprintId;
+    this.dragOverBacklog = false;
+  }
+
+  onBacklogDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOverBacklog = true;
+    this.dragOverSprintId = null;
+  }
+
+  onDragLeaveZone(): void {
+    this.dragOverSprintId = null;
+    this.dragOverBacklog = false;
   }
 
   onDropToSprint(event: DragEvent, sprintId: number): void {
     event.preventDefault();
-    (event.currentTarget as HTMLElement).classList.remove('ring-2', 'ring-indigo-500/50');
+    this.dragOverSprintId = null;
+    this.draggingTaskId = null;
     const taskId = parseInt(event.dataTransfer?.getData('taskId') ?? '0', 10);
     if (!taskId) return;
-    const allTasks = [...this.backlogTasks, ...Array.from(this.sprintTasks.values()).flat()];
-    const task = allTasks.find(t => t.id === taskId);
-    if (task) this.moveToSprint(task, sprintId);
+    const task = this.findTask(taskId);
+    if (task && task.sprint?.id !== sprintId) this.moveToSprint(task, sprintId);
   }
 
   onDropToBacklog(event: DragEvent): void {
     event.preventDefault();
-    (event.currentTarget as HTMLElement).classList.remove('ring-2', 'ring-indigo-500/50');
+    this.dragOverBacklog = false;
+    this.draggingTaskId = null;
     const taskId = parseInt(event.dataTransfer?.getData('taskId') ?? '0', 10);
     if (!taskId) return;
-    const allTasks = [...this.backlogTasks, ...Array.from(this.sprintTasks.values()).flat()];
-    const task = allTasks.find(t => t.id === taskId);
-    if (task) this.moveToBacklog(task);
+    const task = this.findTask(taskId);
+    if (task && task.sprint) this.moveToBacklog(task);
+  }
+
+  private findTask(taskId: number): ITask | undefined {
+    return [...this.backlogTasks, ...Array.from(this.sprintTasks.values()).flat()].find(t => t.id === taskId);
   }
 }

@@ -256,6 +256,62 @@ export default class Sprints implements OnInit {
     return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
   }
 
+  /** Sprints triés : actif d'abord, puis planifiés, puis terminés. */
+  get sortedSprints(): ISprint[] {
+    const rank: Record<string, number> = { ACTIVE: 0, PLANNED: 1, COMPLETED: 2 };
+    return [...this.sprints].sort((a, b) => {
+      const ra = rank[a.status ?? 'PLANNED'] ?? 3;
+      const rb = rank[b.status ?? 'PLANNED'] ?? 3;
+      if (ra !== rb) return ra - rb;
+      const da = a.startDate ? this.toDate(a.startDate).getTime() : 0;
+      const db = b.startDate ? this.toDate(b.startDate).getTime() : 0;
+      return db - da;
+    });
+  }
+
+  countByStatus(status: string): number {
+    return this.sprints.filter(s => (s.status ?? 'PLANNED') === status).length;
+  }
+
+  /** Nombre de jours écoulés depuis le début (borné à la durée totale). */
+  daysElapsed(sprint: ISprint): number {
+    if (!sprint.startDate || !sprint.endDate) return 0;
+    const start = this.toDate(sprint.startDate).getTime();
+    const today = new Date().setHours(0, 0, 0, 0);
+    const total = this.getDaysDifference(sprint.startDate, sprint.endDate);
+    const elapsed = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.min(Math.max(elapsed, 0), total);
+  }
+
+  /** Progression temporelle du sprint (0-100). */
+  timeProgress(sprint: ISprint): number {
+    const total = this.getDaysDifference(sprint.startDate, sprint.endDate);
+    if (total <= 0) return 0;
+    return Math.round((this.daysElapsed(sprint) / total) * 100);
+  }
+
+  /** Jours restants avant la fin (0 si dépassé). */
+  daysRemaining(sprint: ISprint): number {
+    if (!sprint.endDate) return 0;
+    const end = this.toDate(sprint.endDate).getTime();
+    const today = new Date().setHours(0, 0, 0, 0);
+    return Math.max(0, Math.ceil((end - today) / (1000 * 60 * 60 * 24)));
+  }
+
+  statusLabel(status: string | null | undefined): string {
+    const labels: Record<string, string> = { PLANNED: 'Planifié', ACTIVE: 'Actif', COMPLETED: 'Terminé' };
+    return labels[status ?? 'PLANNED'] ?? 'Planifié';
+  }
+
+  accentClass(status: string | null | undefined): string {
+    const map: Record<string, string> = {
+      ACTIVE: 'border-l-4 border-l-green-500',
+      PLANNED: 'border-l-4 border-l-slate-300',
+      COMPLETED: 'border-l-4 border-l-[#328cb1]',
+    };
+    return map[status ?? 'PLANNED'] ?? 'border-l-4 border-l-slate-300';
+  }
+
   formatDate(dateVal: any): string {
     if (!dateVal) return '-';
     const d = this.toDate(dateVal);

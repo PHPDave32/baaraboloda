@@ -63,6 +63,18 @@ public class SprintService {
         return sprintMapper.toDto(sprint);
     }
 
+    public int completeExpiredSprints() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        var expired = sprintRepository.findAllByStatusAndEndDateBefore(SprintStatus.ACTIVE, today);
+        if (expired.isEmpty()) {
+            return 0;
+        }
+        expired.forEach(sprint -> sprint.setStatus(SprintStatus.COMPLETED));
+        sprintRepository.saveAll(expired);
+        LOG.info("Auto-completed {} expired sprint(s)", expired.size());
+        return expired.size();
+    }
+
     private void assertNoOtherActiveSprint(Long projectId, Long currentSprintId) {
         if (projectId == null) {
             return;

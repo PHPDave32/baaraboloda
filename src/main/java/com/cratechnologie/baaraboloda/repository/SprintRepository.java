@@ -25,6 +25,11 @@ public interface SprintRepository extends JpaRepository<Sprint, Long>, JpaSpecif
         Long id
     );
 
+    List<Sprint> findAllByStatusAndEndDateBefore(
+        com.cratechnologie.baaraboloda.domain.enumeration.SprintStatus status,
+        java.time.LocalDate date
+    );
+
     /**
      * Checks whether the given login is a member or the owner of the project that owns the given sprint.
      *
