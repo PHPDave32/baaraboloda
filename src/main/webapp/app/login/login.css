@@ -1,0 +1,282 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.login-page {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  padding: 1.25rem;
+  background:
+    linear-gradient(110deg, rgba(241, 245, 249, 0.93), rgba(224, 231, 255, 0.76)),
+    url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?autq=85') center / cover;
+}
+
+.login-page::before,
+.login-page::after {
+  position: absolute;
+  content: '';
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(12px);
+}
+
+.login-page::before {
+  width: 26rem;
+  height: 26rem;
+  top: -14rem;
+  left: 10%;
+  background: rgba(50, 140, 177, 0.2);
+}
+
+.login-page::after {
+  width: 22rem;
+  height: 22rem;
+  right: -8rem;
+  bottom: -10rem;
+  background: rgba(6, 182, 212, 0.18);
+}
+
+.login-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(100%, 66rem);
+  min-height: min(42rem, calc(100vh - 2.5rem));
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 30px 90px rgba(71, 85, 105, 0.24);
+  backdrop-filter: blur(18px);
+  animation: login-enter 500ms ease-out both;
+}
+
+.brand-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    linear-gradient(145deg, rgba(50, 140, 177, 0.9), rgba(30, 41, 59, 0.36)),
+    url('/content/images/african-american-man-woman-solving-freelance-tasks-home.jpg') center / cover;
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 15px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22);
+}
+
+.brand-copy {
+  max-width: 26rem;
+}
+
+.brand-kicker {
+  color: #c7d2fe;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.brand-title {
+  margin-top: 0.7rem;
+  color: #fff;
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1.03;
+}
+
+.brand-description {
+  max-width: 22rem;
+  margin-top: 1rem;
+  color: #cce6f0;
+  font-size: 0.88rem;
+  line-height: 1.8;
+}
+
+.brand-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #c7d2fe;
+  font-size: 0.72rem;
+}
+
+.brand-footer::before {
+  width: 1.75rem;
+  height: 1px;
+  content: '';
+  background: #a5b4fc;
+}
+
+.form-side {
+  display: flex;
+  align-items: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background: rgba(248, 250, 252, 0.88);
+}
+
+.login-form-wrap {
+  width: min(100%, 25rem);
+  margin: 0 auto;
+}
+
+.form-heading h2 {
+  color: #172033;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.form-heading p {
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.error-message {
+  margin-top: 1.5rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 11px;
+  color: #fecaca;
+  background: rgba(254, 226, 226, 0.82);
+  font-size: 0.75rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 1.15rem;
+  margin-top: 1.75rem;
+}
+
+.field-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-label {
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.login-input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 11px;
+  padding: 0.85rem 0.9rem;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 0.78rem;
+  outline: none;
+  transition: 180ms ease;
+}
+
+.login-input::placeholder {
+  color: #94a3b8;
+}
+.login-input:focus {
+  border-color: #328cb1;
+  box-shadow: 0 0 0 4px rgba(50, 140, 177, 0.14);
+}
+
+.login-submit {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(110deg, #2a7a9e, #328cb1);
+  box-shadow: 0 12px 26px rgba(50, 140, 177, 0.28);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 180ms ease;
+}
+
+.login-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(50, 140, 177, 0.38);
+}
+.login-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.login-note {
+  margin-top: 1.4rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.login-note strong {
+  color: #328cb1;
+  font-weight: 600;
+}
+
+@keyframes login-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 800px) {
+  .login-layout {
+    grid-template-columns: 1.03fr 0.97fr;
+  }
+}
+
+@media (max-width: 799px) {
+  .login-layout {
+    min-height: auto;
+  }
+  .brand-side {
+    min-height: 19rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .login-page {
+    padding: 0.75rem;
+  }
+  .login-layout {
+    border-radius: 20px;
+  }
+  .brand-side {
+    min-height: 16rem;
+    padding: 1.35rem;
+  }
+  .brand-title {
+    font-size: 2.25rem;
+  }
+  .brand-footer {
+    display: none;
+  }
+  .form-side {
+    padding: 1.35rem;
+  }
+}

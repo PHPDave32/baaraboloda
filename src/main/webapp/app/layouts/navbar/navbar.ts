@@ -1,76 +1,53 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { NgbCollapse } from '@ng-bootstrap/ng-bootstrap/collapse';
-import { NgbDropdown, NgbDropdownMenu, NgbDropdownToggle } from '@ng-bootstrap/ng-bootstrap/dropdown';
-import { TranslateService } from '@ngx-translate/core';
-import { environment } from 'environments/environment';
-
-import { LANGUAGES } from 'app/config';
-import { AccountService, StateStorageService } from 'app/core/auth';
-import { ProfileService } from 'app/layouts/profiles/profile.service';
+import { AccountService } from 'app/core/auth';
 import { LoginService } from 'app/login/login.service';
-import { HasAnyAuthorityDirective } from 'app/shared/auth';
-import { FindLanguageFromKeyPipe, TranslateDirective } from 'app/shared/language';
-
-import ActiveMenuDirective from './active-menu.directive';
+import { ModalComponent } from 'app/shared/components/modal/modal.component';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'jhi-navbar',
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
-  imports: [
-    RouterLink,
-    RouterLinkActive,
-    FontAwesomeModule,
-    NgbCollapse,
-    NgbDropdown,
-    NgbDropdownMenu,
-    NgbDropdownToggle,
-    HasAnyAuthorityDirective,
-    ActiveMenuDirective,
-    FindLanguageFromKeyPipe,
-    TranslateDirective,
-  ],
+  imports: [RouterLink, RouterLinkActive, ModalComponent],
 })
 export default class Navbar implements OnInit {
-  readonly inProduction = signal(true);
-  readonly isNavbarCollapsed = signal(true);
-  readonly languages = LANGUAGES;
-  readonly openAPIEnabled = signal(false);
-  readonly version: string;
-  readonly account = inject(AccountService).account;
+  readonly activeProjectId = signal<number | null>(null);
+  readonly showSprintAccessModal = signal(false);
+
+  private readonly accountService = inject(AccountService);
+  readonly account = this.accountService.account;
 
   private readonly loginService = inject(LoginService);
-  private readonly translateService = inject(TranslateService);
-  private readonly stateStorageService = inject(StateStorageService);
-  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
 
-  constructor() {
-    const { VERSION } = environment;
-    if (VERSION) {
-      this.version = VERSION.toLowerCase().startsWith('v') ? VERSION : `v${VERSION}`;
-    } else {
-      this.version = '';
+  get canManageSprints(): boolean {
+    return this.accountService.hasAnyAuthority(['ROLE_ADMIN', 'PERM_SPRINT_MANAGE']);
+  }
+
+  goToSprints(): void {
+    const projectId = this.activeProjectId();
+    if (!projectId) {
+      return;
     }
+    if (!this.canManageSprints) {
+      this.showSprintAccessModal.set(true);
+      return;
+    }
+    this.router.navigate(['/projects', projectId, 'sprints']);
+  }
+
+  closeSprintAccessModal(): void {
+    this.showSprintAccessModal.set(false);
   }
 
   ngOnInit(): void {
-    this.profileService.getProfileInfo().subscribe(profileInfo => {
-      this.inProduction.set(profileInfo.inProduction ?? true);
-      this.openAPIEnabled.set(profileInfo.openAPIEnabled ?? false);
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
+      const match = event.urlAfterRedirects.match(/\/projects\/(\d+)/);
+      this.activeProjectId.set(match ? Number(match[1]) : null);
     });
-  }
-
-  changeLanguage(languageKey: string): void {
-    this.stateStorageService.storeLocale(languageKey);
-    this.translateService.use(languageKey);
-  }
-
-  collapseNavbar(): void {
-    this.isNavbarCollapsed.set(true);
+    this.activeProjectId.set(this.getActiveProjectId(this.router.url));
   }
 
   login(): void {
@@ -78,8 +55,33 @@ export default class Navbar implements OnInit {
   }
 
   logout(): void {
-    this.collapseNavbar();
     this.loginService.logout();
-    this.router.navigate(['']);
+    this.activeProjectId.set(null);
+    this.router.navigate(['/login']);
+  }
+
+  displayName(): string {
+    const account = this.account();
+    if (!account) {
+      return '';
+    }
+    const fullName = [account.firstName, account.lastName].filter(Boolean).join(' ').trim();
+    return fullName || account.login;
+  }
+
+  initials(): string {
+    const account = this.account();
+    if (!account) {
+      return '?';
+    }
+    const first = account.firstName?.charAt(0) ?? '';
+    const last = account.lastName?.charAt(0) ?? '';
+    const value = `${first}${last}`.toUpperCase();
+    return value || account.login.charAt(0).toUpperCase();
+  }
+
+  private getActiveProjectId(url: string): number | null {
+    const match = url.match(/\/projects\/(\d+)/);
+    return match ? Number(match[1]) : null;
   }
 }

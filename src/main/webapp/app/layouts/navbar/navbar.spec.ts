@@ -1,14 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { provideTranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
 
 import { Account, AccountService } from 'app/core/auth';
-import { ProfileInfo } from 'app/layouts/profiles/profile-info.model';
-import { ProfileService } from 'app/layouts/profiles/profile.service';
 import { LoginService } from 'app/login/login.service';
 
 import Navbar from './navbar';
@@ -17,11 +14,10 @@ describe('Navbar Component', () => {
   let comp: Navbar;
   let fixture: ComponentFixture<Navbar>;
   let accountService: AccountService;
-  let profileService: ProfileService;
   const account: Account = {
     activated: true,
     authorities: [],
-    email: '',
+    email: 'john.doe@cra.test',
     firstName: 'John',
     langKey: '',
     lastName: 'Doe',
@@ -47,18 +43,13 @@ describe('Navbar Component', () => {
     fixture = TestBed.createComponent(Navbar);
     comp = fixture.componentInstance;
     accountService = TestBed.inject(AccountService);
-    profileService = TestBed.inject(ProfileService);
   });
 
-  it('should call profileService.getProfileInfo on init', () => {
-    // GIVEN
-    vi.spyOn(profileService, 'getProfileInfo').mockReturnValue(of(new ProfileInfo()));
+  it('should display user name and initials', () => {
+    accountService.authenticate(account);
 
-    // WHEN
-    comp.ngOnInit();
-
-    // THEN
-    expect(profileService.getProfileInfo).toHaveBeenCalled();
+    expect(comp.displayName()).toBe('John Doe');
+    expect(comp.initials()).toBe('JD');
   });
 
   it('should hold current authenticated user in variable account', () => {

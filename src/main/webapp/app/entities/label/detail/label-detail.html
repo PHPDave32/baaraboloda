@@ -1,0 +1,46 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (label(); as labelRef) {
+      <div>
+        <h2 data-cy="labelDetailsHeading"><span jhiTranslate="baaraBolodaApp.label.detail.title">Label</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ labelRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.label.name">Name</span></dt>
+          <dd>
+            <span>{{ labelRef.name }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.label.color">Color</span></dt>
+          <dd>
+            <span>{{ labelRef.color }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.label.project">Project</span></dt>
+          <dd>
+            @if (label()!.project) {
+              <div>
+                <a [routerLink]="['/project', label()!.project?.id, 'view']">{{ labelRef.project?.name }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="button" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+        </button>
+
+        <button type="button" [routerLink]="['/label', labelRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

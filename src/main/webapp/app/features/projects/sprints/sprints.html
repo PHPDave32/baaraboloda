@@ -1,0 +1,149 @@
+<div class="p-8">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-bold text-white mb-1">Sprints</h1>
+      <p class="text-gray-400">{{ sprints.length }} sprint{{ sprints.length > 1 ? 's' : '' }}</p>
+    </div>
+    <button (click)="openCreateForm()" class="btn-primary text-sm flex items-center gap-2">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Nouveau sprint
+    </button>
+  </div>
+
+  <app-modal
+    [isOpen]="showForm"
+    [title]="editingSprint ? 'Modifier le sprint' : 'Créer un sprint'"
+    [subtitle]="editingSprint ? 'Mettez à jour les informations du sprint' : 'Planifiez un nouveau sprint pour votre projet'"
+    [confirmText]="editingSprint ? 'Enregistrer' : 'Créer le sprint'"
+    cancelText="Annuler"
+    [isLoading]="loading"
+    (close)="closeForm()"
+    (confirm)="onSubmit()"
+  >
+    <form [formGroup]="form" class="space-y-5">
+      @if (error) {
+        <div class="px-4 py-3 rounded-lg bg-red-950 border border-red-800 text-red-400 text-sm">{{ error }}</div>
+      }
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-1.5">Nom du sprint</label>
+        <input type="text" formControlName="name" class="input-field" placeholder="Sprint 1" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-1.5">Objectif du sprint</label>
+        <textarea formControlName="goal" class="input-field resize-none h-20" placeholder="Ce que nous voulons accomplir..."></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1.5">Date de début</label>
+          <input type="date" formControlName="startDate" class="input-field" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1.5">Date de fin</label>
+          <input type="date" formControlName="endDate" class="input-field" />
+        </div>
+      </div>
+    </form>
+  </app-modal>
+
+  <app-modal
+    variant="danger"
+    [isOpen]="sprintToDelete !== null"
+    title="Supprimer le sprint"
+    [subtitle]="
+      sprintToDelete
+        ? 'Voulez-vous vraiment supprimer « ' + (sprintToDelete.name ?? 'ce sprint') + ' » ? Cette action est irréversible.'
+        : ''
+    "
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    (close)="closeDeleteSprintModal()"
+    (confirm)="confirmDeleteSprint()"
+  >
+  </app-modal>
+
+  <div class="space-y-4">
+    @if (loading) {
+      <div class="flex items-center justify-center py-12">
+        <svg class="animate-spin w-6 h-6" style="color: #328cb1" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+      </div>
+    } @else {
+      @for (sprint of sprints; track sprint.id) {
+        <div class="card p-6">
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <h3 class="text-lg font-semibold text-white">{{ sprint.name }}</h3>
+                <app-badge [type]="'status'" [value]="sprint.status || 'PLANNED'" />
+              </div>
+              @if (sprint.goal) {
+                <p class="text-gray-400 text-sm">{{ sprint.goal }}</p>
+              }
+            </div>
+            <div class="flex items-center gap-2">
+              @if (sprint.status === 'PLANNED') {
+                <button (click)="openEditForm(sprint)" type="button" class="btn-secondary text-sm px-3 py-1">Modifier</button>
+                <button (click)="activateSprint(sprint)" type="button" class="btn-primary text-sm px-3 py-1">Activer</button>
+              }
+              @if (sprint.status === 'ACTIVE') {
+                <button (click)="completeSprint(sprint)" type="button" class="btn-secondary text-sm px-3 py-1">Terminer</button>
+              }
+              <button (click)="deleteSprint(sprint.id)" type="button" class="btn-danger text-sm px-3 py-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+            <div>
+              <p class="text-gray-500">Date de début</p>
+              <p class="text-white font-medium">{{ formatDate(sprint.startDate) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500">Date de fin</p>
+              <p class="text-white font-medium">{{ formatDate(sprint.endDate) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500">Durée</p>
+              <p class="text-white font-medium">{{ getDaysDifference(sprint.startDate, sprint.endDate) }} jours</p>
+            </div>
+          </div>
+
+          @if (sprint.createdBy) {
+            <div class="pt-3 border-t border-gray-800 flex items-center gap-2">
+              <app-avatar [user]="sprint.createdBy" size="xs" />
+              <span class="text-xs text-gray-500">
+                Créé par
+                <span class="font-medium text-gray-300">{{ getAuthorName(sprint.createdBy) }}</span>
+                @if (sprint.createdAt) {
+                  · {{ formatDate(sprint.createdAt) }}
+                }
+              </span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (!sprints.length) {
+        <div class="text-center py-12">
+          <svg class="w-16 h-16 text-gray-800 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <p class="text-gray-400 mb-4">Aucun sprint créé pour l'instant</p>
+          <button (click)="showForm = true" class="btn-primary">Créer un sprint</button>
+        </div>
+      }
+    }
+  </div>
+</div>

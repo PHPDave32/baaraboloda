@@ -1,0 +1,197 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2 id="jhi-project-heading" data-cy="ProjectCreateUpdateHeading" jhiTranslate="baaraBolodaApp.project.home.createOrEditLabel">
+        Créer ou éditer un Project
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        @let nameRef = editForm.get('name')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_name" jhiTranslate="baaraBolodaApp.project.name">Name</label>
+          <input type="text" class="form-control" name="name" id="field_name" data-cy="name" formControlName="name" />
+          @if (nameRef.invalid && (nameRef.dirty || nameRef.touched)) {
+            <div>
+              @if (nameRef.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+              @if (nameRef.errors?.maxlength) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '100' }"
+                  >Ce champ doit faire au maximum 100 caractères.</small
+                >
+              }
+            </div>
+          }
+        </div>
+
+        @let descriptionRef = editForm.get('description')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_description" jhiTranslate="baaraBolodaApp.project.description">Description</label>
+          <input
+            type="text"
+            class="form-control"
+            name="description"
+            id="field_description"
+            data-cy="description"
+            formControlName="description"
+          />
+          @if (descriptionRef.invalid && (descriptionRef.dirty || descriptionRef.touched)) {
+            <div>
+              @if (descriptionRef.errors?.maxlength) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '2000' }"
+                  >Ce champ doit faire au maximum 2000 caractères.</small
+                >
+              }
+            </div>
+          }
+        </div>
+
+        @let projectKeyRef = editForm.get('projectKey')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_projectKey" jhiTranslate="baaraBolodaApp.project.projectKey">Project Key</label>
+          <input
+            type="text"
+            class="form-control"
+            name="projectKey"
+            id="field_projectKey"
+            data-cy="projectKey"
+            formControlName="projectKey"
+          />
+          @if (projectKeyRef.invalid && (projectKeyRef.dirty || projectKeyRef.touched)) {
+            <div>
+              @if (projectKeyRef.errors?.maxlength) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '20' }"
+                  >Ce champ doit faire au maximum 20 caractères.</small
+                >
+              }
+            </div>
+          }
+        </div>
+
+        @let iconColorRef = editForm.get('iconColor')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_iconColor" jhiTranslate="baaraBolodaApp.project.iconColor">Icon Color</label>
+          <input type="text" class="form-control" name="iconColor" id="field_iconColor" data-cy="iconColor" formControlName="iconColor" />
+          @if (iconColorRef.invalid && (iconColorRef.dirty || iconColorRef.touched)) {
+            <div>
+              @if (iconColorRef.errors?.maxlength) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '30' }"
+                  >Ce champ doit faire au maximum 30 caractères.</small
+                >
+              }
+            </div>
+          }
+        </div>
+
+        @let statusRef = editForm.get('status')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_status" jhiTranslate="baaraBolodaApp.project.status">Status</label>
+          <select class="form-select" name="status" formControlName="status" id="field_status" data-cy="status">
+            <option [ngValue]="null">{{ 'baaraBolodaApp.ProjectStatus.null' | translate }}</option>
+            @for (projectStatus of projectStatusValues; track $index) {
+              <option [value]="projectStatus">{{ 'baaraBolodaApp.ProjectStatus.' + projectStatus | translate }}</option>
+            }
+          </select>
+          @if (statusRef.invalid && (statusRef.dirty || statusRef.touched)) {
+            <div>
+              @if (statusRef.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="baaraBolodaApp.project.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_updatedAt" jhiTranslate="baaraBolodaApp.project.updatedAt">Updated At</label>
+          <div class="d-flex">
+            <input
+              id="field_updatedAt"
+              data-cy="updatedAt"
+              type="datetime-local"
+              class="form-control"
+              name="updatedAt"
+              formControlName="updatedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_owner" jhiTranslate="baaraBolodaApp.project.owner">Owner</label>
+          <select class="form-select" id="field_owner" data-cy="owner" name="owner" formControlName="owner" [compareWith]="compareUser">
+            @if (!editForm.get('owner')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (userOption of usersSharedCollection(); track $index) {
+              <option [ngValue]="userOption">{{ userOption.login }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['owner'])!.invalid && (editForm.get(['owner'])!.dirty || editForm.get(['owner'])!.touched)) {
+          <div>
+            @if (editForm.get(['owner'])?.errors?.required) {
+              <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+        }
+
+        <div class="mb-3">
+          <label for="field_memberses" jhiTranslate="baaraBolodaApp.project.members">Members</label>
+          <select
+            class="form-select"
+            id="field_memberses"
+            data-cy="members"
+            multiple
+            name="memberses"
+            formControlName="memberses"
+            [compareWith]="compareUser"
+          >
+            @for (userOption of usersSharedCollection(); track $index) {
+              <option [ngValue]="userOption">{{ userOption.login }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

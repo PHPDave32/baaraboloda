@@ -1,0 +1,100 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (task(); as taskRef) {
+      <div>
+        <h2 data-cy="taskDetailsHeading"><span jhiTranslate="baaraBolodaApp.task.detail.title">Task</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ taskRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.title">Title</span></dt>
+          <dd>
+            <span>{{ taskRef.title }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.description">Description</span></dt>
+          <dd>
+            <span>{{ taskRef.description }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.status">Status</span></dt>
+          <dd>
+            <span [jhiTranslate]="'baaraBolodaApp.TaskStatus.' + (taskRef.status ?? 'null')">{{
+              { null: '', TODO: 'TODO', IN_PROGRESS: 'IN_PROGRESS', IN_REVIEW: 'IN_REVIEW', DONE: 'DONE' }[taskRef.status ?? 'null']
+            }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.priority">Priority</span></dt>
+          <dd>
+            <span [jhiTranslate]="'baaraBolodaApp.TaskPriority.' + (taskRef.priority ?? 'null')">{{
+              { null: '', LOW: 'LOW', MEDIUM: 'MEDIUM', HIGH: 'HIGH', CRITICAL: 'CRITICAL' }[taskRef.priority ?? 'null']
+            }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.type">Type</span></dt>
+          <dd>
+            <span [jhiTranslate]="'baaraBolodaApp.TaskType.' + (taskRef.type ?? 'null')">{{
+              { null: '', STORY: 'STORY', BUG: 'BUG', TASK: 'TASK', EPIC: 'EPIC' }[taskRef.type ?? 'null']
+            }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.storyPoints">Story Points</span></dt>
+          <dd>
+            <span>{{ taskRef.storyPoints }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.dueDate">Due Date</span></dt>
+          <dd>
+            <span>{{ taskRef.dueDate | formatMediumDate }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.position">Position</span></dt>
+          <dd>
+            <span>{{ taskRef.position }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.createdAt">Created At</span></dt>
+          <dd>
+            <span>{{ taskRef.createdAt | formatMediumDatetime }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.updatedAt">Updated At</span></dt>
+          <dd>
+            <span>{{ taskRef.updatedAt | formatMediumDatetime }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.assignee">Assignee</span></dt>
+          <dd>
+            <span>{{ taskRef.assignee?.login }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.reporter">Reporter</span></dt>
+          <dd>
+            <span>{{ taskRef.reporter?.login }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.project">Project</span></dt>
+          <dd>
+            @if (task()!.project) {
+              <div>
+                <a [routerLink]="['/project', task()!.project?.id, 'view']">{{ taskRef.project?.name }}</a>
+              </div>
+            }
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.task.sprint">Sprint</span></dt>
+          <dd>
+            @if (task()!.sprint) {
+              <div>
+                <a [routerLink]="['/sprint', task()!.sprint?.id, 'view']">{{ taskRef.sprint?.name }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="button" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+        </button>
+
+        <button type="button" [routerLink]="['/task', taskRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

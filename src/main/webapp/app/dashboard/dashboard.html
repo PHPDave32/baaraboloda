@@ -1,0 +1,155 @@
+<main class="min-h-[calc(100vh-2rem)] bg-slate-100 px-5 py-8 text-slate-800 sm:px-8">
+  <div class="mx-auto max-w-7xl">
+    <header class="mb-8">
+      <h1 class="mb-1 text-3xl font-bold text-slate-900">Tableau de bord</h1>
+      <p class="text-sm text-slate-500">Bienvenue dans votre espace de travail.</p>
+    </header>
+
+    <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500">Projets</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ stats.totalProjects }}</p>
+          </div>
+          <img src="/content/images/bookshelf-svgrepo-com.svg" class="h-20 w-20 object-contain" alt="" aria-hidden="true" />
+        </div>
+      </article>
+      <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500">Tâches en cours</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ stats.activeTasks }}</p>
+          </div>
+          <img src="/content/images/calendar-svgrepo-com.svg" class="h-20 w-20 object-contain" alt="" aria-hidden="true" />
+        </div>
+      </article>
+      <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500">Terminées</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ stats.completedTasks }}</p>
+          </div>
+          <img src="/content/images/done-all-round-svgrepo-com.svg" class="h-20 w-20 object-contain" alt="" aria-hidden="true" />
+        </div>
+      </article>
+      <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500">En révision</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ stats.reviewTasks }}</p>
+          </div>
+          <img src="/content/images/preview-svgrepo-com.svg" class="h-20 w-20 object-contain" alt="" aria-hidden="true" />
+        </div>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <article class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <h2 class="text-lg font-semibold text-slate-900">Projets récents</h2>
+          <a routerLink="/projects" class="text-sm font-semibold text-cyan-700 hover:opacity-80">Voir tout</a>
+        </div>
+        @if (loading) {
+          <div class="flex items-center justify-center py-8">
+            <span class="h-5 w-5 animate-spin rounded-full border-2 border-cyan-200 border-t-cyan-700"></span>
+          </div>
+        } @else {
+          <div class="divide-y divide-slate-200">
+            @for (project of projects; track trackProject($index, project)) {
+              <a
+                [routerLink]="['/projects', project.id, 'board']"
+                class="group flex items-center justify-between px-6 py-4 transition-colors hover:bg-slate-50"
+                ><div class="flex items-center gap-4">
+                  <div class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-cyan-50">
+                    <img src="/content/images/bookshelf-svgrepo-com.svg" class="h-10 w-10 object-contain" alt="" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p class="font-medium text-slate-900 transition-colors group-hover:text-cyan-700">{{ project.name }}</p>
+                    <p class="text-xs text-slate-500">
+                      {{ project.memberses?.length || 0 }} membre{{ (project.memberses?.length || 0) > 1 ? 's' : '' }}
+                    </p>
+                  </div>
+                </div>
+                <span class="text-slate-400">›</span></a
+              >
+            }
+            @if (!projects.length) {
+              <div class="px-6 py-10 text-center">
+                <img
+                  src="/content/images/bookshelf-svgrepo-com.svg"
+                  class="mx-auto mb-3 h-24 w-24 object-contain"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <p class="mb-3 text-slate-500">Aucun projet pour l&apos;instant.</p>
+                <a
+                  routerLink="/projects"
+                  class="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-cyan-800"
+                  >Créer un projet</a
+                >
+              </div>
+            }
+          </div>
+        }
+      </article>
+
+      <div class="space-y-4">
+        <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-base font-semibold text-slate-900">Statistiques</h2>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">Total des tâches</span><span class="font-semibold text-slate-900">{{ stats.totalTasks }}</span>
+            </div>
+            <div class="h-2 w-full rounded-full bg-slate-100">
+              <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" [style.width.%]="completionPercent"></div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-500">
+              <span>{{ completionPercent }}% terminé</span><span>{{ stats.completedTasks }} / {{ stats.totalTasks }}</span>
+            </div>
+          </div>
+          <div class="mt-5 space-y-3 border-t border-slate-200 pt-4">
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2 text-slate-500"><span class="h-2 w-2 rounded-full bg-cyan-600"></span>En cours</span
+              ><span class="text-slate-900">{{ stats.activeTasks }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2 text-slate-500"><span class="h-2 w-2 rounded-full bg-purple-500"></span>En révision</span
+              ><span class="text-slate-900">{{ stats.reviewTasks }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2 text-slate-500"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Terminées</span
+              ><span class="text-emerald-600">{{ stats.completedTasks }}</span>
+            </div>
+          </div>
+        </article>
+        <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-base font-semibold text-slate-900">Actions rapides</h2>
+          <div class="space-y-2">
+            <a routerLink="/projects" class="group flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-slate-50"
+              ><div class="grid h-10 w-10 place-items-center rounded-lg bg-cyan-50">
+                <img src="/content/images/bookshelf-svgrepo-com.svg" class="h-7 w-7 object-contain" alt="" aria-hidden="true" />
+              </div>
+              <span class="text-sm text-slate-600 group-hover:text-slate-900">Nouveau projet</span></a
+            >
+            @if (projects.length > 0) {
+              <a
+                [routerLink]="['/projects', projects[0].id, 'backlog']"
+                class="group flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-slate-50"
+                ><div class="grid h-11 w-11 place-items-center rounded-lg bg-cyan-50">
+                  <img src="/content/images/add-file-svgrepo-com.svg" class="h-4 w-4 object-contain" alt="" aria-hidden="true" />
+                </div>
+                <span class="text-sm text-slate-600 group-hover:text-slate-900">Créer une tâche</span></a
+              ><a
+                [routerLink]="['/projects', projects[0].id, 'sprints']"
+                class="group flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-slate-50"
+                ><div class="grid h-11 w-11 place-items-center rounded-lg bg-emerald-50"><span class="text-emerald-600">⚡</span></div>
+                <span class="text-sm text-slate-600 group-hover:text-slate-900">Démarrer un sprint</span></a
+              >
+            }
+          </div>
+        </article>
+      </div>
+    </section>
+  </div>
+</main>

@@ -1,0 +1,54 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (comment(); as commentRef) {
+      <div>
+        <h2 data-cy="commentDetailsHeading"><span jhiTranslate="baaraBolodaApp.comment.detail.title">Comment</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ commentRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.comment.content">Content</span></dt>
+          <dd>
+            <span>{{ commentRef.content }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.comment.createdAt">Created At</span></dt>
+          <dd>
+            <span>{{ commentRef.createdAt | formatMediumDatetime }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.comment.updatedAt">Updated At</span></dt>
+          <dd>
+            <span>{{ commentRef.updatedAt | formatMediumDatetime }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.comment.author">Author</span></dt>
+          <dd>
+            <span>{{ commentRef.author?.login }}</span>
+          </dd>
+          <dt><span jhiTranslate="baaraBolodaApp.comment.task">Task</span></dt>
+          <dd>
+            @if (comment()!.task) {
+              <div>
+                <a [routerLink]="['/task', comment()!.task?.id, 'view']">{{ commentRef.task?.title }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="button" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+        </button>
+
+        <button type="button" [routerLink]="['/comment', commentRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

@@ -8,8 +8,14 @@ import { errorRoute } from './layouts/error/error.route';
 const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./home/home'),
-    title: 'home.title',
+    redirectTo: 'dashboard',
+    pathMatch: 'full',
+  },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./dashboard/dashboard'),
+    title: 'Tableau de bord',
+    canActivate: [userRouteAccessService],
   },
   {
     path: '',
@@ -29,9 +35,19 @@ const routes: Routes = [
     loadChildren: () => import('./account/account.route'),
   },
   {
+    path: 'profile',
+    loadChildren: () => import('./features/profile/profile.routes'),
+    canActivate: [userRouteAccessService],
+  },
+  {
     path: 'login',
     loadComponent: () => import('./login/login'),
     title: 'login.title',
+  },
+  {
+    path: 'projects',
+    loadChildren: () => import('./entities/project/project.routes'),
+    canActivate: [userRouteAccessService],
   },
   {
     path: '',

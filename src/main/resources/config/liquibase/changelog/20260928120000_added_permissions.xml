@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20260928120000-add-permission-authorities" author="cra">
+        <insert tableName="jhi_authority">
+            <column name="name" value="PERM_PROJECT_CREATE"/>
+        </insert>
+        <insert tableName="jhi_authority">
+            <column name="name" value="PERM_PROJECT_DELETE"/>
+        </insert>
+        <insert tableName="jhi_authority">
+            <column name="name" value="PERM_SPRINT_MANAGE"/>
+        </insert>
+        <insert tableName="jhi_authority">
+            <column name="name" value="PERM_MANAGE_MEMBERS"/>
+        </insert>
+        <rollback>
+            <delete tableName="jhi_authority">
+                <where>name in ('PERM_PROJECT_CREATE', 'PERM_PROJECT_DELETE', 'PERM_SPRINT_MANAGE', 'PERM_MANAGE_MEMBERS')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

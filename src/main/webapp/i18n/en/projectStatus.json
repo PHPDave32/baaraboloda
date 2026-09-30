@@ -1,0 +1,10 @@
+{
+  "baaraBolodaApp": {
+    "ProjectStatus": {
+      "null": "",
+      "ACTIVE": "ACTIVE",
+      "ARCHIVED": "ARCHIVED",
+      "COMPLETED": "COMPLETED"
+    }
+  }
+}

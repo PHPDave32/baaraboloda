@@ -1,36 +1,197 @@
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-
-/* ==========================================================================
-Navbar
-========================================================================== */
-
-.navbar-version {
-  font-size: 0.65em;
-  color: $navbar-dark-color;
+:host {
+  display: contents;
 }
 
-.profile-image {
-  height: 1.75em;
-  width: 1.75em;
+.workspace-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  display: flex;
+  width: 15rem;
+  height: 100vh;
+  flex-direction: column;
+  border-right: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 8px 0 28px rgba(100, 116, 139, 0.08);
+  backdrop-filter: blur(18px);
 }
 
-.navbar {
-  padding: 0.2rem 1rem;
-
-  a.nav-link {
-    font-weight: 400;
-  }
+.workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
 }
 
-/* ==========================================================================
-Logo styles
-========================================================================== */
-.logo-img {
-  height: 45px;
-  width: 45px;
-  display: inline-block;
-  vertical-align: middle;
-  background: url('/content/images/logo-jhipster.png') no-repeat center center;
-  background-size: contain;
+.workspace-brand-logo {
+  height: 2.75rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.workspace-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0.75rem;
+}
+
+.workspace-nav-section {
+  padding: 1rem 0 0.25rem;
+}
+
+.workspace-nav-section-title {
+  margin: 0 0 0.25rem;
+  padding: 0 0.75rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.workspace-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.125rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.workspace-nav-link:hover {
+  border-color: #a8d4e8;
+  background: #eaf4f9;
+  color: #334155;
+}
+
+.workspace-nav-link.is-active {
+  border-color: transparent;
+  background: #eaf4f9;
+  color: #328cb1;
+}
+
+.workspace-nav-button {
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.workspace-nav-icon {
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+.workspace-user {
+  border-top: 1px solid #e2e8f0;
+  background: rgba(248, 250, 252, 0.72);
+  padding: 0.75rem;
+}
+
+.workspace-user-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.25rem;
+}
+
+.workspace-user-link {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.workspace-user-link:hover {
+  border-color: #a8d4e8;
+  background: #eaf4f9;
+}
+
+.workspace-user-link.is-active {
+  background: #eaf4f9;
+}
+
+.workspace-avatar {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #328cb1;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.workspace-avatar img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.workspace-user-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.workspace-user-name {
+  margin: 0;
+  overflow: hidden;
+  color: #172033;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-user-email {
+  margin: 0;
+  overflow: hidden;
+  color: #7b879b;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-logout {
+  border: 0;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  background: transparent;
+  color: #7b879b;
+  transition: color 0.15s ease;
+}
+
+.workspace-logout:hover {
+  color: #f87171;
+}
+
+.workspace-logout svg {
+  display: block;
+  height: 1rem;
+  width: 1rem;
 }

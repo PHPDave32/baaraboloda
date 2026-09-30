@@ -5,13 +5,13 @@ import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
 import dayjs from 'dayjs/esm';
 
 import { AccountService } from 'app/core/auth';
-import Footer from '../footer/footer';
+import { ToastContainer } from 'app/shared/toast/toast-container';
 import PageRibbon from '../profiles/page-ribbon';
 
 @Component({
   selector: 'jhi-main',
   templateUrl: './main.html',
-  imports: [RouterOutlet, Footer, PageRibbon],
+  imports: [RouterOutlet, PageRibbon, ToastContainer],
 })
 export default class Main implements OnInit {
   private readonly renderer: Renderer2;
@@ -20,6 +20,7 @@ export default class Main implements OnInit {
   private readonly router = inject(Router);
   private readonly titleStrategy = inject(TitleStrategy);
   private readonly accountService = inject(AccountService);
+  readonly account = this.accountService.account;
   private readonly document = inject(DOCUMENT);
   private readonly translateService = inject(TranslateService);
   private readonly rootRenderer = inject(RendererFactory2);

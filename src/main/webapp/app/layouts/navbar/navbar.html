@@ -1,224 +1,132 @@
-<nav data-cy="navbar" class="navbar navbar-dark navbar-expand-md bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand logo" routerLink="/" (click)="collapseNavbar()">
-      <span class="logo-img"></span>
-      <span class="navbar-title" jhiTranslate="global.title">BaaraBoloda</span>
-      <span class="navbar-version">{{ version }}</span>
-    </a>
-    <a
-      class="navbar-toggler d-lg-none"
-      href="javascript:void(0);"
-      aria-controls="navbarResponsive"
-      [attr.aria-expanded]="!isNavbarCollapsed()"
-      aria-label="Toggle navigation"
-      (click)="isNavbarCollapsed.update(isNavbarCollapsed => !isNavbarCollapsed)"
-    >
-      <fa-icon icon="bars" />
-    </a>
-    <div class="navbar-collapse collapse" id="navbarResponsive" [ngbCollapse]="isNavbarCollapsed()">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          <a class="nav-link" routerLink="/" (click)="collapseNavbar()">
-            <span>
-              <fa-icon icon="home" />
-              <span jhiTranslate="global.menu.home">Accueil</span>
-            </span>
-          </a>
-        </li>
-        @if (account() !== null) {
-          <li
-            ngbDropdown
-            class="nav-item dropdown pointer"
-            display="static"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            data-cy="entity"
-          >
-            <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="entity-menu">
-              <span>
-                <fa-icon icon="th-list" />
-                <span jhiTranslate="global.menu.entities.main">Entités</span>
-              </span>
-            </a>
-            <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="entity-menu">
-              <!-- jhipster-needle-add-entity-to-menu - JHipster will add entities to the menu here -->
-            </ul>
-          </li>
-        }
-        <li
-          *jhiHasAnyAuthority="'ROLE_ADMIN'"
-          ngbDropdown
-          class="nav-item dropdown pointer"
-          display="static"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          data-cy="adminMenu"
-        >
-          <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="admin-menu">
-            <span>
-              <fa-icon icon="users-cog" />
-              <span jhiTranslate="global.menu.admin.main">Administration</span>
-            </span>
-          </a>
-          <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="admin-menu">
-            <li>
-              <a
-                class="dropdown-item"
-                routerLink="/user-management"
-                routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: true }"
-                (click)="collapseNavbar()"
-              >
-                <fa-icon icon="asterisk" [fixedWidth]="true" />
-                <span jhiTranslate="userManagement.home.title">User Management</span>
-              </a>
-            </li>
-            <li>
-              <a
-                class="dropdown-item"
-                routerLink="/authority"
-                routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: true }"
-                (click)="collapseNavbar()"
-              >
-                <fa-icon icon="asterisk" [fixedWidth]="true" />
-                <span jhiTranslate="global.menu.entities.adminAuthority">Authority</span>
-              </a>
-            </li>
-            <!-- jhipster-needle-add-element-to-admin-menu - JHipster will add entities to the admin menu here -->
-            <li>
-              <a class="dropdown-item" routerLink="/admin/metrics" routerLinkActive="active" (click)="collapseNavbar()">
-                <fa-icon icon="tachometer-alt" [fixedWidth]="true" />
-                <span jhiTranslate="global.menu.admin.metrics">Métriques</span>
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" routerLink="/admin/health" routerLinkActive="active" (click)="collapseNavbar()">
-                <fa-icon icon="heart" [fixedWidth]="true" />
-                <span jhiTranslate="global.menu.admin.health">Diagnostics</span>
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" routerLink="/admin/configuration" routerLinkActive="active" (click)="collapseNavbar()">
-                <fa-icon icon="cogs" [fixedWidth]="true" />
-                <span jhiTranslate="global.menu.admin.configuration">Configuration</span>
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" routerLink="/admin/logs" routerLinkActive="active" (click)="collapseNavbar()">
-                <fa-icon icon="tasks" [fixedWidth]="true" />
-                <span jhiTranslate="global.menu.admin.logs">Logs</span>
-              </a>
-            </li>
-            @if (openAPIEnabled()) {
-              <li>
-                <a class="dropdown-item" routerLink="/admin/docs" routerLinkActive="active" (click)="collapseNavbar()">
-                  <fa-icon icon="book" [fixedWidth]="true" />
-                  <span jhiTranslate="global.menu.admin.apidocs">API</span>
-                </a>
-              </li>
-            }
-          </ul>
-        </li>
-        @if (languages.length > 1) {
-          <li ngbDropdown class="nav-item dropdown pointer" display="static">
-            <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="languagesnavBarDropdown">
-              <span>
-                <fa-icon icon="flag" />
-                <span jhiTranslate="global.menu.language">Langue</span>
-              </span>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" ngbDropdownMenu aria-labelledby="languagesnavBarDropdown">
-              @for (language of languages; track $index) {
-                <li>
-                  <a
-                    class="dropdown-item"
-                    [jhiActiveMenu]="language"
-                    href="javascript:void(0);"
-                    (click)="changeLanguage(language); collapseNavbar()"
-                    >{{ language | findLanguageFromKey }}</a
-                  >
-                </li>
-              }
-            </ul>
-          </li>
-        }
-        <li
-          ngbDropdown
-          class="nav-item dropdown pointer"
-          display="static"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          data-cy="accountMenu"
-        >
-          @let accountRef = account();
-          <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="account-menu">
-            @if (!accountRef?.imageUrl) {
-              <span>
-                <fa-icon icon="user" />
-                <span jhiTranslate="global.menu.account.main">Compte</span>
-              </span>
-            } @else {
-              <span>
-                <img [src]="accountRef.imageUrl" class="profile-image rounded-circle" alt="Avatar" />
-              </span>
-            }
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end" ngbDropdownMenu aria-labelledby="account-menu">
-            @if (accountRef !== null) {
-              <li>
-                <a
-                  class="dropdown-item"
-                  routerLink="/account/settings"
-                  routerLinkActive="active"
-                  (click)="collapseNavbar()"
-                  data-cy="settings"
-                >
-                  <fa-icon icon="wrench" [fixedWidth]="true" />
-                  <span jhiTranslate="global.menu.account.settings">Profil</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  class="dropdown-item"
-                  routerLink="/account/password"
-                  routerLinkActive="active"
-                  (click)="collapseNavbar()"
-                  data-cy="passwordItem"
-                >
-                  <fa-icon icon="lock" [fixedWidth]="true" />
-                  <span jhiTranslate="global.menu.account.password">Mot de passe</span>
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" (click)="logout()" id="logout" data-cy="logout">
-                  <fa-icon icon="sign-out-alt" [fixedWidth]="true" />
-                  <span jhiTranslate="global.menu.account.logout">Déconnexion</span>
-                </a>
-              </li>
-            } @else {
-              <li>
-                <a class="dropdown-item" (click)="login()" id="login" data-cy="login">
-                  <fa-icon icon="sign-in-alt" [fixedWidth]="true" />
-                  <span jhiTranslate="global.menu.account.login">S&apos;authentifier</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  class="dropdown-item"
-                  routerLink="/account/register"
-                  routerLinkActive="active"
-                  (click)="collapseNavbar()"
-                  data-cy="register"
-                >
-                  <fa-icon icon="user-plus" [fixedWidth]="true" />
-                  <span jhiTranslate="global.menu.account.register">Créer un compte</span>
-                </a>
-              </li>
-            }
-          </ul>
-        </li>
-      </ul>
+@if (account()) {
+  <aside data-cy="navbar" class="workspace-sidebar">
+    <div class="workspace-brand">
+      <img src="/content/images/figma-logo-cra.png" alt="Logo" class="workspace-brand-logo" />
     </div>
-  </div>
-</nav>
+
+    <nav class="workspace-nav">
+      <a routerLink="/dashboard" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="workspace-nav-link">
+        <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
+        </svg>
+        Tableau de bord
+      </a>
+
+      <a routerLink="/projects" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="workspace-nav-link">
+        <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+          />
+        </svg>
+        Projets
+      </a>
+
+      @if (account()?.authorities?.includes('ROLE_ADMIN')) {
+        <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="workspace-nav-link">
+          <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 15a3 3 0 100-6 3 3 0 000 6zm7.4-3a7.4 7.4 0 01-.1 1l2 1.5-2 3.4-2.4-1a7.5 7.5 0 01-1.7 1l-.3 2.6H9.1l-.3-2.6a7.5 7.5 0 01-1.7-1l-2.4 1-2-3.4 2-1.5a7.4 7.4 0 010-2l-2-1.5 2-3.4 2.4 1a7.5 7.5 0 011.7-1L9.1 3h3.8l.3 2.6a7.5 7.5 0 011.7 1l2.4-1 2 3.4-2 1.5c.1.3.1.7.1 1z"
+            />
+          </svg>
+          Administration
+        </a>
+      }
+
+      @if (activeProjectId()) {
+        <div class="workspace-nav-section">
+          <p class="workspace-nav-section-title">Projet</p>
+        </div>
+
+        <a [routerLink]="['/projects', activeProjectId(), 'board']" routerLinkActive="is-active" class="workspace-nav-link">
+          <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+            />
+          </svg>
+          Tableau
+        </a>
+
+        <a [routerLink]="['/projects', activeProjectId(), 'backlog']" routerLinkActive="is-active" class="workspace-nav-link">
+          <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+          Backlog
+        </a>
+
+        <button type="button" (click)="goToSprints()" class="workspace-nav-link workspace-nav-button">
+          <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <rect x="3" y="5" width="18" height="16" rx="2" stroke-width="1.8" />
+            <path stroke-linecap="round" stroke-width="1.8" d="M8 3v4M16 3v4M3 10h18" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 15h3l2-2 3 3" />
+          </svg>
+          Sprints
+        </button>
+      }
+    </nav>
+
+    <div class="workspace-user">
+      <div class="workspace-user-row">
+        <a routerLink="/profile" routerLinkActive="is-active" class="workspace-user-link" [title]="'Voir le profil de ' + displayName()">
+          <div class="workspace-avatar">
+            @if (account()?.imageUrl) {
+              <img [src]="account()!.imageUrl!" [alt]="displayName()" />
+            } @else {
+              <span>{{ initials() }}</span>
+            }
+          </div>
+          <div class="workspace-user-meta">
+            <p class="workspace-user-name">{{ displayName() }}</p>
+            <p class="workspace-user-email">{{ account()?.email }}</p>
+          </div>
+        </a>
+        <button type="button" title="Déconnexion" (click)="logout()" class="workspace-logout">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <app-modal
+    variant="danger"
+    [isOpen]="showSprintAccessModal()"
+    title="Accès non autorisé"
+    subtitle="La gestion des sprints n’est pas activée pour votre compte."
+    [showFooter]="false"
+    (close)="closeSprintAccessModal()"
+  >
+    <p class="text-sm leading-relaxed text-slate-600">
+      Vous n’avez pas la permission d’accéder aux sprints de ce projet. Contactez un administrateur pour obtenir l’accès « Gérer les sprints
+      ».
+    </p>
+    <div class="mt-6 flex justify-end">
+      <button
+        type="button"
+        (click)="closeSprintAccessModal()"
+        class="rounded-xl bg-[#328cb1] px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(50,140,177,.2)] transition hover:-translate-y-px hover:bg-[#2a7a9e]"
+      >
+        J’ai compris
+      </button>
+    </div>
+  </app-modal>
+}

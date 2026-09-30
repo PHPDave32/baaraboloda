@@ -74,6 +74,12 @@ public class CacheConfiguration {
             createCache(cm, com.cratechnologie.baaraboloda.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.cratechnologie.baaraboloda.domain.Authority.class.getName(), jcacheConfiguration);
             createCache(cm, com.cratechnologie.baaraboloda.domain.User.class.getName() + ".authorities", jcacheConfiguration);
+            createCache(cm, com.cratechnologie.baaraboloda.domain.Project.class.getName(), jcacheConfiguration);
+            createCache(cm, com.cratechnologie.baaraboloda.domain.Project.class.getName() + ".memberses", jcacheConfiguration);
+            createCache(cm, com.cratechnologie.baaraboloda.domain.Sprint.class.getName(), jcacheConfiguration);
+            createCache(cm, com.cratechnologie.baaraboloda.domain.Task.class.getName(), jcacheConfiguration);
+            createCache(cm, com.cratechnologie.baaraboloda.domain.Comment.class.getName(), jcacheConfiguration);
+            createCache(cm, com.cratechnologie.baaraboloda.domain.Label.class.getName(), jcacheConfiguration);
             // jhipster-needle-redis-add-entry
         };
     }

@@ -1,0 +1,32 @@
+{
+  "baaraBolodaApp": {
+    "project": {
+      "home": {
+        "title": "Projects",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Project",
+        "createOrEditLabel": "Créer ou éditer un Project",
+        "notFound": "Aucun Project trouvé"
+      },
+      "created": "Un nouveau Project a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Project avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Project avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Project {{ id }} ?"
+      },
+      "detail": {
+        "title": "Project"
+      },
+      "id": "ID",
+      "name": "Name",
+      "description": "Description",
+      "projectKey": "Project Key",
+      "iconColor": "Icon Color",
+      "status": "Status",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "owner": "Owner",
+      "members": "Members"
+    }
+  }
+}

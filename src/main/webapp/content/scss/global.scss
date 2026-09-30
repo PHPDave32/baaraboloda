@@ -1,43 +1,174 @@
-@import 'bootstrap-variables';
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* ==============================================================
-Bootstrap tweaks
-===============================================================*/
-
-body,
-h1,
-h2,
-h3,
-h4 {
-  font-weight: 300;
+/* box-sizing global (Tailwind preflight est désactivé pour cohabiter avec Bootstrap) */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* Increase contrast of links to get 100% on Lighthouse Accessibility Audit. Override this color if you want to change the link color, or use a Bootswatch theme */
-a {
-  color: #533f03;
-  font-weight: bold;
+body {
+  font-family: 'Poppins', sans-serif;
 }
 
-/* override hover color for dropdown-item forced by bootstrap to all a:not([href]):not([tabindex]) elements in _reboot.scss */
-a:not([href]):not([tabindex]):hover.dropdown-item {
-  color: $dropdown-link-hover-color;
+@keyframes confirmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-/* override .dropdown-item.active background-color on hover */
-.dropdown-item.active:hover {
-  background-color: mix($dropdown-link-hover-bg, $dropdown-link-active-bg, 50%);
+@keyframes confirmFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
-a:hover {
-  color: #533f03;
-  /* make sure browsers use the pointer cursor for anchors, even with no href */
-  cursor: pointer;
+@keyframes confirmRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.dropdown-item:hover {
-  color: $dropdown-link-hover-color;
+@keyframes confirmFall {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  body {
+    @apply antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-gray-700;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-lg px-4 py-2 font-medium text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+    background-color: #328cb1;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: #2a7a9e;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg bg-gray-800 px-4 py-2 font-medium text-gray-200 transition-colors duration-150 hover:bg-gray-700;
+  }
+
+  .btn-danger {
+    @apply rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition-colors duration-150 hover:bg-red-500;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100 placeholder-gray-500 transition focus:border-transparent focus:outline-none focus:ring-2;
+    --tw-ring-color: #328cb1;
+  }
+
+  .card {
+    @apply rounded-xl border border-gray-800 bg-gray-900;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-medium;
+  }
+
+  .asset-icon,
+  .project-icon {
+    @apply shrink-0 object-contain;
+  }
+
+  .asset-icon {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .project-icon {
+    height: 1.5rem;
+    width: 1.5rem;
+    filter: drop-shadow(0 0 1px rgba(50, 140, 177, 0.3));
+  }
+
+  .btn-primary .asset-icon,
+  .btn-danger .asset-icon {
+    filter: brightness(0) invert(1);
+  }
+
+  .toast-container {
+    z-index: 9999 !important;
+  }
+
+  .toast {
+    border: 1px solid #374151 !important;
+    border-radius: 0.5rem !important;
+    background-color: #1f2937 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .toast.toast-success {
+    border-color: #10b981 !important;
+    background-color: #065f46 !important;
+  }
+  .toast.toast-error {
+    border-color: #ef4444 !important;
+    background-color: #7f1d1d !important;
+  }
+  .toast.toast-info {
+    border-color: #0ea5e9 !important;
+    background-color: #0c4a6e !important;
+  }
+  .toast.toast-warning {
+    border-color: #f59e0b !important;
+    background-color: #78350f !important;
+  }
+
+  .toast-title,
+  .toast-message {
+    color: #f3f4f6 !important;
+    font-family: 'Poppins', sans-serif !important;
+  }
+
+  .progress-bar {
+    background-color: #328cb1 !important;
+  }
 }
 
 /* ==========================================================================
@@ -233,4 +364,147 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
     }
   }
 }
-/* jhipster-needle-scss-add-main JHipster will add new css style */
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  color: #172033;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(224, 242, 254, 0.82), transparent 32rem),
+    radial-gradient(circle at 8% 92%, rgba(241, 245, 249, 0.9), transparent 28rem), #f8fafc;
+
+  a {
+    text-decoration: none !important;
+    color: inherit;
+    &:hover {
+      text-decoration: none !important;
+    }
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  button:not(.login-submit):not([class*='border']):not([class*='btn-']) {
+    border: none;
+    background: transparent;
+  }
+}
+
+.workspace-main {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.app-shell.has-sidebar .workspace-main {
+  margin-left: 15rem;
+}
+
+.app-shell .card {
+  position: relative;
+  overflow: hidden;
+  border-color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 32px rgba(100, 116, 139, 0.09);
+}
+
+.app-shell .card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  content: '';
+  background: linear-gradient(90deg, #328cb1, #22d3ee, #fbbf24, transparent 82%);
+  opacity: 0.55;
+}
+
+.app-shell h1,
+.app-shell h2,
+.app-shell h3 {
+  letter-spacing: -0.035em;
+}
+
+.app-shell .btn-primary {
+  box-shadow: 0 8px 18px rgba(50, 140, 177, 0.18);
+  color: #fff !important;
+}
+
+.app-shell .bg-gray-950 {
+  background-color: transparent !important;
+}
+.app-shell .bg-gray-900 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+.app-shell .bg-gray-800 {
+  background-color: #eef2f7 !important;
+}
+.app-shell .bg-gray-700 {
+  background-color: #dbe3ef !important;
+}
+
+.app-shell .text-white {
+  color: #172033 !important;
+}
+.app-shell .text-gray-100,
+.app-shell .text-gray-200,
+.app-shell .text-gray-300 {
+  color: #334155 !important;
+}
+.app-shell .text-gray-400 {
+  color: #64748b !important;
+}
+.app-shell .text-gray-500 {
+  color: #7b879b !important;
+}
+.app-shell .text-gray-600,
+.app-shell .text-gray-700 {
+  color: #94a3b8 !important;
+}
+
+.app-shell .border-gray-800 {
+  border-color: #e2e8f0 !important;
+}
+.app-shell .border-gray-700 {
+  border-color: #cbd5e1 !important;
+}
+
+.app-shell .input-field {
+  border-color: #cbd5e1;
+  color: #172033;
+  background: #fff;
+}
+
+.app-shell .input-field.ng-invalid:not(form),
+.app-shell .input-field.ng-valid[required],
+.app-shell .input-field.ng-valid.required {
+  border-left: 1px solid #cbd5e1;
+}
+
+.app-shell .input-field::placeholder {
+  color: #94a3b8;
+}
+
+.app-shell .btn-secondary {
+  color: #334155;
+  background: #e8edf4;
+}
+
+.app-shell .btn-secondary:hover {
+  background: #dbe3ef;
+}
+
+.app-shell .hover\:border-gray-700:hover {
+  border-color: #cbd5e1 !important;
+}
+
+@media (max-width: 767px) {
+  .app-shell.has-sidebar .workspace-main {
+    margin-left: 0;
+  }
+}
+.app-shell .bug-card .text-white {
+  color: #fff !important;
+}

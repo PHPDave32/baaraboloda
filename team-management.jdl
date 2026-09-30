@@ -1,0 +1,101 @@
+enum ProjectStatus {
+  ACTIVE,
+  ARCHIVED,
+  COMPLETED
+}
+
+enum SprintStatus {
+  PLANNED,
+  ACTIVE,
+  COMPLETED
+}
+
+enum TaskStatus {
+  TODO,
+  IN_PROGRESS,
+  IN_REVIEW,
+  DONE
+}
+
+enum TaskPriority {
+  LOW,
+  MEDIUM,
+  HIGH,
+  CRITICAL
+}
+
+enum TaskType {
+  STORY,
+  BUG,
+  TASK,
+  EPIC
+}
+
+entity Project {
+  name String required maxlength(100),
+  description String maxlength(2000),
+  projectKey String maxlength(20),
+  iconColor String maxlength(30),
+  status ProjectStatus required,
+  createdAt Instant,
+  updatedAt Instant
+}
+
+entity Sprint {
+  name String required maxlength(100),
+  goal String maxlength(2000),
+  status SprintStatus required,
+  startDate LocalDate,
+  endDate LocalDate,
+  createdAt Instant,
+  updatedAt Instant
+}
+
+entity Task {
+  title String required maxlength(200),
+  description String maxlength(5000),
+  status TaskStatus required,
+  priority TaskPriority required,
+  type TaskType required,
+  storyPoints Integer,
+  dueDate LocalDate,
+  position Integer,
+  createdAt Instant,
+  updatedAt Instant
+}
+
+entity Comment {
+  content String required maxlength(5000),
+  createdAt Instant,
+  updatedAt Instant
+}
+
+entity Label {
+  name String required maxlength(50),
+  color String maxlength(30)
+}
+
+relationship ManyToOne {
+  Project{owner(login) required} to User with builtInEntity,
+  Sprint{createdBy(login)} to User with builtInEntity,
+  Task{assignee(login)} to User with builtInEntity,
+  Task{reporter(login) required} to User with builtInEntity,
+  Comment{author(login) required} to User with builtInEntity,
+  Task{project(name) required} to Project,
+  Task{sprint(name)} to Sprint,
+  Sprint{project(name) required} to Project,
+  Comment{task(title) required} to Task,
+  Label{project(name) required} to Project
+}
+
+relationship ManyToMany {
+  Project{members(login)} to User{projects} with builtInEntity
+}
+
+paginate Project, Sprint, Task, Comment, Label with pagination
+service Project, Sprint, Task, Comment, Label with serviceClass
+search Project, Sprint, Task, Comment, Label with no
+filter Project, Sprint, Task, Comment, Label
+
+dto Project, Sprint, Task, Comment, Label with mapstruct
+

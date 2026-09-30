@@ -153,7 +153,13 @@ public class UserService {
         } else {
             user.setLangKey(userDTO.getLangKey());
         }
-        String encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword());
+        String rawPassword =
+            userDTO instanceof com.cratechnologie.baaraboloda.web.rest.vm.ManagedUserVM managedUser &&
+            managedUser.getPassword() != null &&
+            !managedUser.getPassword().isBlank()
+                ? managedUser.getPassword()
+                : RandomUtil.generatePassword();
+        String encryptedPassword = passwordEncoder.encode(rawPassword);
         user.setPassword(encryptedPassword);
         user.setResetKey(RandomUtil.generateResetKey());
         user.setResetDate(Instant.now());

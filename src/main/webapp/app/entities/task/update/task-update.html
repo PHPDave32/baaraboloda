@@ -1,0 +1,280 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2 id="jhi-task-heading" data-cy="TaskCreateUpdateHeading" jhiTranslate="baaraBolodaApp.task.home.createOrEditLabel">
+        Créer ou éditer un Task
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        @let titleRef = editForm.get('title')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_title" jhiTranslate="baaraBolodaApp.task.title">Title</label>
+          <input type="text" class="form-control" name="title" id="field_title" data-cy="title" formControlName="title" />
+          @if (titleRef.invalid && (titleRef.dirty || titleRef.touched)) {
+            <div>
+              @if (titleRef.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+              @if (titleRef.errors?.maxlength) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '200' }"
+                  >Ce champ doit faire au maximum 200 caractères.</small
+                >
+              }
+            </div>
+          }
+        </div>
+
+        @let descriptionRef = editForm.get('description')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_description" jhiTranslate="baaraBolodaApp.task.description">Description</label>
+          <input
+            type="text"
+            class="form-control"
+            name="description"
+            id="field_description"
+            data-cy="description"
+            formControlName="description"
+          />
+          @if (descriptionRef.invalid && (descriptionRef.dirty || descriptionRef.touched)) {
+            <div>
+              @if (descriptionRef.errors?.maxlength) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '5000' }"
+                  >Ce champ doit faire au maximum 5000 caractères.</small
+                >
+              }
+            </div>
+          }
+        </div>
+
+        @let statusRef = editForm.get('status')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_status" jhiTranslate="baaraBolodaApp.task.status">Status</label>
+          <select class="form-select" name="status" formControlName="status" id="field_status" data-cy="status">
+            <option [ngValue]="null">{{ 'baaraBolodaApp.TaskStatus.null' | translate }}</option>
+            @for (taskStatus of taskStatusValues; track $index) {
+              <option [value]="taskStatus">{{ 'baaraBolodaApp.TaskStatus.' + taskStatus | translate }}</option>
+            }
+          </select>
+          @if (statusRef.invalid && (statusRef.dirty || statusRef.touched)) {
+            <div>
+              @if (statusRef.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let priorityRef = editForm.get('priority')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_priority" jhiTranslate="baaraBolodaApp.task.priority">Priority</label>
+          <select class="form-select" name="priority" formControlName="priority" id="field_priority" data-cy="priority">
+            <option [ngValue]="null">{{ 'baaraBolodaApp.TaskPriority.null' | translate }}</option>
+            @for (taskPriority of taskPriorityValues; track $index) {
+              <option [value]="taskPriority">{{ 'baaraBolodaApp.TaskPriority.' + taskPriority | translate }}</option>
+            }
+          </select>
+          @if (priorityRef.invalid && (priorityRef.dirty || priorityRef.touched)) {
+            <div>
+              @if (priorityRef.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let typeRef = editForm.get('type')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_type" jhiTranslate="baaraBolodaApp.task.type">Type</label>
+          <select class="form-select" name="type" formControlName="type" id="field_type" data-cy="type">
+            <option [ngValue]="null">{{ 'baaraBolodaApp.TaskType.null' | translate }}</option>
+            @for (taskType of taskTypeValues; track $index) {
+              <option [value]="taskType">{{ 'baaraBolodaApp.TaskType.' + taskType | translate }}</option>
+            }
+          </select>
+          @if (typeRef.invalid && (typeRef.dirty || typeRef.touched)) {
+            <div>
+              @if (typeRef.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_storyPoints" jhiTranslate="baaraBolodaApp.task.storyPoints">Story Points</label>
+          <input
+            type="number"
+            class="form-control"
+            name="storyPoints"
+            id="field_storyPoints"
+            data-cy="storyPoints"
+            formControlName="storyPoints"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_dueDate" jhiTranslate="baaraBolodaApp.task.dueDate">Due Date</label>
+          <div class="input-group">
+            <input
+              id="field_dueDate"
+              data-cy="dueDate"
+              type="text"
+              class="form-control"
+              name="dueDate"
+              ngbDatepicker
+              #dueDateDp="ngbDatepicker"
+              formControlName="dueDate"
+            />
+            <button type="button" class="btn btn-secondary" (click)="dueDateDp.toggle()"><fa-icon icon="calendar-alt" /></button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_position" jhiTranslate="baaraBolodaApp.task.position">Position</label>
+          <input type="number" class="form-control" name="position" id="field_position" data-cy="position" formControlName="position" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="baaraBolodaApp.task.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_updatedAt" jhiTranslate="baaraBolodaApp.task.updatedAt">Updated At</label>
+          <div class="d-flex">
+            <input
+              id="field_updatedAt"
+              data-cy="updatedAt"
+              type="datetime-local"
+              class="form-control"
+              name="updatedAt"
+              formControlName="updatedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_assignee" jhiTranslate="baaraBolodaApp.task.assignee">Assignee</label>
+          <select
+            class="form-select"
+            id="field_assignee"
+            data-cy="assignee"
+            name="assignee"
+            formControlName="assignee"
+            [compareWith]="compareUser"
+          >
+            <option [ngValue]="null"></option>
+            @for (userOption of usersSharedCollection(); track $index) {
+              <option [ngValue]="userOption">{{ userOption.login }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_reporter" jhiTranslate="baaraBolodaApp.task.reporter">Reporter</label>
+          <select
+            class="form-select"
+            id="field_reporter"
+            data-cy="reporter"
+            name="reporter"
+            formControlName="reporter"
+            [compareWith]="compareUser"
+          >
+            @if (!editForm.get('reporter')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (userOption of usersSharedCollection(); track $index) {
+              <option [ngValue]="userOption">{{ userOption.login }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['reporter'])!.invalid && (editForm.get(['reporter'])!.dirty || editForm.get(['reporter'])!.touched)) {
+          <div>
+            @if (editForm.get(['reporter'])?.errors?.required) {
+              <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="field_project" jhiTranslate="baaraBolodaApp.task.project">Project</label>
+          <select
+            class="form-select"
+            id="field_project"
+            data-cy="project"
+            name="project"
+            formControlName="project"
+            [compareWith]="compareProject"
+          >
+            @if (!editForm.get('project')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (projectOption of projectsSharedCollection(); track $index) {
+              <option [ngValue]="projectOption">{{ projectOption.name }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['project'])!.invalid && (editForm.get(['project'])!.dirty || editForm.get(['project'])!.touched)) {
+          <div>
+            @if (editForm.get(['project'])?.errors?.required) {
+              <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="field_sprint" jhiTranslate="baaraBolodaApp.task.sprint">Sprint</label>
+          <select
+            class="form-select"
+            id="field_sprint"
+            data-cy="sprint"
+            name="sprint"
+            formControlName="sprint"
+            [compareWith]="compareSprint"
+          >
+            <option [ngValue]="null"></option>
+            @for (sprintOption of sprintsSharedCollection(); track $index) {
+              <option [ngValue]="sprintOption">{{ sprintOption.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

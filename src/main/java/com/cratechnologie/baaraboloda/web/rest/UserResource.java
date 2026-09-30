@@ -10,6 +10,7 @@ import com.cratechnologie.baaraboloda.service.dto.AdminUserDTO;
 import com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException;
 import com.cratechnologie.baaraboloda.web.rest.errors.EmailAlreadyUsedException;
 import com.cratechnologie.baaraboloda.web.rest.errors.LoginAlreadyUsedException;
+import com.cratechnologie.baaraboloda.web.rest.vm.ManagedUserVM;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import java.net.URI;
@@ -104,7 +105,7 @@ public class UserResource {
      */
     @PostMapping("/users")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<User> createUser(@Valid @RequestBody AdminUserDTO userDTO) throws URISyntaxException {
+    public ResponseEntity<User> createUser(@Valid @RequestBody ManagedUserVM userDTO) throws URISyntaxException {
         LOG.debug("REST request to save User : {}", userDTO);
 
         if (userDTO.getId() != null) {

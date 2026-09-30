@@ -1,0 +1,68 @@
+@if (isOpen) {
+  <div class="modal-overlay" (click)="onBackdropClick()">
+    <div
+      class="modal-panel"
+      [class.modal-panel-danger]="variant === 'danger'"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="modal-close" [disabled]="isLoading" (click)="onClose()" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="modal-header">
+        <span class="modal-icon" [class.modal-icon-danger]="variant === 'danger'">
+          @if (variant === 'danger') {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              />
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        </span>
+        <div class="modal-heading">
+          <h2 class="modal-title">{{ title }}</h2>
+          @if (subtitle) {
+            <p class="modal-subtitle">{{ subtitle }}</p>
+          }
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <ng-content></ng-content>
+      </div>
+
+      @if (showFooter) {
+        <div class="modal-footer">
+          <button type="button" class="modal-btn modal-btn-cancel" [disabled]="isLoading" (click)="onClose()">
+            {{ cancelText }}
+          </button>
+          <button
+            type="button"
+            class="modal-btn"
+            [class.modal-btn-danger]="variant === 'danger'"
+            [class.modal-btn-primary]="variant !== 'danger'"
+            [disabled]="isLoading"
+            (click)="onConfirm()"
+          >
+            @if (isLoading) {
+              <span class="modal-spinner" aria-hidden="true"></span>
+              <span>Traitement…</span>
+            } @else {
+              <span>{{ confirmText }}</span>
+            }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

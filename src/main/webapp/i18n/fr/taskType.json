@@ -1,0 +1,11 @@
+{
+  "baaraBolodaApp": {
+    "TaskType": {
+      "null": "",
+      "STORY": "STORY",
+      "BUG": "BUG",
+      "TASK": "TASK",
+      "EPIC": "EPIC"
+    }
+  }
+}

@@ -142,6 +142,11 @@ describe('Login', () => {
     it('should stay on login form and show error message on login error', () => {
       // GIVEN
       mockLoginService.login = vi.fn(() => throwError(Error));
+      comp.loginForm.patchValue({
+        username: 'admin',
+        password: 'wrong-password',
+        rememberMe: false,
+      });
 
       // WHEN
       comp.login();
