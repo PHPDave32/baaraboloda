@@ -1,3 +1,5 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { CardDepthDirective } from 'app/shared/directives/card-depth.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -14,10 +16,12 @@ type BoardStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 
 @Component({
   selector: 'jhi-project-board',
-  imports: [RouterLink, BadgeComponent, AvatarComponent, FormsModule],
+  imports: [NotificationCenterComponent, CardDepthDirective, RouterLink, BadgeComponent, AvatarComponent, FormsModule],
   templateUrl: './board.html',
+  styleUrl: './board.scss',
 })
 export default class Board implements OnInit {
+  readonly memberColors = ['#328cb1', '#4058bb', '#9466c2', '#b76c29', '#bc4858', '#258971'];
   readonly statusColumns: BoardStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'];
 
   readonly columnLabels: Record<BoardStatus, string> = {
@@ -38,6 +42,8 @@ export default class Board implements OnInit {
   readonly project = signal<IProject | null>(null);
   readonly tasks = signal<ITask[]>([]);
   readonly loading = signal(false);
+  readonly draggingTaskId = signal<number | null>(null);
+  readonly landedTaskId = signal<number | null>(null);
   readonly dragOverColumn = signal<BoardStatus | null>(null);
 
   readonly sprints = signal<ISprint[]>([]);
@@ -135,7 +141,7 @@ export default class Board implements OnInit {
   toggleAssignMenu(task: ITask, event: Event): void {
     event.stopPropagation();
     event.preventDefault();
-    if (!this.canAssign()) return;
+    if (!this.canAssignTask(task)) return;
     this.assignSearch.set('');
     this.assignMenuTaskId.set(this.assignMenuTaskId() === task.id ? null : task.id);
   }
@@ -150,6 +156,7 @@ export default class Board implements OnInit {
   }
 
   assign(task: ITask, memberId: number | null): void {
+    if (!this.canAssignTask(task) || (memberId !== null && !this.projectMembers().some(member => member.id === memberId))) return;
     this.assignMenuTaskId.set(null);
     const member = memberId ? (this.projectMembers().find(m => m.id === memberId) ?? null) : null;
     const previous = task.assignee ?? null;
@@ -294,6 +301,22 @@ export default class Board implements OnInit {
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   }
 
+  hasColumnMenu(status: BoardStatus): boolean {
+    const id = this.assignMenuTaskId() ?? this.moveMenuTaskId();
+    return id !== null && this.tasks().some(task => task.id === id && task.status === status);
+  }
+
+  finishArrival(event: AnimationEvent, taskId: number): void {
+    if (event.animationName === 'board-arrive' && this.landedTaskId() === taskId) {
+      (event.currentTarget as HTMLElement).style.animation = 'none';
+      this.landedTaskId.set(null);
+    }
+  }
+
+  canAssignTask(task: ITask): boolean {
+    return this.canAssign() || (Boolean(this.currentLogin()) && task.reporter?.login === this.currentLogin());
+  }
+
   canMoveTask(_task: ITask): boolean {
     return this.canAssign();
   }
@@ -303,11 +326,16 @@ export default class Board implements OnInit {
       event.preventDefault();
       return;
     }
+    this.closeAssignMenu();
+    this.closeMoveMenu();
+    this.draggingTaskId.set(task.id);
+    this.landedTaskId.set(null);
     event.dataTransfer?.setData('taskId', String(task.id));
     event.dataTransfer && (event.dataTransfer.effectAllowed = 'move');
   }
 
   onDragEnd(): void {
+    this.draggingTaskId.set(null);
     this.dragOverColumn.set(null);
   }
 
@@ -326,17 +354,21 @@ export default class Board implements OnInit {
   onDrop(event: DragEvent, newStatus: BoardStatus): void {
     event.preventDefault();
     this.dragOverColumn.set(null);
+    this.draggingTaskId.set(null);
     const taskId = parseInt(event.dataTransfer?.getData('taskId') ?? '0', 10);
     if (!taskId) return;
 
     const task = this.tasks().find(t => t.id === taskId);
     if (!task || task.status === newStatus || !this.canMoveTask(task)) return;
 
+    this.draggingTaskId.set(null);
+    this.landedTaskId.set(taskId);
     const previousStatus = task.status;
     this.tasks.update(list => list.map(t => (t.id === taskId ? { ...t, status: newStatus } : t)));
 
     this.workspaceService.updateTask({ ...task, status: newStatus }, newStatus).subscribe({
       error: () => {
+        this.landedTaskId.set(null);
         this.tasks.update(list => list.map(t => (t.id === taskId ? { ...t, status: previousStatus } : t)));
       },
     });

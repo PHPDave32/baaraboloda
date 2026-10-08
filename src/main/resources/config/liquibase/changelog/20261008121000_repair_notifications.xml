@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="20261008121000-repair-0" author="codex">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="app_notification"/></not></preConditions>
+        <createTable tableName="app_notification">
+            <column name="id" type="varchar(36)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="recipient" type="varchar(50)"><constraints nullable="false"/></column>
+            <column name="actor" type="varchar(50)"/>
+            <column name="kind" type="varchar(32)"/>
+            <column name="message" type="varchar(500)"/>
+            <column name="task_id" type="bigint"/>
+            <column name="project_id" type="bigint"/>
+            <column name="created_at" type="timestamp"><constraints nullable="false"/></column>
+            <column name="read_at" type="timestamp"/>
+            <column name="email_pending" type="boolean" defaultValueBoolean="false"/>
+            <column name="push_pending" type="boolean" defaultValueBoolean="false"/>
+            <column name="attempts" type="int" defaultValueNumeric="0"/>
+            <column name="retry_at" type="timestamp"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="20261008121000-repair-1" author="codex">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="notification_preferences"/></not></preConditions>
+        <createTable tableName="notification_preferences">
+            <column name="login" type="varchar(50)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="sound_enabled" type="boolean" defaultValueBoolean="false"/>
+            <column name="email_enabled" type="boolean" defaultValueBoolean="false"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="20261008121000-repair-2" author="codex">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="notification_push_subscription"/></not></preConditions>
+        <createTable tableName="notification_push_subscription">
+            <column name="endpoint_hash" type="varchar(64)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="login" type="varchar(50)"><constraints nullable="false"/></column>
+            <column name="endpoint" type="varchar(2048)"/>
+            <column name="p256dh" type="varchar(256)"/>
+            <column name="auth_key" type="varchar(256)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="20261008121000-repair-index" author="codex">
+        <preConditions onFail="MARK_RAN"><not><indexExists tableName="app_notification" indexName="notification_recipient_date"/></not></preConditions>
+        <createIndex tableName="app_notification" indexName="notification_recipient_date"><column name="recipient"/><column name="created_at"/></createIndex>
+    </changeSet>
+</databaseChangeLog>

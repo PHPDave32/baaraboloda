@@ -1,0 +1,111 @@
+<button
+  type="button"
+  class="notification-bell"
+  title="Notifications"
+  (click)="opened.set(true)"
+  [attr.aria-label]="'Notifications : ' + notifications.unread() + ' non lues'"
+>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+  <span class="notification-label">Notifications</span>
+  @if (notifications.unread()) {
+    <strong>{{ notifications.unread() > 99 ? '99+' : notifications.unread() }}</strong>
+  }
+</button>
+<dialog
+  #notificationDialog
+  class="notification-dialog"
+  aria-label="Vos notifications"
+  (cancel)="opened.set(false)"
+  (close)="opened.set(false)"
+  (click)="dismissOutside($event)"
+>
+  <header class="notification-dialog-heading">
+    <div>
+      <span class="notification-eyebrow">VOTRE ÉQUIPE · EN DIRECT</span>
+      <h2>
+        Notifications <span class="notification-count">{{ notifications.unread() }}</span>
+      </h2>
+      <p>{{ notifications.unread() ? 'Du nouveau dans vos projets.' : 'Vous êtes à jour, gardez le fil de vos projets.' }}</p>
+    </div>
+    <button type="button" class="notification-dialog-close" aria-label="Fermer les notifications" (click)="opened.set(false)">×</button>
+  </header>
+  <section class="notification-sound-status" aria-label="Réglage du son">
+    <div class="sound-description">
+      <strong
+        >Son des notifications
+        <span [class.sound-active]="notifications.preferences().soundEnabled">{{
+          notifications.preferences().soundEnabled ? 'Activé' : 'Désactivé'
+        }}</span></strong
+      >
+      <small>{{
+        !notifications.preferences().soundEnabled
+          ? 'Recevez vos alertes en silence.'
+          : notifications.soundReady()
+            ? 'Prêt à vous avertir sur cet appareil.'
+            : 'Votre navigateur doit autoriser l’audio.'
+      }}</small>
+    </div>
+    <div class="sound-controls">
+      <button type="button" class="notification-test" (click)="notifications.testSound()">Tester</button>
+      <button
+        type="button"
+        role="switch"
+        class="notification-switch"
+        [class.is-on]="notifications.preferences().soundEnabled"
+        [attr.aria-checked]="notifications.preferences().soundEnabled"
+        aria-label="Son des notifications"
+        [disabled]="notifications.savingPreferences()"
+        (click)="notifications.savePreferences(!notifications.preferences().soundEnabled, notifications.preferences().emailEnabled)"
+      >
+        <span></span>
+      </button>
+    </div>
+  </section>
+  <div class="notification-toolbar">
+    <div class="notification-tabs" role="group" aria-label="Filtrer les notifications">
+      <button type="button" [class.selected]="!onlyUnread()" [attr.aria-pressed]="!onlyUnread()" (click)="onlyUnread.set(false)">
+        Toutes
+      </button>
+      <button type="button" [class.selected]="onlyUnread()" [attr.aria-pressed]="onlyUnread()" (click)="onlyUnread.set(true)">
+        Non lues <span>{{ notifications.unread() }}</span>
+      </button>
+    </div>
+    <button class="notification-read-all" type="button" [disabled]="!notifications.unread()" (click)="notifications.markRead()">
+      Tout marquer comme lu
+    </button>
+  </div>
+  <div class="notification-feed">
+    @for (item of visible(); track item.id) {
+      <button type="button" class="notification-entry" [class.is-unread]="!item.read" (click)="openTask(item)">
+        <span class="entry-dot" aria-hidden="true"></span>
+        <span class="entry-content">
+          <span class="entry-kind"
+            >{{
+              item.kind === 'ASSIGNMENT'
+                ? 'Assignation'
+                : item.kind === 'MENTION'
+                  ? 'Mention'
+                  : item.kind === 'COMMENT'
+                    ? 'Commentaire'
+                    : 'Statut'
+            }}
+            · Tâche #{{ item.taskId }}</span
+          >
+          <strong>{{ item.message }}</strong>
+          <small>{{ item.createdAt | date: 'dd MMM à HH:mm' }}</small>
+        </span>
+        <span class="entry-arrow" aria-hidden="true">↗</span>
+      </button>
+    } @empty {
+      <div class="notification-empty">
+        <strong>{{ onlyUnread() ? 'Tout est à jour.' : 'Le fil est encore calme.' }}</strong>
+        <p>Les assignations, commentaires et mentions apparaîtront ici.</p>
+      </div>
+    }
+  </div>
+  @if (notifications.error()) {
+    <p class="notification-error" role="alert">{{ notifications.error() }}</p>
+  }
+</dialog>

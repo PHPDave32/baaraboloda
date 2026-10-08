@@ -1,5 +1,6 @@
 package com.cratechnologie.baaraboloda.domain;
 
+import com.cratechnologie.baaraboloda.domain.ImageAttachment;
 import com.cratechnologie.baaraboloda.domain.enumeration.TaskPriority;
 import com.cratechnologie.baaraboloda.domain.enumeration.TaskStatus;
 import com.cratechnologie.baaraboloda.domain.enumeration.TaskType;
@@ -10,6 +11,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -86,6 +88,18 @@ public class Task implements Serializable {
     private Sprint sprint;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
+
+    @Convert(converter = com.cratechnologie.baaraboloda.domain.converter.ImageAttachmentsConverter.class)
+    @Column(name = "images", columnDefinition = "longtext")
+    private List<ImageAttachment> images;
+
+    public List<ImageAttachment> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ImageAttachment> images) {
+        this.images = images;
+    }
 
     public Long getId() {
         return this.id;

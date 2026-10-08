@@ -1,6 +1,4 @@
-<div
-  class="relative isolate min-h-[calc(100vh-2rem)] overflow-hidden rounded-[28px] border border-slate-300/40 bg-[linear-gradient(112deg,rgba(248,250,252,.94),rgba(239,246,255,.84)_52%,rgba(224,231,255,.72))] text-slate-900 shadow-[0_28px_80px_rgba(100,116,139,.18)] max-[600px]:rounded-[20px]"
->
+<div class="admin-page">
   <app-modal
     variant="danger"
     [isOpen]="showDeleteUserModal"
@@ -29,13 +27,19 @@
     [title]="editingUser ? 'Modifier l\'employé' : 'Créer un compte employé'"
     [subtitle]="editingUser ? 'Mettez à jour les informations du compte' : 'Renseignez les informations du nouvel employé'"
     [showFooter]="false"
-    [isLoading]="loadingUser"
+    [isLoading]="loadingUser || photoUploading"
     (close)="showUserForm = false"
   >
     @if (userError) {
       <p class="mb-4 text-sm text-red-500">{{ userError }}</p>
     }
     <form [formGroup]="userForm" (ngSubmit)="submitUser()" class="space-y-3">
+      <jhi-photo-picker
+        [imageUrl]="userForm.get('imageUrl')?.value"
+        (imageUrlChange)="userForm.patchValue({ imageUrl: $event })"
+        (uploading)="photoUploading = $event"
+        [disabled]="loadingUser"
+      />
       <div class="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
         <input
           formControlName="firstName"
@@ -77,45 +81,29 @@
         </select>
       </div>
       <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 max-[600px]:justify-start">
-        <button
-          type="button"
-          (click)="showUserForm = false"
-          class="rounded-[10px] bg-[#e8edf4] px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-[#dbe3ef]"
-        >
-          Annuler
-        </button>
-        <button
-          type="submit"
-          class="rounded-[10px] bg-[#328cb1] px-3.5 py-2.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(50,140,177,.2)] transition hover:-translate-y-px hover:bg-[#2a7a9e] disabled:cursor-not-allowed disabled:opacity-50"
-          [disabled]="userForm.invalid || loadingUser"
-        >
-          Enregistrer
-        </button>
+        <button type="button" (click)="showUserForm = false" class="btn-secondary">Annuler</button>
+        <button type="submit" class="btn-primary" [disabled]="userForm.invalid || loadingUser || photoUploading">Enregistrer</button>
       </div>
     </form>
   </app-modal>
 
-  <div class="relative z-[1] p-5 sm:p-8 lg:p-12">
-    <header>
-      <span
-        class="inline-flex items-center gap-2 text-[.7rem] font-bold uppercase tracking-[.18em] text-[#328cb1] before:h-px before:w-7 before:bg-[#328cb1]"
-        >Espace d'administration</span
-      >
-      <h1 class="mt-2.5 text-[clamp(1.8rem,4vw,3.2rem)] font-bold leading-tight tracking-[-.04em] text-[#172033]">Administration</h1>
+  <div class="admin-content">
+    <header class="admin-hero">
+      <div>
+        <span class="admin-eyebrow">ÉQUIPE &amp; ORGANISATION</span>
+        <h1>Administration</h1>
+        <p>Gérez les comptes de votre équipe et leur accès aux projets.</p>
+      </div>
+      <jhi-notification-center />
     </header>
 
-    <section
-      class="mt-8 overflow-hidden rounded-[22px] border border-slate-200 bg-white/80 shadow-[0_20px_45px_rgba(100,116,139,.12)] backdrop-blur-[18px]"
-    >
-      <div class="flex gap-1.5 border-b border-slate-200 p-1.5">
+    <section class="admin-panel">
+      <div class="admin-tabs" aria-label="Sections de l’administration">
         <button
           type="button"
-          class="flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition"
-          [class]="
-            activeTab === 'users'
-              ? 'bg-[#328cb1] text-white shadow-[0_8px_18px_rgba(50,140,177,.22)]'
-              : 'text-slate-500 hover:bg-[#eaf4f9] hover:text-slate-700'
-          "
+          class="admin-tab"
+          [class.is-active]="activeTab === 'users'"
+          [attr.aria-pressed]="activeTab === 'users'"
           (click)="activeTab = 'users'"
         >
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -125,16 +113,13 @@
               d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-.13a4 4 0 10-4-4 4 4 0 004 4z"
             />
           </svg>
-          Employés
+          Employés <span class="tab-count">{{ users.length }}</span>
         </button>
         <button
           type="button"
-          class="flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition"
-          [class]="
-            activeTab === 'projects'
-              ? 'bg-[#328cb1] text-white shadow-[0_8px_18px_rgba(50,140,177,.22)]'
-              : 'text-slate-500 hover:bg-[#eaf4f9] hover:text-slate-700'
-          "
+          class="admin-tab"
+          [class.is-active]="activeTab === 'projects'"
+          [attr.aria-pressed]="activeTab === 'projects'"
           (click)="activeTab = 'projects'"
         >
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -144,22 +129,18 @@
               d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
             />
           </svg>
-          Projets et accès
+          Projets et accès <span class="tab-count">{{ projects.length }}</span>
         </button>
       </div>
 
-      <div class="p-4 sm:p-7">
+      <div class="admin-panel-body">
         @if (activeTab === 'users') {
           <div class="mb-5 flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
             <div>
               <h2 class="text-base font-semibold text-[#172033]">Répertoire de l'équipe</h2>
               <p class="mt-0.5 text-xs text-slate-500">{{ users.length }} compte{{ users.length > 1 ? 's' : '' }} sous votre gestion</p>
             </div>
-            <button
-              type="button"
-              (click)="openCreateUser()"
-              class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#328cb1] px-4 py-2.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(50,140,177,.2)] transition hover:-translate-y-px hover:bg-[#2a7a9e]"
-            >
+            <button type="button" (click)="openCreateUser()" class="btn-primary">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
@@ -181,9 +162,7 @@
                 class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/75 p-4 shadow-[0_8px_22px_rgba(100,116,139,.06)] transition hover:-translate-y-px hover:border-[#a8d4e8] hover:bg-white max-[600px]:flex-col max-[600px]:items-start"
               >
                 <div class="flex min-w-0 items-center gap-3">
-                  <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#328cb1] text-xs font-bold text-white">
-                    {{ getUserInitials(user) }}
-                  </div>
+                  <app-avatar [user]="user" size="md" />
                   <div class="min-w-0">
                     <p class="truncate text-[.85rem] font-semibold text-[#172033]">{{ user.firstName }} {{ user.lastName }}</p>
                     <div class="mt-1 flex flex-wrap items-center gap-2">
@@ -254,7 +233,7 @@
           <div class="mb-5 flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
             <div>
               <h2 class="text-base font-semibold text-[#172033]">Accès aux projets</h2>
-              <p class="mt-0.5 text-xs text-slate-500">Assignez autant d'employés que nécessaire à chaque projet</p>
+              <p class="mt-0.5 text-xs text-slate-500">Consultez les équipes et gérez les autorisations de participation.</p>
             </div>
           </div>
 
@@ -266,17 +245,12 @@
             <p class="mb-4 text-xs text-slate-500">Aucun projet ne correspond à « {{ projectSearch }} ».</p>
           }
 
-          <div class="space-y-3">
+          <div class="access-grid">
             @for (project of pagedProjects; track project.id) {
-              <article
-                class="rounded-2xl border border-slate-200 bg-white/75 p-5 shadow-[0_8px_22px_rgba(100,116,139,.06)] transition hover:-translate-y-px hover:border-[#a8d4e8] hover:bg-white"
-              >
-                <div class="flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
+              <article class="access-card">
+                <div class="access-card-heading">
                   <div class="flex min-w-0 items-center gap-3">
-                    <div
-                      class="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xs font-bold text-white"
-                      [style.background-color]="project.iconColor || '#328cb1'"
-                    >
+                    <div class="access-project-icon" [style.color]="project.iconColor || '#328cb1'">
                       {{ (project.projectKey || project.name || 'P').charAt(0).toUpperCase() }}
                     </div>
                     <div class="min-w-0">
@@ -286,12 +260,7 @@
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    (click)="openMemberPanel(project)"
-                    class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#328cb1] px-3.5 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(50,140,177,.2)] transition hover:-translate-y-px hover:bg-[#2a7a9e]"
-                    title="Gérer l'accès au projet"
-                  >
+                  <button type="button" (click)="openMemberPanel(project)" class="access-manage" title="Gérer l'accès au projet">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path
                         stroke-linecap="round"
@@ -299,17 +268,16 @@
                         d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-.13a4 4 0 10-4-4 4 4 0 004 4z"
                       />
                     </svg>
-                    Membres
+                    Gérer les accès
                   </button>
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
+                <div class="access-members">
+                  <p class="access-members-label">
+                    ÉQUIPE DU PROJET <span>{{ project.memberses?.length || 0 }}</span>
+                  </p>
                   @for (member of project.memberses; track member.id) {
-                    <span
-                      class="inline-flex items-center gap-1.5 rounded-full border border-[#a8d4e8] bg-[#d9eef6] px-2.5 py-1 text-[.68rem] font-medium text-[#2a7a9e]"
-                    >
-                      <span class="grid h-4 w-4 place-items-center rounded-full bg-[#328cb1] text-[.55rem] font-bold text-white">
-                        {{ member.login?.charAt(0)?.toUpperCase() }}
-                      </span>
+                    <span class="access-member">
+                      <app-avatar [user]="member" size="xs" />
                       {{ member.login }}
                     </span>
                   }
@@ -335,9 +303,7 @@
       >
         <div class="mb-4 flex items-start justify-between gap-4">
           <div class="flex items-center gap-3">
-            <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#328cb1] text-xs font-bold text-white">
-              {{ getUserInitials(permissionUser) }}
-            </div>
+            <app-avatar [user]="permissionUser" size="md" />
             <div>
               <h2 class="text-base font-semibold text-[#172033]">Accès et actions</h2>
               <p class="mt-0.5 text-xs text-slate-500">
@@ -396,9 +362,7 @@
         @for (user of users; track user.login) {
           <div class="flex items-center justify-between gap-4 border-b border-slate-200 py-2.5 text-xs text-slate-700 last:border-0">
             <span class="flex items-center gap-2.5">
-              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-[.65rem] font-bold text-slate-600">
-                {{ getUserInitials(user) }}
-              </span>
+              <app-avatar [user]="user" size="sm" />
               <span
                 >{{ user.firstName }} {{ user.lastName }} <span class="text-slate-400">({{ user.login }})</span></span
               >
@@ -416,12 +380,7 @@
                 Retirer
               </button>
             } @else {
-              <button
-                type="button"
-                (click)="addMember(selectedProject.id!, user.id!)"
-                class="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] bg-[#328cb1] px-3 py-1.5 text-[.7rem] font-semibold text-white shadow-[0_6px_14px_rgba(50,140,177,.2)] transition hover:-translate-y-px hover:bg-[#2a7a9e]"
-                title="Assigner au projet"
-              >
+              <button type="button" (click)="addMember(selectedProject.id!, user.id!)" class="btn-primary" title="Assigner au projet">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>

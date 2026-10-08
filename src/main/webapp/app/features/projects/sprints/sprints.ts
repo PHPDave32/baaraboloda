@@ -1,12 +1,13 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { ProjectMembersComponent } from 'app/shared/components/project-members/project-members';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { IProject } from 'app/entities/project/project.model';
 import { ISprint } from 'app/entities/sprint/sprint.model';
 import { PlanningService } from '../planning.service';
-import { BadgeComponent } from 'app/shared/components/badge/badge.component';
 import { AvatarComponent } from 'app/shared/components/avatar/avatar.component';
 import { ModalComponent } from 'app/shared/components/modal/modal.component';
 import { ToastService } from 'app/shared/toast/toast.service';
@@ -14,10 +15,28 @@ import { ToastService } from 'app/shared/toast/toast.service';
 @Component({
   selector: 'jhi-project-sprints',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, BadgeComponent, AvatarComponent, ModalComponent],
+  imports: [
+    NotificationCenterComponent,
+    FormsModule,
+    ProjectMembersComponent,
+    CommonModule,
+    RouterLink,
+    ReactiveFormsModule,
+    AvatarComponent,
+    ModalComponent,
+  ],
   templateUrl: './sprints.html',
+  styleUrl: './sprints.scss',
 })
 export default class Sprints implements OnInit {
+  search = '';
+  statusFilter = 'ALL';
+  readonly statusFilters = [
+    { value: 'ALL', label: 'Tous' },
+    { value: 'ACTIVE', label: 'En cours' },
+    { value: 'PLANNED', label: 'Planifiés' },
+    { value: 'COMPLETED', label: 'Terminés' },
+  ];
   projectId = 0;
   project: IProject | null = null;
   sprints: ISprint[] = [];
@@ -269,6 +288,21 @@ export default class Sprints implements OnInit {
     });
   }
 
+  get visibleSprints(): ISprint[] {
+    const term = this.search.trim().toLocaleLowerCase();
+    return this.sortedSprints.filter(
+      sprint =>
+        (this.statusFilter === 'ALL' || (sprint.status ?? 'PLANNED') === this.statusFilter) &&
+        `${sprint.name ?? ''} ${sprint.goal ?? ''}`.toLocaleLowerCase().includes(term),
+    );
+  }
+
+  calendarDate(sprint: ISprint): Date | null {
+    if (!sprint.startDate) return null;
+    const date = this.toDate(sprint.startDate);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
   countByStatus(status: string): number {
     return this.sprints.filter(s => (s.status ?? 'PLANNED') === status).length;
   }
@@ -299,7 +333,7 @@ export default class Sprints implements OnInit {
   }
 
   statusLabel(status: string | null | undefined): string {
-    const labels: Record<string, string> = { PLANNED: 'Planifié', ACTIVE: 'Actif', COMPLETED: 'Terminé' };
+    const labels: Record<string, string> = { PLANNED: 'Planifié', ACTIVE: 'En cours', COMPLETED: 'Terminé' };
     return labels[status ?? 'PLANNED'] ?? 'Planifié';
   }
 

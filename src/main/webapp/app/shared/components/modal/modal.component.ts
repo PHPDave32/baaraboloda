@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 export class ModalComponent {
   @Input() isOpen = false;
   @Input() title = '';
+  @Input() appearance: 'standard' | 'editor' = 'standard';
   @Input() subtitle: string | null = null;
   @Input() confirmText = 'Confirmer';
   @Input() cancelText = 'Annuler';

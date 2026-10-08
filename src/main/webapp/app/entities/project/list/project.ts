@@ -1,3 +1,5 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { AvatarComponent } from 'app/shared/components/avatar/avatar.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -12,9 +14,20 @@ import { SearchBarComponent } from '../../../shared/components/search-bar/search
 @Component({
   selector: 'jhi-project',
   templateUrl: './project.html',
-  imports: [RouterLink, ReactiveFormsModule, ModalComponent, PaginationComponent, SearchBarComponent],
+  styleUrl: './project.scss',
+  host: { '(document:click)': 'dismissMembers($event)', '(document:keydown.escape)': 'activeMembers.set(null)' },
+  imports: [
+    NotificationCenterComponent,
+    AvatarComponent,
+    RouterLink,
+    ReactiveFormsModule,
+    ModalComponent,
+    PaginationComponent,
+    SearchBarComponent,
+  ],
 })
 export class Project implements OnInit {
+  readonly activeMembers = signal<number | null>(null);
   readonly projects = signal<IProject[]>([]);
   readonly showForm = signal(false);
   readonly editingProject = signal<IProject | null>(null);
@@ -50,10 +63,10 @@ export class Project implements OnInit {
   readonly form = inject(FormBuilder).group({
     name: ['', [Validators.required, Validators.maxLength(100)]],
     description: [''],
-    projectKey: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(6)]],
     iconColor: ['#328cb1', Validators.required],
   });
 
+  private readonly memberColors = ['#328cb1', '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f97316', '#14b8a6'];
   private readonly projectService = inject(ProjectService);
   private readonly accountService = inject(AccountService);
 
@@ -95,7 +108,6 @@ export class Project implements OnInit {
     this.form.reset({
       name: project.name ?? '',
       description: project.description ?? '',
-      projectKey: project.projectKey ?? '',
       iconColor: project.iconColor ?? '#328cb1',
     });
     this.showForm.set(true);
@@ -105,12 +117,6 @@ export class Project implements OnInit {
     this.showForm.set(false);
     this.editingProject.set(null);
     this.error.set('');
-  }
-
-  private showAccessDenied(message: string, title = 'Accès non autorisé'): void {
-    this.accessDeniedTitle.set(title);
-    this.accessDeniedMessage.set(message);
-    this.accessDenied.set(true);
   }
 
   closeAccessDenied(): void {
@@ -148,7 +154,6 @@ export class Project implements OnInit {
         ...existing,
         name: value.name,
         description: value.description,
-        projectKey: value.projectKey,
         iconColor: value.iconColor,
       };
 
@@ -175,7 +180,6 @@ export class Project implements OnInit {
       id: null,
       name: value.name,
       description: value.description,
-      projectKey: value.projectKey,
       iconColor: value.iconColor,
       status: 'ACTIVE',
     };
@@ -240,6 +244,32 @@ export class Project implements OnInit {
     });
   }
 
+  dismissMembers(event: Event): void {
+    if (!(event.target instanceof Element) || !event.target.closest('.project-members')) this.activeMembers.set(null);
+  }
+
+  leaveMembers(event: FocusEvent): void {
+    if (!(event.relatedTarget instanceof Node) || !(event.currentTarget as HTMLElement).contains(event.relatedTarget)) {
+      this.activeMembers.set(null);
+    }
+  }
+
+  tiltCard(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse' || globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const card = event.currentTarget as HTMLElement;
+    const bounds = card.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    card.style.setProperty('--tilt-x', `${(0.5 - y) * 4}deg`);
+    card.style.setProperty('--tilt-y', `${(x - 0.5) * 4}deg`);
+  }
+
+  resetCard(event: PointerEvent): void {
+    const card = event.currentTarget as HTMLElement;
+    card.style.setProperty('--tilt-x', '0deg');
+    card.style.setProperty('--tilt-y', '0deg');
+  }
+
   getProjectColor(project: IProject): string {
     if (project.iconColor && /^#[0-9a-fA-F]{3,8}$/.test(project.iconColor.trim())) {
       return project.iconColor.trim();
@@ -247,14 +277,38 @@ export class Project implements OnInit {
 
     const colors = ['#328cb1', '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f97316', '#10b981', '#14b8a6', '#f59e0b'];
 
-    const id = project.id ?? 1;
+    const id = project.id;
 
     return colors[Math.abs(id) % colors.length];
   }
 
   getProjectInitial(project: IProject): string {
-    const raw = (project.projectKey || project.name || 'P').trim();
-
+    const raw = (project.projectKey?.trim() ? project.projectKey : (project.name ?? 'P')).trim();
     return raw.charAt(0).toUpperCase();
+  }
+
+  // ── Helpers membres ──────────────────────────────────────────────────────
+
+  getMemberColor(index: number): string {
+    return this.memberColors[index % this.memberColors.length];
+  }
+
+  getMemberInitials(member: { login?: string | null; firstName?: string | null; lastName?: string | null }): string {
+    const first = member.firstName?.charAt(0) ?? '';
+    const last = member.lastName?.charAt(0) ?? '';
+    if (first || last) return (first + last).toUpperCase();
+    return (member.login ?? 'M')[0].toUpperCase();
+  }
+
+  getMemberName(member: { login?: string | null; firstName?: string | null; lastName?: string | null }): string {
+    const first = member.firstName ?? '';
+    const last = member.lastName ?? '';
+    const full = (first + ' ' + last).trim();
+    return full ? full : (member.login ?? 'Membre');
+  }
+  private showAccessDenied(message: string, title = 'Accès non autorisé'): void {
+    this.accessDeniedTitle.set(title);
+    this.accessDeniedMessage.set(message);
+    this.accessDenied.set(true);
   }
 }

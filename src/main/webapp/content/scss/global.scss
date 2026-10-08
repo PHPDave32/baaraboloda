@@ -384,11 +384,11 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
   button {
     font-family: inherit;
   }
+}
 
-  button:not(.login-submit):not([class*='border']):not([class*='btn-']) {
-    border: none;
-    background: transparent;
-  }
+:where(.app-shell button:not(.login-submit):not([class*='border']):not([class*='btn-'])) {
+  border: none;
+  background: transparent;
 }
 
 .workspace-main {
@@ -521,4 +521,501 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
 }
 .app-shell .bug-card .text-white {
   color: #fff !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app-shell {
+    cursor:
+      url('/content/images/cursors/circle.svg') 20 20,
+      auto;
+  }
+
+  .app-shell :is(a, button, select, label, summary, [role='button'], .cursor-pointer),
+  .app-shell input[type='file']::file-selector-button {
+    cursor:
+      url('/content/images/cursors/circle.svg') 20 20,
+      pointer;
+  }
+
+  .app-shell
+    :is(
+      input:not([type='file']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+      textarea,
+      [contenteditable='true']
+    ) {
+    cursor: text;
+  }
+
+  .app-shell :is(button, input, select, textarea):disabled,
+  .app-shell [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
+.animated-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    transform 85ms ease-out,
+    opacity 150ms ease;
+  &::after {
+    content: '';
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid #94a3b8;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    transition:
+      width 180ms ease,
+      height 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease;
+  }
+  &.is-visible {
+    opacity: 1;
+  }
+  &.is-interactive::after {
+    width: 36px;
+    height: 36px;
+    border-color: #328cb1;
+    background: #328cb10d;
+  }
+  &.is-pressed::after {
+    width: 20px;
+    height: 20px;
+    border-color: #082e59;
+    background: #328cb11a;
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .app-shell.animated-cursor-enabled,
+  .app-shell.animated-cursor-enabled :is(a, button, select, label, summary, [role='button'], .cursor-pointer) {
+    cursor:
+      url('/content/images/cursors/dot.svg') 8 8,
+      pointer;
+  }
+  .app-shell.animated-cursor-enabled :is(button, input, select, textarea):disabled,
+  .app-shell.animated-cursor-enabled [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  .animated-cursor-ring {
+    display: none;
+  }
+}
+
+.app-shell
+  :is(button, a):is(
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .modal-btn,
+    .resource-submit,
+    .documents-add,
+    .document-open,
+    .access-manage
+  ) {
+  --button-top: #ffffff;
+  --button-bottom: #edf2f7;
+  --button-edge: #cbd5e1;
+  --button-border: #cbd5e1;
+  --button-text: #334155;
+  --button-highlight: #ffffffed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--button-border);
+  border-radius: 0.65rem;
+  background: linear-gradient(180deg, var(--button-top), var(--button-bottom));
+  color: var(--button-text) !important;
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 var(--button-highlight),
+    inset 0 -1px 0 #0000000a,
+    0 3px 0 var(--button-edge),
+    0 5px 7px #18364b12;
+  transform: translateY(0);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    filter 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell :is(button, a):is(.btn-primary, .modal-btn-primary, .resource-submit, .documents-add) {
+  --button-top: #3084a8;
+  --button-bottom: #236d8e;
+  --button-edge: #184e69;
+  --button-border: #226886;
+  --button-text: #ffffff;
+  --button-highlight: #ffffff45;
+  text-shadow: 0 1px 1px #123c5550;
+}
+
+.app-shell :is(button, a):is(.btn-danger, .modal-btn-danger) {
+  --button-top: #c64551;
+  --button-bottom: #aa2f3e;
+  --button-edge: #7d2330;
+  --button-border: #a02d3b;
+  --button-text: #ffffff;
+  --button-highlight: #ffffff40;
+}
+
+.app-shell :is(button, a):is(.document-open, .access-manage) {
+  --button-top: #f7fcff;
+  --button-bottom: #e3eff6;
+  --button-edge: #bfd5e2;
+  --button-border: #c9dfea;
+  --button-text: #235e7d;
+  min-height: 2.15rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.72rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app-shell
+    :is(button, a):is(
+      .btn-primary,
+      .btn-secondary,
+      .btn-danger,
+      .modal-btn,
+      .resource-submit,
+      .documents-add,
+      .document-open,
+      .access-manage
+    ):hover:not(:disabled):not([aria-disabled='true']) {
+    transform: translateY(-1px);
+    filter: brightness(1.035);
+    box-shadow:
+      inset 0 1px 0 var(--button-highlight),
+      inset 0 -1px 0 #0000000a,
+      0 4px 0 var(--button-edge),
+      0 8px 12px #18364b18;
+  }
+}
+
+.app-shell
+  :is(button, a):is(
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .modal-btn,
+    .resource-submit,
+    .documents-add,
+    .document-open,
+    .access-manage
+  ):active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(2px);
+  filter: brightness(0.98);
+  box-shadow:
+    inset 0 2px 3px #00000014,
+    0 1px 0 var(--button-edge),
+    0 2px 3px #18364b0d;
+}
+
+.app-shell
+  :is(button, a):is(
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .modal-btn,
+    .resource-submit,
+    .documents-add,
+    .document-open,
+    .access-manage
+  ):focus-visible {
+  outline: 3px solid #328cb180;
+  outline-offset: 5px;
+}
+
+.app-shell
+  :is(button, a):is(
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .modal-btn,
+    .resource-submit,
+    .documents-add,
+    .document-open,
+    .access-manage
+  ):is(:disabled, [aria-disabled='true']) {
+  --button-text: #607184;
+  --button-border: #d9e1e8;
+  background: #edf1f5;
+  text-shadow: none;
+  box-shadow: inset 0 1px 0 #ffffffb3;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell
+    :is(button, a):is(
+      .btn-primary,
+      .btn-secondary,
+      .btn-danger,
+      .modal-btn,
+      .resource-submit,
+      .documents-add,
+      .document-open,
+      .access-manage
+    ) {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+.app-shell
+  :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage)
+  .text-white {
+  color: inherit !important;
+}
+
+.app-shell {
+  --action-primary: #24799d;
+  --action-primary-hover: #1d6585;
+  --action-primary-active: #185570;
+  --action-border: #d4dfe8;
+
+  :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 0.625rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    box-shadow: 0 1px 2px #18364a0d;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 120ms ease;
+  }
+
+  :is(.btn-primary, .modal-btn-primary, .resource-submit, .documents-add) {
+    border-color: #206e90;
+    background: var(--action-primary);
+    color: #fff !important;
+    box-shadow:
+      inset 0 1px 0 #ffffff1f,
+      0 2px 3px #163e5614;
+  }
+
+  :is(.btn-primary, .modal-btn-primary, .resource-submit, .documents-add):hover:not(:disabled):not([aria-disabled='true']) {
+    border-color: var(--action-primary-hover);
+    background: var(--action-primary-hover);
+    box-shadow:
+      inset 0 1px 0 #ffffff1a,
+      0 3px 7px #163e5624;
+    transform: translateY(-1px);
+  }
+
+  :is(.btn-secondary, .modal-btn-cancel) {
+    border-color: var(--action-border);
+    background: #fff;
+    color: #40566b !important;
+  }
+
+  :is(.btn-secondary, .modal-btn-cancel):hover:not(:disabled):not([aria-disabled='true']) {
+    border-color: #b4c7d5;
+    background: #f3f7fa;
+    color: #243e53 !important;
+    transform: translateY(-1px);
+  }
+
+  :is(.access-manage, .document-open) {
+    border-color: #c7dfe9;
+    background: #f0f8fc;
+    color: #226c8d !important;
+    min-height: 36px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  :is(.access-manage, .document-open):hover:not(:disabled):not([aria-disabled='true']) {
+    border-color: #96c4d8;
+    background: #e1f0f7;
+    transform: translateY(-1px);
+  }
+
+  :is(.btn-danger, .modal-btn-danger) {
+    border-color: #b22940;
+    background: #be3048;
+    color: #fff !important;
+    box-shadow: 0 1px 2px #7c183016;
+  }
+
+  :is(.btn-danger, .modal-btn-danger):hover:not(:disabled):not([aria-disabled='true']) {
+    border-color: #952239;
+    background: #a3263d;
+    box-shadow: 0 3px 7px #7c183021;
+    transform: translateY(-1px);
+  }
+
+  :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage):active:not(
+      :disabled
+    ):not([aria-disabled='true']) {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 3px #15394b1a;
+  }
+
+  :is(
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .modal-btn,
+    .resource-submit,
+    .documents-add,
+    .document-open,
+    .access-manage
+  ):focus-visible {
+    outline: 3px solid #328cb166;
+    outline-offset: 3px;
+  }
+
+  :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage):is(
+    :disabled,
+    [aria-disabled='true']
+  ) {
+    border-color: #dce5ed;
+    background: #edf2f6;
+    color: #6b7d8b !important;
+    opacity: 1;
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+  }
+
+  :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage) svg {
+    flex-shrink: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage) {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+.app-shell .sprint-editor {
+  display: grid;
+  gap: 20px;
+  label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #40596d;
+  }
+  label > span {
+    color: #328cb1;
+  }
+  label small {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 400;
+    color: #7f929f;
+  }
+  .input-field {
+    min-height: 43px;
+    border-radius: 9px;
+    border-color: #d9e3eb;
+    background: #fcfdfe;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  textarea {
+    min-height: 92px;
+    resize: vertical;
+  }
+  .sprint-editor-period {
+    min-width: 0;
+    padding: 18px;
+    margin: 0;
+    border: 1px solid #e2eaf1;
+    border-radius: 11px;
+    background: #f8fafc;
+  }
+  legend {
+    float: none;
+    width: auto;
+    margin: 0;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #496579;
+  }
+  .sprint-editor-period > p {
+    margin: 0 0 16px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #7b8f9f;
+  }
+  .sprint-editor-dates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .sprint-editor-dates > div {
+    min-width: 0;
+  }
+  .sprint-editor-hint {
+    margin: -3px 0 0;
+    font-size: 10px;
+    color: #7b8f9f;
+  }
+  .sprint-editor-error {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #f2ccd4;
+    border-radius: 8px;
+    background: #fff5f6;
+    color: #a72c42;
+    font-size: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .app-shell .sprint-editor .sprint-editor-dates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }

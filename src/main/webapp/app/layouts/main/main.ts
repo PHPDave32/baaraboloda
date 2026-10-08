@@ -1,3 +1,4 @@
+import { NotificationToastComponent } from 'app/shared/components/notifications/notification-toast.component';
 import { Component, DOCUMENT, OnInit, Renderer2, RendererFactory2, inject } from '@angular/core';
 import { Router, RouterOutlet, TitleStrategy } from '@angular/router';
 
@@ -6,12 +7,13 @@ import dayjs from 'dayjs/esm';
 
 import { AccountService } from 'app/core/auth';
 import { ToastContainer } from 'app/shared/toast/toast-container';
+import { AnimatedCursorDirective } from 'app/shared/animated-cursor.directive';
 import PageRibbon from '../profiles/page-ribbon';
 
 @Component({
   selector: 'jhi-main',
   templateUrl: './main.html',
-  imports: [RouterOutlet, PageRibbon, ToastContainer],
+  imports: [NotificationToastComponent, RouterOutlet, PageRibbon, ToastContainer, AnimatedCursorDirective],
 })
 export default class Main implements OnInit {
   private readonly renderer: Renderer2;

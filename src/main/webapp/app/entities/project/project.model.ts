@@ -12,8 +12,8 @@ export interface IProject {
   status?: keyof typeof ProjectStatus | null;
   createdAt?: dayjs.Dayjs | null;
   updatedAt?: dayjs.Dayjs | null;
-  owner?: Pick<IUser, 'id' | 'login'> | null;
-  memberses?: Pick<IUser, 'id' | 'login'>[] | null;
+  owner?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
+  memberses?: Pick<IUser, 'id' | 'login' | 'imageUrl'>[] | null;
 }
 
 export type NewProject = Omit<IProject, 'id'> & { id: null };

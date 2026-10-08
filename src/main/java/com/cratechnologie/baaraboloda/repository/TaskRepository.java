@@ -42,6 +42,8 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
     )
     boolean isUserMemberOfTaskProject(@Param("taskId") Long taskId, @Param("login") String login);
 
+    boolean existsByIdAndReporterLogin(Long id, String login);
+
     default Optional<Task> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }

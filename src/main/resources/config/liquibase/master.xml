@@ -27,4 +27,9 @@
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <include file="config/liquibase/changelog/20260928120000_added_permissions.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20261005120000_added_project_document.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261007120000_comment_image.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261007130000_multiple_images.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261008121000_repair_notifications.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261008120000_notifications.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

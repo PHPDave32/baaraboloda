@@ -1,8 +1,10 @@
 package com.cratechnologie.baaraboloda.service.dto;
 
+import com.cratechnologie.baaraboloda.domain.ImageAttachment;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -17,6 +19,12 @@ public class CommentDTO implements Serializable {
     @Size(max = 5000)
     private String content;
 
+    @Size(max = 2097152)
+    private byte[] image;
+
+    @Size(max = 32)
+    private String imageContentType;
+
     private Instant createdAt;
 
     private Instant updatedAt;
@@ -25,6 +33,33 @@ public class CommentDTO implements Serializable {
 
     @NotNull
     private TaskDTO task;
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
+    public String getImageContentType() {
+        return imageContentType;
+    }
+
+    public void setImageContentType(String imageContentType) {
+        this.imageContentType = imageContentType;
+    }
+
+    @Size(max = 5)
+    private List<ImageAttachment> images;
+
+    public List<ImageAttachment> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ImageAttachment> images) {
+        this.images = images;
+    }
 
     public Long getId() {
         return id;

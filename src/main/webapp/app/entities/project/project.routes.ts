@@ -23,6 +23,11 @@ const projectRoute: Routes = [
     canActivate: [userRouteAccessService],
   },
   {
+    path: ':id/documents',
+    loadComponent: () => import('app/features/projects/documents/documents'),
+    canActivate: [userRouteAccessService],
+  },
+  {
     path: ':id/board',
     loadComponent: () => import('app/features/projects/board/board'),
     canActivate: [userRouteAccessService],

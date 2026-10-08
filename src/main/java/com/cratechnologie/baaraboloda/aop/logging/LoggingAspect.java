@@ -83,7 +83,7 @@ public class LoggingAspect {
      * @return result.
      * @throws Throwable rethrows the exception thrown by the advised method.
      */
-    @Around("applicationPackagePointcut() && springBeanPointcut()")
+    @Around("applicationPackagePointcut() && springBeanPointcut() && !@annotation(org.springframework.scheduling.annotation.Scheduled)")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         var log = logger(joinPoint);
         if (log.isDebugEnabled()) {

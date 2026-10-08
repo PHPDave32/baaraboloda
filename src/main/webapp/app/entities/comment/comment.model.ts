@@ -8,7 +8,7 @@ export interface IComment {
   content?: string | null;
   createdAt?: dayjs.Dayjs | null;
   updatedAt?: dayjs.Dayjs | null;
-  author?: Pick<IUser, 'id' | 'login'> | null;
+  author?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
   task?: Pick<ITask, 'id' | 'title'> | null;
 }
 

@@ -15,6 +15,14 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    @org.springframework.data.jpa.repository.Query(
+        "select count(p) > 0 from Project p left join p.memberses m where p.id = :projectId and (m.id = :userId or p.owner.id = :userId)"
+    )
+    boolean isMemberOfProject(
+        @org.springframework.data.repository.query.Param("userId") Long userId,
+        @org.springframework.data.repository.query.Param("projectId") Long projectId
+    );
+
     String USERS_BY_LOGIN_CACHE = "usersByLogin";
 
     String USERS_BY_EMAIL_CACHE = "usersByEmail";

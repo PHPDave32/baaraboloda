@@ -1,3 +1,5 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { ImageAttachment, ImageAttachmentsComponent } from 'app/shared/components/image-attachments/image-attachments';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,8 +15,20 @@ import { ModalComponent } from 'app/shared/components/modal/modal.component';
 
 @Component({
   selector: 'jhi-task-detail',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, DatePipe, BadgeComponent, AvatarComponent, ModalComponent],
+  imports: [
+    NotificationCenterComponent,
+    ImageAttachmentsComponent,
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    RouterLink,
+    DatePipe,
+    BadgeComponent,
+    AvatarComponent,
+    ModalComponent,
+  ],
   templateUrl: './task-detail.html',
+  styleUrl: './task-detail.scss',
 })
 export default class TaskDetail implements OnInit {
   projectId = 0;
@@ -25,11 +39,18 @@ export default class TaskDetail implements OnInit {
   error = '';
   comments: TaskComment[] = [];
   canManage = false;
+  canManageProject = false;
 
   commentToEdit: TaskComment | null = null;
   editCommentContent = '';
   commentToDelete: TaskComment | null = null;
   savingComment = false;
+  commentDraft = '';
+  captures: ImageAttachment[] = [];
+  captureError = '';
+  readingCapture = false;
+  sendingComment = false;
+  expandedCapture: string | null = null;
 
   readonly form = inject(FormBuilder).group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -86,42 +107,9 @@ export default class TaskDetail implements OnInit {
     });
   }
 
-  /**
-   * Détermine si l'utilisateur courant peut modifier cette tâche et ses commentaires :
-   * admin, propriétaire du projet, ou membre du projet.
-   */
-  private loadMembership(): void {
-    if (this.accountService.hasAnyAuthority('ROLE_ADMIN')) {
-      this.canManage = true;
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const projectId = this.task?.project?.id ?? this.projectId;
-    if (!projectId) {
-      this.canManage = false;
-      this.cdr.markForCheck();
-      return;
-    }
-
-    this.planningService.getProject(projectId).subscribe({
-      next: project => {
-        const login = this.accountService.account()?.login;
-        const isOwner = project.owner?.login === login;
-        const isMember = project.memberses?.some(member => member.login === login) ?? false;
-        this.canManage = Boolean(login) && (isOwner || isMember);
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.canManage = false;
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
   save(): void {
     if (!this.canManage) {
-      this.error = 'Vous devez appartenir au projet pour modifier cette tâche.';
+      this.error = 'Vous devez être le rapporteur de cette tâche ou appartenir au projet pour la modifier.';
       return;
     }
     if (!this.task || this.form.invalid || this.saving) {
@@ -134,7 +122,7 @@ export default class TaskDetail implements OnInit {
       .updateTask(this.task, {
         title: value.title,
         description: value.description,
-        status: value.status as ITask['status'],
+        status: this.canManageProject ? (value.status as ITask['status']) : this.task.status,
         priority: value.priority as ITask['priority'],
         type: value.type as ITask['type'],
         storyPoints: value.storyPoints,
@@ -154,21 +142,37 @@ export default class TaskDetail implements OnInit {
       });
   }
 
-  addComment(content: string): void {
-    const value = content.trim();
-    if (!value) return;
-    this.planningService.createComment(this.taskId, value).subscribe({
+  captureUrl(image: string, type: string): string {
+    return `data:${type === 'image/jpeg' ? 'image/jpeg' : 'image/png'};base64,${image}`;
+  }
+
+  addComment(): void {
+    const value = this.commentDraft.trim();
+    if ((!value && !this.captures.length) || !this.canManage || this.sendingComment || this.readingCapture) return;
+    if (value.length > 5000) {
+      this.captureError = 'Le commentaire doit contenir au maximum 5 000 caractères.';
+      return;
+    }
+    this.sendingComment = true;
+    this.captureError = '';
+    this.planningService.createComment(this.taskId, value, this.captures).subscribe({
       next: comment => {
         this.comments = [...this.comments, comment];
+        this.commentDraft = '';
+        this.captures = [];
+        this.sendingComment = false;
         this.cdr.markForCheck();
       },
-      error: () => (this.error = 'Le commentaire n\u2019a pas pu \u00eatre ajout\u00e9.'),
+      error: () => {
+        this.captureError = 'Le commentaire n’a pas pu être envoyé. Vérifiez la capture et réessayez.';
+        this.sendingComment = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
-  canManageComment(_comment: TaskComment): boolean {
-    // Aligné sur la règle backend : appartenir au projet (membre/owner) ou être admin.
-    return this.canManage;
+  canManageComment(comment: TaskComment): boolean {
+    return comment.author?.login === this.accountService.account()?.login || this.canManageProject;
   }
 
   editComment(comment: TaskComment): void {
@@ -227,6 +231,45 @@ export default class TaskDetail implements OnInit {
       error: () => {
         this.error = 'Le commentaire n\u2019a pas pu \u00eatre supprim\u00e9.';
         this.commentToDelete = null;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+  /**
+   * Détermine si l'utilisateur courant peut modifier cette tâche et ses commentaires :
+   * admin, propriétaire du projet, ou membre du projet.
+   */
+  private loadMembership(): void {
+    this.canManageProject = false;
+    this.form.controls.status.disable();
+    this.canManage = Boolean(this.accountService.account()?.login) && this.task?.reporter?.login === this.accountService.account()?.login;
+    if (this.accountService.hasAnyAuthority('ROLE_ADMIN')) {
+      this.canManageProject = true;
+      this.form.controls.status.enable();
+      this.canManage = true;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const projectId = this.task?.project?.id ?? this.projectId;
+    if (!projectId) {
+      this.canManage = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.planningService.getProject(projectId).subscribe({
+      next: project => {
+        const login = this.accountService.account()?.login;
+        const isOwner = project.owner?.login === login;
+        const isMember = project.memberses?.some(member => member.login === login) ?? false;
+        this.canManageProject = Boolean(login) && (isOwner || isMember);
+        if (this.canManageProject) this.form.controls.status.enable();
+        this.canManage = this.canManageProject || (Boolean(login) && this.task?.reporter?.login === login);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.canManageProject = false;
         this.cdr.markForCheck();
       },
     });

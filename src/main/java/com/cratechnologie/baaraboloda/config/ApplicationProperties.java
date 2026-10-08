@@ -23,7 +23,7 @@ public class ApplicationProperties {
 
     public static class Liquibase {
 
-        private Boolean asyncStart = true;
+        private Boolean asyncStart = false;
 
         public Boolean getAsyncStart() {
             return asyncStart;

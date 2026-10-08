@@ -1,3 +1,8 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { PhotoPicker } from 'app/shared/components/photo-picker/photo-picker';
+import { UserPhotoDirective } from 'app/shared/components/photo-picker/user-photo.directive';
+import { HttpClient } from '@angular/common/http';
+import { serverApiUrl } from 'app/config';
 import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -7,10 +12,14 @@ import { PasswordService } from 'app/account/password/password.service';
 @Component({
   selector: 'jhi-profile',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [NotificationCenterComponent, ReactiveFormsModule, PhotoPicker, UserPhotoDirective],
   templateUrl: './profile.html',
 })
 export default class ProfileComponent {
+  readonly photoSaving = signal(false);
+  readonly photoMessage = signal('');
+  private readonly http = inject(HttpClient);
+  private readonly accountService = inject(AccountService);
   readonly success = signal(false);
   readonly error = signal<string | null>(null);
   readonly doNotMatch = signal(false);
@@ -51,6 +60,24 @@ export default class ProfileComponent {
       currentPassword: ['', Validators.required],
       newPassword: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(100)]],
       confirmPassword: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(100)]],
+    });
+  }
+
+  savePhoto(imageUrl: string | null): void {
+    const account = this.account();
+    if (!account || this.photoSaving()) return;
+    this.photoSaving.set(true);
+    this.photoMessage.set('');
+    this.http.post(`${serverApiUrl}api/account`, { ...account, imageUrl }).subscribe({
+      next: () => {
+        this.accountService.identity(true).subscribe();
+        this.photoSaving.set(false);
+        this.photoMessage.set('Photo de profil mise à jour.');
+      },
+      error: () => {
+        this.photoSaving.set(false);
+        this.photoMessage.set('La photo n’a pas pu être enregistrée.');
+      },
     });
   }
 

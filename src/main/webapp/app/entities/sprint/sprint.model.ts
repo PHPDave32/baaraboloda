@@ -13,7 +13,7 @@ export interface ISprint {
   endDate?: dayjs.Dayjs | null;
   createdAt?: dayjs.Dayjs | null;
   updatedAt?: dayjs.Dayjs | null;
-  createdBy?: Pick<IUser, 'id' | 'login'> | null;
+  createdBy?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
   project?: Pick<IProject, 'id' | 'name'> | null;
 }
 

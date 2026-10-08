@@ -1,3 +1,4 @@
+import { ImageAttachment } from 'app/shared/components/image-attachments/image-attachments';
 import dayjs from 'dayjs/esm';
 
 import { TaskPriority } from 'app/entities/enumerations/task-priority.model';
@@ -9,6 +10,7 @@ import { IUser } from 'app/entities/user/user.model';
 
 export interface ITask {
   id: number;
+  images?: ImageAttachment[] | null;
   title?: string | null;
   description?: string | null;
   status?: keyof typeof TaskStatus | null;
@@ -19,8 +21,8 @@ export interface ITask {
   position?: number | null;
   createdAt?: dayjs.Dayjs | null;
   updatedAt?: dayjs.Dayjs | null;
-  assignee?: Pick<IUser, 'id' | 'login'> | null;
-  reporter?: Pick<IUser, 'id' | 'login'> | null;
+  assignee?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
+  reporter?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
   project?: Pick<IProject, 'id' | 'name'> | null;
   sprint?: Pick<ISprint, 'id' | 'name'> | null;
 }

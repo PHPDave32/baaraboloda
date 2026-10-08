@@ -11,13 +11,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Centralizes project-membership based authorization checks.
- *
- * <p>The rule enforced here: a user may only modify (update/delete) a task's details
- * or its comments when they are a member (or the owner) of the project the task belongs to.
- * Administrators are exempt from this restriction.</p>
- */
 @Service
 @Transactional(readOnly = true)
 public class ProjectSecurityService {
@@ -47,12 +40,27 @@ public class ProjectSecurityService {
      * @param taskId the task id.
      * @return {@code true} if the current user is an admin, or a member/owner of the task's project.
      */
+    public boolean canMoveTask(Long taskId) {
+        return (
+            isCurrentUserAdmin() ||
+            SecurityUtils.getCurrentUserLogin()
+                .map(login -> taskRepository.isUserMemberOfTaskProject(taskId, login))
+                .orElse(false)
+        );
+    }
+
+    public void checkCanMoveTask(Long taskId) {
+        if (!canMoveTask(taskId)) throw new AccessDeniedException("Seuls les membres du projet peuvent déplacer cette tâche.");
+    }
+
     public boolean canModifyTask(Long taskId) {
         if (isCurrentUserAdmin()) {
             return true;
         }
         return SecurityUtils.getCurrentUserLogin()
-            .map(login -> taskRepository.isUserMemberOfTaskProject(taskId, login))
+            .map(
+                login -> taskRepository.isUserMemberOfTaskProject(taskId, login) || taskRepository.existsByIdAndReporterLogin(taskId, login)
+            )
             .orElse(false);
     }
 
@@ -65,7 +73,11 @@ public class ProjectSecurityService {
             return true;
         }
         return SecurityUtils.getCurrentUserLogin()
-            .map(login -> commentRepository.isUserMemberOfCommentProject(commentId, login))
+            .map(
+                login ->
+                    commentRepository.isUserMemberOfCommentProject(commentId, login) ||
+                    commentRepository.existsByIdAndAuthorLogin(commentId, login)
+            )
             .orElse(false);
     }
 
@@ -112,7 +124,7 @@ public class ProjectSecurityService {
                 SecurityUtils.getCurrentUserLogin().orElse("?"),
                 taskId
             );
-            throw new AccessDeniedException("Vous devez appartenir au projet de cette tâche pour la modifier.");
+            throw new AccessDeniedException("Vous devez être le rapporteur de cette tâche ou appartenir à son projet pour la modifier.");
         }
     }
 
@@ -129,7 +141,7 @@ public class ProjectSecurityService {
                 SecurityUtils.getCurrentUserLogin().orElse("?"),
                 commentId
             );
-            throw new AccessDeniedException("Vous devez appartenir au projet de cette tâche pour modifier ce commentaire.");
+            throw new AccessDeniedException("Vous devez être l’auteur du commentaire ou appartenir au projet pour le modifier.");
         }
     }
 }

@@ -1,3 +1,6 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { ProjectMembersComponent } from 'app/shared/components/project-members/project-members';
+import { ImageAttachment, ImageAttachmentsComponent } from 'app/shared/components/image-attachments/image-attachments';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -18,10 +21,25 @@ import { PlanningService } from '../planning.service';
 
 @Component({
   selector: 'jhi-project-backlog',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DatePipe, NgTemplateOutlet, BadgeComponent, AvatarComponent, ModalComponent],
+  imports: [
+    NotificationCenterComponent,
+    ProjectMembersComponent,
+    ImageAttachmentsComponent,
+    ReactiveFormsModule,
+    FormsModule,
+    RouterLink,
+    DatePipe,
+    NgTemplateOutlet,
+    BadgeComponent,
+    AvatarComponent,
+    ModalComponent,
+  ],
   templateUrl: './backlog.html',
+  styleUrl: './backlog.scss',
 })
 export default class Backlog implements OnInit {
+  taskImages: ImageAttachment[] = [];
+  readingImages = false;
   projectId = 0;
   project: IProject | null = null;
   backlogTasks: ITask[] = [];
@@ -70,6 +88,7 @@ export default class Backlog implements OnInit {
       type: ['TASK'],
       storyPoints: [null],
       sprintId: [null],
+      assigneeId: [null],
     });
 
     this.sprintForm = this.fb.group({
@@ -146,6 +165,15 @@ export default class Backlog implements OnInit {
     return isOwner || isMember;
   }
 
+  get orderedSprints(): ISprint[] {
+    const rank: Record<string, number> = { ACTIVE: 0, PLANNED: 1, COMPLETED: 2 };
+    return [...this.sprints].sort(
+      (a, b) =>
+        rank[a.status ?? 'PLANNED'] - rank[b.status ?? 'PLANNED'] ||
+        String(this.fmtDate(b.startDate) ?? '').localeCompare(String(this.fmtDate(a.startDate) ?? '')),
+    );
+  }
+
   get canManageSprints(): boolean {
     return this.canManage && this.accountService.hasAnyAuthority(['ROLE_ADMIN', 'PERM_SPRINT_MANAGE']);
   }
@@ -213,6 +241,7 @@ export default class Backlog implements OnInit {
   }
 
   openTaskForm(sprintId: number | null = null): void {
+    this.taskImages = [];
     this.targetSprintId = sprintId;
     this.showTaskForm = true;
     this.showSprintForm = false;
@@ -226,6 +255,7 @@ export default class Backlog implements OnInit {
     }
     this.editingSprint = null;
     this.showSprintForm = true;
+    this.taskImages = [];
     this.showTaskForm = false;
     this.sprintForm.reset();
   }
@@ -241,6 +271,7 @@ export default class Backlog implements OnInit {
     }
     this.editingSprint = sprint;
     this.showSprintForm = true;
+    this.taskImages = [];
     this.showTaskForm = false;
     this.sprintForm.reset({
       name: sprint.name ?? '',
@@ -261,6 +292,7 @@ export default class Backlog implements OnInit {
   }
 
   closeTaskForm(): void {
+    this.taskImages = [];
     this.showTaskForm = false;
     this.taskForm.reset({ priority: 'MEDIUM', type: 'TASK', sprintId: null });
   }
@@ -272,12 +304,14 @@ export default class Backlog implements OnInit {
   }
 
   submitTask(): void {
-    if (this.taskForm.invalid || this.loading) return;
+    if (this.taskForm.invalid || this.loading || this.readingImages) return;
     this.loading = true;
     this.error = '';
     const login = this.accountService.account()?.login ?? '';
     this.planningService
       .createTask(this.projectId, login, {
+        assigneeId: this.taskForm.value.assigneeId ?? null,
+        images: this.taskImages,
         title: this.taskForm.value.title,
         description: this.taskForm.value.description,
         priority: this.taskForm.value.priority,
@@ -287,14 +321,17 @@ export default class Backlog implements OnInit {
       })
       .subscribe({
         next: () => {
+          this.taskImages = [];
           this.showTaskForm = false;
           this.taskForm.reset({ priority: 'MEDIUM', type: 'TASK', sprintId: null });
           this.loading = false;
+          this.cdr.markForCheck();
           this.loadAll();
         },
-        error: () => {
-          this.error = 'Erreur lors de la création de la tâche';
+        error: (response: any) => {
+          this.error = response.error?.detail || response.error?.message || 'Erreur lors de la création de la tâche. Réessayez.';
           this.loading = false;
+          this.cdr.markForCheck();
         },
       });
   }
@@ -363,6 +400,7 @@ export default class Backlog implements OnInit {
   }
 
   moveToSprint(task: ITask, sprintId: number): void {
+    if (!this.canManage) return;
     if (task.sprint?.id === sprintId) return;
     const targetSprint = this.sprints.find(s => s.id === sprintId) ?? null;
     this.applyLocalMove(task, targetSprint ? { id: sprintId, name: targetSprint.name } : { id: sprintId });
@@ -376,6 +414,7 @@ export default class Backlog implements OnInit {
   }
 
   moveToBacklog(task: ITask): void {
+    if (!this.canManage) return;
     if (!task.sprint) return;
     this.applyLocalMove(task, null);
 
@@ -416,13 +455,19 @@ export default class Backlog implements OnInit {
     this.cdr.detectChanges();
   }
 
+  canManageTask(task: ITask): boolean {
+    const login = this.accountService.account()?.login;
+    return this.canManage || (Boolean(login) && task.reporter?.login === login);
+  }
+
   deleteTask(id: number): void {
-    if (!this.canManage) {
-      this.error = 'Vous devez appartenir au projet pour supprimer une tâche.';
+    const all = [...this.backlogTasks, ...Array.from(this.sprintTasks.values()).flat()];
+    const task = all.find(t => t.id === id);
+    if (!task || !this.canManageTask(task)) {
+      this.error = 'Vous devez être le rapporteur ou appartenir au projet pour supprimer cette tâche.';
       return;
     }
-    const all = [...this.backlogTasks, ...Array.from(this.sprintTasks.values()).flat()];
-    this.taskToDelete = all.find(t => t.id === id) ?? ({ id } as ITask);
+    this.taskToDelete = task;
     this.cdr.detectChanges();
   }
 
@@ -555,6 +600,10 @@ export default class Backlog implements OnInit {
     event.dataTransfer?.setData('taskId', String(task.id));
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
+    }
+    if (!this.canManage) {
+      event.preventDefault();
+      return;
     }
     this.draggingTaskId = task.id;
   }

@@ -34,7 +34,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.core.ClaimAccessor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import tech.jhipster.service.filter.LongFilter;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
@@ -228,26 +227,6 @@ public class ProjectResource {
         @org.springdoc.core.annotations.ParameterObject Pageable pageable
     ) {
         LOG.debug("REST request to get Projects by criteria: {}", criteria);
-
-        // Un utilisateur non-admin ne voit que les projets dont il est membre ou propriétaire.
-        if (!SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN)) {
-            List<Long> accessibleIds = SecurityUtils.getCurrentUserLogin()
-                .map(projectRepository::findAccessibleProjectIds)
-                .orElseGet(List::of);
-
-            if (accessibleIds.isEmpty()) {
-                // Aucun projet accessible : renvoyer une page vide sans interroger la base.
-                HttpHeaders emptyHeaders = PaginationUtil.generatePaginationHttpHeaders(
-                    ServletUriComponentsBuilder.fromCurrentRequest(),
-                    Page.empty(pageable)
-                );
-                return ResponseEntity.ok().headers(emptyHeaders).body(List.of());
-            }
-
-            LongFilter idFilter = new LongFilter();
-            idFilter.setIn(accessibleIds);
-            criteria.setId(idFilter);
-        }
 
         Page<ProjectDTO> page = projectQueryService.findByCriteria(criteria, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);

@@ -1,35 +1,40 @@
-<div class="p-8">
-  <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+<div class="sprints-page">
+  <header class="sprints-header">
     <div>
-      <h1 class="text-3xl font-bold text-white mb-1">Sprints</h1>
-      <p class="text-gray-400">{{ sprints.length }} sprint{{ sprints.length > 1 ? 's' : '' }} · planifiez vos itérations</p>
-
-      @if (sprints.length) {
-        <div class="mt-3 flex flex-wrap items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-            <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
-            {{ countByStatus('ACTIVE') }} actif{{ countByStatus('ACTIVE') > 1 ? 's' : '' }}
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600">
-            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-            {{ countByStatus('PLANNED') }} planifié{{ countByStatus('PLANNED') > 1 ? 's' : '' }}
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-[#d9eef6] px-2.5 py-1 text-xs font-medium text-[#1e6f8e]">
-            <span class="h-1.5 w-1.5 rounded-full bg-[#328cb1]"></span>
-            {{ countByStatus('COMPLETED') }} terminé{{ countByStatus('COMPLETED') > 1 ? 's' : '' }}
-          </span>
-        </div>
-      }
+      <span class="sprints-eyebrow">PLANIFICATION · {{ project?.name }}</span>
+      <h1>Le rythme de votre équipe.</h1>
+      <p>Organisez vos sprints, suivez leur calendrier et préparez la suite.</p>
     </div>
-    <button (click)="openCreateForm()" class="btn-primary text-sm flex items-center gap-2">
-      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      Nouveau sprint
-    </button>
+    <div class="page-header-actions">
+      <button (click)="openCreateForm()" class="btn-primary text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Nouveau sprint
+      </button>
+      <jhi-notification-center />
+    </div>
+  </header>
+  <div class="sprints-toolbar">
+    <input type="search" [(ngModel)]="search" placeholder="Rechercher un sprint ou un objectif…" aria-label="Rechercher un sprint" />
+    <div class="sprints-team">
+      <span>Équipe du projet</span><jhi-project-members [members]="project?.memberses ?? []" [filterable]="false" />
+    </div>
   </div>
-
+  <nav class="sprints-filters" aria-label="Filtrer les sprints par statut">
+    @for (filter of statusFilters; track filter.value) {
+      <button
+        type="button"
+        [class.is-selected]="statusFilter === filter.value"
+        [attr.aria-pressed]="statusFilter === filter.value"
+        (click)="statusFilter = filter.value"
+      >
+        {{ filter.label }}<span>{{ filter.value === 'ALL' ? sprints.length : countByStatus(filter.value) }}</span>
+      </button>
+    }
+  </nav>
   <app-modal
+    appearance="editor"
     [isOpen]="showForm"
     [title]="editingSprint ? 'Modifier le sprint' : 'Créer un sprint'"
     [subtitle]="editingSprint ? 'Mettez à jour les informations du sprint' : 'Planifiez un nouveau sprint pour votre projet'"
@@ -39,28 +44,39 @@
     (close)="closeForm()"
     (confirm)="onSubmit()"
   >
-    <form [formGroup]="form" class="space-y-5">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="sprint-editor">
+      <div>
+        <label for="sprints-sprint-name">Nom du sprint <span>*</span></label>
+        <input id="sprints-sprint-name" type="text" formControlName="name" class="input-field" placeholder="Ex. Sprint 3 — Espace client" />
+      </div>
+      <div>
+        <label for="sprints-sprint-goal">Objectif <small>Facultatif</small></label>
+        <textarea
+          id="sprints-sprint-goal"
+          formControlName="goal"
+          class="input-field"
+          rows="3"
+          placeholder="Quel résultat souhaitez-vous atteindre à la fin de ce sprint ?"
+        ></textarea>
+      </div>
+      <fieldset class="sprint-editor-period">
+        <legend>Période du sprint</legend>
+        <p>Définissez le début et la fin de cette période de travail.</p>
+        <div class="sprint-editor-dates">
+          <div>
+            <label for="sprints-sprint-start">Date de début <span>*</span></label
+            ><input id="sprints-sprint-start" type="date" formControlName="startDate" class="input-field" />
+          </div>
+          <div>
+            <label for="sprints-sprint-end">Date de fin <span>*</span></label
+            ><input id="sprints-sprint-end" type="date" formControlName="endDate" class="input-field" />
+          </div>
+        </div>
+      </fieldset>
+      <p class="sprint-editor-hint">Les champs marqués d’un astérisque sont obligatoires.</p>
       @if (error) {
-        <div class="px-4 py-3 rounded-lg bg-red-950 border border-red-800 text-red-400 text-sm">{{ error }}</div>
+        <p role="alert" class="sprint-editor-error">{{ error }}</p>
       }
-      <div>
-        <label class="block text-sm font-medium text-gray-400 mb-1.5">Nom du Sprint</label>
-        <input type="text" formControlName="name" class="input-field" placeholder="Sprint 1" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-400 mb-1.5">Objectif du sprint</label>
-        <textarea formControlName="goal" class="input-field resize-none h-20" placeholder="Ce que nous voulons accomplir..."></textarea>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Date de début</label>
-          <input type="date" formControlName="startDate" class="input-field" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Date de fin</label>
-          <input type="date" formControlName="endDate" class="input-field" />
-        </div>
-      </div>
     </form>
   </app-modal>
 
@@ -80,7 +96,7 @@
   >
   </app-modal>
 
-  <div class="space-y-4">
+  <div class="sprints-timeline">
     @if (loading) {
       <div class="flex items-center justify-center py-12">
         <svg class="animate-spin w-6 h-6" style="color: #328cb1" fill="none" viewBox="0 0 24 24">
@@ -89,140 +105,157 @@
         </svg>
       </div>
     } @else {
-      @for (sprint of sortedSprints; track sprint.id) {
-        <div class="card p-6 transition-shadow hover:shadow-lg" [class]="accentClass(sprint.status)">
-          <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-3 mb-2">
-                <h3 class="text-lg font-semibold text-slate-800">{{ sprint.name }}</h3>
-                <app-badge [type]="'status'" [value]="sprint.status || 'PLANNED'" />
-                @if (sprint.status === 'ACTIVE') {
-                  <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                    <span class="relative flex h-2 w-2">
-                      <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-                      <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-                    </span>
-                    En cours
-                  </span>
+      @for (sprint of visibleSprints; track sprint.id; let sprintIndex = $index) {
+        <article
+          class="sprint-entry"
+          [attr.data-status]="sprint.status ?? 'PLANNED'"
+          [style.--entry-order]="sprintIndex < 8 ? sprintIndex : 8"
+        >
+          <div class="sprint-calendar">
+            <span class="sprint-sequence">SPRINT #{{ sprint.id }}</span
+            ><strong>{{ sprint.startDate ? (calendarDate(sprint) | date: 'dd') : '—' }}</strong
+            ><span>{{ sprint.startDate ? (calendarDate(sprint) | date: 'MMM yyyy') : 'Date à définir' }}</span
+            ><span class="sprint-state">{{ statusLabel(sprint.status) }}</span>
+          </div>
+          <div class="sprint-main">
+            <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                  <h3 class="text-lg font-semibold text-slate-800">{{ sprint.name }}</h3>
+                </div>
+                @if (sprint.goal) {
+                  <p class="text-slate-500 text-sm">{{ sprint.goal }}</p>
+                } @else {
+                  <p class="text-slate-400 text-sm italic">Aucun objectif défini</p>
                 }
               </div>
-              @if (sprint.goal) {
-                <p class="text-slate-500 text-sm">{{ sprint.goal }}</p>
-              } @else {
-                <p class="text-slate-400 text-sm italic">Aucun objectif défini</p>
-              }
+              <div class="flex items-center gap-2">
+                @if (sprint.status === 'PLANNED') {
+                  <button (click)="openEditForm(sprint)" type="button" class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    Modifier
+                  </button>
+                  <button (click)="activateSprint(sprint)" type="button" class="btn-primary text-sm px-3 py-1.5 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                      />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Activer
+                  </button>
+                }
+                @if (sprint.status === 'ACTIVE') {
+                  <button
+                    (click)="completeSprint(sprint)"
+                    type="button"
+                    class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Terminer
+                  </button>
+                }
+                <button
+                  (click)="deleteSprint(sprint.id)"
+                  type="button"
+                  class="p-2 rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  title="Supprimer le sprint"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              @if (sprint.status === 'PLANNED') {
-                <button (click)="openEditForm(sprint)" type="button" class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  Modifier
-                </button>
-                <button (click)="activateSprint(sprint)" type="button" class="btn-primary text-sm px-3 py-1.5 flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                    />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Activer
-                </button>
-              }
-              @if (sprint.status === 'ACTIVE') {
-                <button (click)="completeSprint(sprint)" type="button" class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Terminer
-                </button>
-              }
-              <button
-                (click)="deleteSprint(sprint.id)"
-                type="button"
-                class="p-2 rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                title="Supprimer le sprint"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Début</p>
-              <p class="text-slate-700 font-medium">{{ formatDate(sprint.startDate) }}</p>
+            <div class="sprint-dates grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Début</p>
+                <p class="text-slate-700 font-medium">{{ formatDate(sprint.startDate) }}</p>
+              </div>
+              <div>
+                <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Fin</p>
+                <p class="text-slate-700 font-medium">{{ formatDate(sprint.endDate) }}</p>
+              </div>
+              <div>
+                <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Durée</p>
+                <p class="text-slate-700 font-medium">{{ getDaysDifference(sprint.startDate, sprint.endDate) }} jours</p>
+              </div>
             </div>
-            <div>
-              <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Fin</p>
-              <p class="text-slate-700 font-medium">{{ formatDate(sprint.endDate) }}</p>
-            </div>
-            <div>
-              <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Durée</p>
-              <p class="text-slate-700 font-medium">{{ getDaysDifference(sprint.startDate, sprint.endDate) }} jours</p>
-            </div>
-          </div>
 
-          @if (sprint.status === 'ACTIVE') {
-            <div class="mt-4">
-              <div class="flex items-center justify-between text-xs mb-1.5">
-                <span class="text-slate-500">
-                  Jour {{ daysElapsed(sprint) }} / {{ getDaysDifference(sprint.startDate, sprint.endDate) }}
-                </span>
-                <span class="font-medium" [class]="daysRemaining(sprint) <= 2 ? 'text-red-600' : 'text-slate-600'">
-                  @if (daysRemaining(sprint) > 0) {
-                    {{ daysRemaining(sprint) }} jour{{ daysRemaining(sprint) > 1 ? 's' : '' }} restant{{
-                      daysRemaining(sprint) > 1 ? 's' : ''
-                    }}
-                  } @else {
-                    Dernier jour
+            @if (sprint.status === 'ACTIVE') {
+              <div class="mt-4">
+                <div class="flex items-center justify-between text-xs mb-1.5">
+                  <span class="text-slate-500">
+                    Jour {{ daysElapsed(sprint) }} / {{ getDaysDifference(sprint.startDate, sprint.endDate) }}
+                  </span>
+                  <span class="font-medium" [class]="daysRemaining(sprint) <= 2 ? 'text-red-600' : 'text-slate-600'">
+                    @if (daysRemaining(sprint) > 0) {
+                      {{ daysRemaining(sprint) }} jour{{ daysRemaining(sprint) > 1 ? 's' : '' }} restant{{
+                        daysRemaining(sprint) > 1 ? 's' : ''
+                      }}
+                    } @else {
+                      Dernier jour
+                    }
+                  </span>
+                </div>
+                <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div class="h-full rounded-full bg-green-500 transition-all duration-500" [style.width.%]="timeProgress(sprint)"></div>
+                </div>
+              </div>
+            }
+
+            @if (sprint.createdBy) {
+              <div class="pt-3 mt-4 border-t border-slate-100 flex items-center gap-2">
+                <app-avatar [user]="sprint.createdBy" size="xs" />
+                <span class="text-xs text-slate-500">
+                  Créé par
+                  <span class="font-medium text-slate-700">{{ getAuthorName(sprint.createdBy) }}</span>
+                  @if (sprint.createdAt) {
+                    · {{ formatDate(sprint.createdAt) }}
                   }
                 </span>
               </div>
-              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div class="h-full rounded-full bg-green-500 transition-all duration-500" [style.width.%]="timeProgress(sprint)"></div>
-              </div>
+            }
+            <div class="sprint-bottom">
+              <a [routerLink]="['/projects', projectId, 'backlog']">Consulter les tâches <span aria-hidden="true">↗</span></a
+              ><span>{{ getDaysDifference(sprint.startDate, sprint.endDate) }} jours de travail planifiés</span>
             </div>
-          }
-
-          @if (sprint.createdBy) {
-            <div class="pt-3 mt-4 border-t border-slate-100 flex items-center gap-2">
-              <app-avatar [user]="sprint.createdBy" size="xs" />
-              <span class="text-xs text-slate-500">
-                Créé par
-                <span class="font-medium text-slate-700">{{ getAuthorName(sprint.createdBy) }}</span>
-                @if (sprint.createdAt) {
-                  · {{ formatDate(sprint.createdAt) }}
-                }
-              </span>
-            </div>
-          }
-        </div>
+          </div>
+        </article>
       }
 
+      @if (sprints.length && !visibleSprints.length) {
+        <div class="sprints-empty">
+          <h2>Aucun sprint ne correspond.</h2>
+          <p>Essayez un autre nom ou affichez tous les statuts.</p>
+          <button type="button" class="btn-secondary" (click)="search = ''; statusFilter = 'ALL'">Réinitialiser les filtres</button>
+        </div>
+      }
       @if (!sprints.length) {
-        <div class="card flex flex-col items-center justify-center py-16 text-center">
+        <div class="sprints-empty flex flex-col items-center justify-center py-16 text-center">
           <div class="mb-4 grid h-16 w-16 place-items-center rounded-full bg-[#d9eef6]">
             <svg class="w-8 h-8 text-[#328cb1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />

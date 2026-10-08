@@ -1,3 +1,4 @@
+import { UserPhotoDirective } from 'app/shared/components/photo-picker/user-photo.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -10,7 +11,7 @@ import { filter } from 'rxjs';
   selector: 'jhi-navbar',
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
-  imports: [RouterLink, RouterLinkActive, ModalComponent],
+  imports: [UserPhotoDirective, RouterLink, RouterLinkActive, ModalComponent],
 })
 export default class Navbar implements OnInit {
   readonly activeProjectId = signal<number | null>(null);

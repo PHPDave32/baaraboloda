@@ -1,0 +1,45 @@
+<div class="image-attachments" (paste)="paste($event)">
+  <ng-content />
+  @if (images.length) {
+    <div class="attachment-grid">
+      @for (image of images; track $index) {
+        <div class="attachment-tile">
+          <button type="button" class="attachment-open" (click)="expanded = image" [attr.aria-label]="'Agrandir ' + image.name">
+            <img [src]="url(image)" [alt]="image.name" loading="lazy" /><span>{{ image.name }}</span>
+          </button>
+          @if (editable) {
+            <button
+              type="button"
+              class="attachment-remove"
+              [disabled]="disabled || reading"
+              (click)="remove($index)"
+              [attr.aria-label]="'Retirer ' + image.name"
+            >
+              ×
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+  @if (editable) {
+    <div class="attachment-tools">
+      <input #files type="file" accept="image/png,image/jpeg" multiple hidden (change)="select($event)" /><button
+        type="button"
+        class="btn-secondary"
+        [disabled]="disabled || reading || images.length >= 5"
+        (click)="files.click()"
+      >
+        {{ reading ? 'Lecture…' : 'Joindre des images' }}</button
+      ><span>{{ images.length }}/5 · PNG, JPEG · 2 Mo/image</span>
+    </div>
+  }
+  @if (error) {
+    <p class="attachment-error" role="alert">{{ error }}</p>
+  }
+</div>
+<app-modal [isOpen]="expanded !== null" title="Image jointe" [showFooter]="false" (close)="expanded = null">
+  @if (expanded) {
+    <img class="attachment-expanded" [src]="url(expanded)" [alt]="expanded.name" />
+  }
+</app-modal>

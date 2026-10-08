@@ -1,14 +1,15 @@
+import { UserPhotoDirective } from '../photo-picker/user-photo.directive';
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-avatar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, UserPhotoDirective],
   template: `
-    <div [class]="containerClass" [title]="titleText">
-      @if (avatarUrl) {
-        <img [src]="avatarUrl" [alt]="firstName" class="w-full h-full object-cover rounded-full" />
+    <div [class]="containerClass" [title]="titleText" [style.background-color]="color">
+      @if (avatarUrl && failedUrl !== avatarUrl) {
+        <img [jhiUserPhoto]="avatarUrl" (error)="failedUrl = avatarUrl" [alt]="firstName" class="w-full h-full object-cover rounded-full" />
       } @else {
         <span [class]="textClass">{{ initials }}</span>
       }
@@ -16,7 +17,9 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class AvatarComponent {
+  failedUrl?: string;
   @Input() user?: any;
+  @Input() color: string | null = null;
   @Input() size: 'xs' | 'sm' | 'md' | 'lg' = 'sm';
 
   get firstName(): string {

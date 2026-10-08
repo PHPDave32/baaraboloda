@@ -2,12 +2,15 @@
   class="relative isolate min-h-[calc(100vh-2rem)] overflow-hidden rounded-[28px] border border-slate-300/40 bg-[linear-gradient(112deg,rgba(248,250,252,.94),rgba(239,246,255,.84)_52%,rgba(224,231,255,.72))] text-slate-900 shadow-[0_28px_80px_rgba(100,116,139,.18)] max-[600px]:rounded-[20px]"
 >
   <div class="relative z-[1] p-5 sm:p-8 lg:p-12">
-    <header>
-      <span
-        class="inline-flex items-center gap-2 text-[.7rem] font-bold uppercase tracking-[.18em] text-[#328cb1] before:h-px before:w-7 before:bg-[#328cb1]"
-        >Mon espace</span
-      >
-      <h1 class="mt-2.5 text-[clamp(1.8rem,4vw,3.2rem)] font-bold leading-tight tracking-[-.04em] text-[#172033]">Profil</h1>
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <span
+          class="inline-flex items-center gap-2 text-[.7rem] font-bold uppercase tracking-[.18em] text-[#328cb1] before:h-px before:w-7 before:bg-[#328cb1]"
+          >Mon espace</span
+        >
+        <h1 class="mt-2.5 text-[clamp(1.8rem,4vw,3.2rem)] font-bold leading-tight tracking-[-.04em] text-[#172033]">Profil</h1>
+      </div>
+      <jhi-notification-center />
     </header>
 
     <div class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
@@ -20,7 +23,7 @@
             class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#328cb1] text-xl font-semibold text-white"
           >
             @if (account()?.imageUrl) {
-              <img [src]="account()!.imageUrl!" [alt]="displayName()" class="h-full w-full object-cover" />
+              <img [jhiUserPhoto]="account()!.imageUrl!" [alt]="displayName()" class="h-full w-full object-cover" />
             } @else {
               <span>{{ initials() }}</span>
             }
@@ -31,6 +34,12 @@
           </div>
         </div>
 
+        <div class="mt-5">
+          <jhi-photo-picker [imageUrl]="account()?.imageUrl ?? null" (imageUrlChange)="savePhoto($event)" [disabled]="photoSaving()" />
+          @if (photoMessage()) {
+            <p role="status" class="text-xs text-slate-600">{{ photoMessage() }}</p>
+          }
+        </div>
         <dl class="mt-6 space-y-3 text-sm">
           <div class="flex items-center justify-between gap-3">
             <dt class="text-slate-500">Identifiant</dt>

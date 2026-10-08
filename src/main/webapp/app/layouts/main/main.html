@@ -1,7 +1,8 @@
 <jhi-page-ribbon />
 <jhi-toast-container />
 
-<div class="app-shell" [class.has-sidebar]="account()">
+<div jhiAnimatedCursor class="app-shell" [class.has-sidebar]="account()">
+  <jhi-notification-toast />
   <router-outlet name="navbar" />
   <main class="workspace-main">
     <router-outlet />

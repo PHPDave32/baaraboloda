@@ -81,14 +81,13 @@ public class CommentResource {
         if (commentDTO.getId() != null) {
             throw new BadRequestAlertException("A new comment cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        if (commentDTO.getAuthor() == null || commentDTO.getAuthor().getId() == null) {
-            commentDTO.setAuthor(
-                SecurityUtils.getCurrentUserLogin()
-                    .flatMap(userRepository::findOneByLogin)
-                    .map(UserDTO::new)
-                    .orElseThrow(() -> new BadRequestAlertException("Current user not found", ENTITY_NAME, "currentusernotfound"))
-            );
-        }
+        commentDTO.setAuthor(
+            SecurityUtils.getCurrentUserLogin()
+                .flatMap(userRepository::findOneByLogin)
+                .map(UserDTO::new)
+                .orElseThrow(() -> new BadRequestAlertException("Current user not found", ENTITY_NAME, "currentusernotfound"))
+        );
+        projectSecurityService.checkCanModifyTask(commentDTO.getTask().getId());
         commentDTO = commentService.save(commentDTO);
         return ResponseEntity.created(new URI("/api/comments/" + commentDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, commentDTO.getId().toString()))
@@ -124,6 +123,9 @@ public class CommentResource {
 
         projectSecurityService.checkCanModifyComment(id);
 
+        CommentDTO original = commentService.findOne(id).orElseThrow();
+        commentDTO.setAuthor(original.getAuthor());
+        commentDTO.setTask(original.getTask());
         commentDTO = commentService.update(commentDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, commentDTO.getId().toString()))
@@ -160,6 +162,8 @@ public class CommentResource {
 
         projectSecurityService.checkCanModifyComment(id);
 
+        commentDTO.setAuthor(null);
+        commentDTO.setTask(null);
         Optional<CommentDTO> result = commentService.partialUpdate(commentDTO);
 
         return ResponseUtil.wrapOrNotFound(

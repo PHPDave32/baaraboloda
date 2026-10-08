@@ -1,3 +1,4 @@
+import { ImageAttachment } from 'app/shared/components/image-attachments/image-attachments';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -10,6 +11,9 @@ import { ITask } from 'app/entities/task/task.model';
 export interface TaskComment {
   id: number;
   content: string;
+  images?: ImageAttachment[] | null;
+  image?: string | null;
+  imageContentType?: string | null;
   createdAt?: string;
   author?: { id?: number; login?: string };
 }
@@ -95,9 +99,14 @@ export class PlanningService {
   createTask(
     projectId: number,
     reporterLogin: string,
-    task: Pick<ITask, 'title' | 'description' | 'priority' | 'type' | 'storyPoints'> & { sprintId?: number | null },
+    task: Pick<ITask, 'title' | 'description' | 'priority' | 'type' | 'storyPoints' | 'images'> & {
+      sprintId?: number | null;
+      assigneeId?: number | null;
+    },
   ): Observable<ITask> {
     return this.http.post<ITask>(`${this.apiUrl}/tasks`, {
+      assignee: task.assigneeId ? { id: task.assigneeId } : null,
+      images: task.images ?? [],
       title: task.title,
       description: task.description ?? null,
       status: 'TODO',
@@ -159,8 +168,8 @@ export class PlanningService {
     return this.http.get<TaskComment[]>(`${this.apiUrl}/comments`, { params: { 'taskId.equals': taskId, size: 1000 } });
   }
 
-  createComment(taskId: number, content: string): Observable<TaskComment> {
-    return this.http.post<TaskComment>(`${this.apiUrl}/comments`, { content, task: { id: taskId } });
+  createComment(taskId: number, content: string, images: ImageAttachment[] = []): Observable<TaskComment> {
+    return this.http.post<TaskComment>(`${this.apiUrl}/comments`, { content, images, task: { id: taskId } });
   }
 
   updateComment(comment: TaskComment, content: string): Observable<TaskComment> {

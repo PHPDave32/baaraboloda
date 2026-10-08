@@ -1,12 +1,14 @@
-<div class="p-8">
-  <div class="flex items-center justify-between mb-8">
+<div class="backlog-workspace p-8">
+  <div class="backlog-heading flex items-center justify-between mb-8">
     <div>
+      <span class="backlog-eyebrow">PLANIFICATION · {{ project?.name }}</span>
       <h1 class="text-3xl font-bold text-white mb-1">Backlog</h1>
       <p class="text-gray-400">
-        {{ backlogTasks.length }} tâche{{ backlogTasks.length > 1 ? 's' : '' }} non planifiée{{ backlogTasks.length > 1 ? 's' : '' }}
+        Répartissez le travail, du backlog aux sprints. · {{ backlogTasks.length }} tâche{{ backlogTasks.length > 1 ? 's' : '' }} non
+        planifiée{{ backlogTasks.length > 1 ? 's' : '' }}
       </p>
     </div>
-    <div class="flex gap-3">
+    <div class="page-header-actions flex items-center flex-wrap gap-3">
       <button (click)="openSprintForm()" class="btn-secondary text-sm flex items-center gap-2">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -19,6 +21,7 @@
         </svg>
         Nouvelle tâche
       </button>
+      <jhi-notification-center />
     </div>
   </div>
 
@@ -27,7 +30,7 @@
   }
 
   <!-- Barre de filtres -->
-  <div class="mb-3 flex flex-wrap items-center gap-2">
+  <div class="backlog-filters mb-3 flex flex-wrap items-center gap-2">
     <div class="relative w-64 flex-shrink-0">
       <svg
         class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
@@ -40,6 +43,11 @@
       <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher une tâche…" class="input-field w-full py-1.5 pl-9 text-sm" />
     </div>
 
+    <jhi-project-members
+      [members]="projectMembers"
+      [selected]="filterAssignee"
+      (selectedChange)="onAssigneeFilterChange('' + ($event ?? 'ALL'))"
+    />
     <select
       [ngModel]="filterAssignee"
       (ngModelChange)="onAssigneeFilterChange($event)"
@@ -140,6 +148,7 @@
 
   <!-- Modal Sprint -->
   <app-modal
+    appearance="editor"
     [isOpen]="showSprintForm"
     [title]="editingSprint ? 'Modifier le sprint' : 'Créer un sprint'"
     [subtitle]="editingSprint ? 'Mettez à jour les informations du sprint' : 'Ajoutez un nouveau sprint à votre projet'"
@@ -149,78 +158,129 @@
     (close)="closeSprintForm()"
     (confirm)="submitSprint()"
   >
-    <form [formGroup]="sprintForm" class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Nom du sprint</label>
-          <input type="text" formControlName="name" class="input-field" placeholder="Sprint 1" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Objectif</label>
-          <input type="text" formControlName="goal" class="input-field" placeholder="Objectif du sprint..." />
-        </div>
+    <form [formGroup]="sprintForm" (ngSubmit)="submitSprint()" class="sprint-editor">
+      <div>
+        <label for="backlog-sprint-name">Nom du sprint <span>*</span></label>
+        <input id="backlog-sprint-name" type="text" formControlName="name" class="input-field" placeholder="Ex. Sprint 3 — Espace client" />
       </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Date de début</label>
-          <input type="date" formControlName="startDate" class="input-field" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Date de fin</label>
-          <input type="date" formControlName="endDate" class="input-field" />
-        </div>
+      <div>
+        <label for="backlog-sprint-goal">Objectif <small>Facultatif</small></label>
+        <textarea
+          id="backlog-sprint-goal"
+          formControlName="goal"
+          class="input-field"
+          rows="3"
+          placeholder="Quel résultat souhaitez-vous atteindre à la fin de ce sprint ?"
+        ></textarea>
       </div>
+      <fieldset class="sprint-editor-period">
+        <legend>Période du sprint</legend>
+        <p>Définissez le début et la fin de cette période de travail.</p>
+        <div class="sprint-editor-dates">
+          <div>
+            <label for="backlog-sprint-start">Date de début <span>*</span></label
+            ><input id="backlog-sprint-start" type="date" formControlName="startDate" class="input-field" />
+          </div>
+          <div>
+            <label for="backlog-sprint-end">Date de fin <span>*</span></label
+            ><input id="backlog-sprint-end" type="date" formControlName="endDate" class="input-field" />
+          </div>
+        </div>
+      </fieldset>
+      <p class="sprint-editor-hint">Les champs marqués d’un astérisque sont obligatoires.</p>
     </form>
   </app-modal>
 
   <!-- Modal Tâche -->
   <app-modal
+    appearance="editor"
     [isOpen]="showTaskForm"
     [title]="targetSprintId ? 'Ajouter une tâche au sprint' : 'Ajouter une tâche au backlog'"
-    subtitle="Complétez les informations de la tâche"
+    subtitle="Décrivez le travail à réaliser et définissez sa priorité."
     confirmText="Créer la tâche"
     cancelText="Annuler"
-    [isLoading]="loading"
+    [isLoading]="loading || readingImages"
     (close)="closeTaskForm()"
     (confirm)="submitTask()"
   >
-    <form [formGroup]="taskForm" class="space-y-4">
+    @if (error) {
+      <p role="alert" class="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ error }}</p>
+    }
+    <form [formGroup]="taskForm" (ngSubmit)="submitTask()" class="task-create-form">
       <div>
-        <label class="block text-sm font-medium text-gray-400 mb-1.5">Titre</label>
-        <input type="text" formControlName="title" class="input-field" placeholder="Titre de la tâche..." />
+        <label for="new-task-title">Titre de la tâche <span>*</span></label>
+        <input
+          id="new-task-title"
+          type="text"
+          formControlName="title"
+          class="input-field"
+          placeholder="Ex. Concevoir la page de connexion"
+        />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-400 mb-1.5">Description</label>
-        <textarea formControlName="description" class="input-field resize-none h-20" placeholder="Description facultative..."></textarea>
+        <label for="new-task-description">Description <small>Facultatif</small></label>
+        <textarea
+          id="new-task-description"
+          formControlName="description"
+          class="input-field"
+          rows="4"
+          placeholder="Précisez le contexte, les étapes ou le résultat attendu…"
+        ></textarea>
       </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Priorité</label>
-          <select formControlName="priority" class="input-field">
-            <option value="LOW">Faible</option>
-            <option value="MEDIUM">Moyenne</option>
-            <option value="HIGH">Haute</option>
-            <option value="CRITICAL">Critique</option>
-          </select>
+      <jhi-image-attachments [editable]="true" [disabled]="loading" [(images)]="taskImages" (readingChange)="readingImages = $event" />
+
+      <fieldset class="task-create-priority">
+        <legend>Priorité</legend>
+        <div class="priority-options">
+          @for (
+            priority of [
+              { value: 'LOW', label: 'Faible' },
+              { value: 'MEDIUM', label: 'Moyenne' },
+              { value: 'HIGH', label: 'Haute' },
+              { value: 'CRITICAL', label: 'Critique' },
+            ];
+            track priority.value
+          ) {
+            <label class="priority-choice" [attr.data-priority]="priority.value">
+              <input type="radio" formControlName="priority" [value]="priority.value" />
+              <span><i aria-hidden="true"></i>{{ priority.label }}</span>
+            </label>
+          }
         </div>
+      </fieldset>
+      <div class="task-create-type">
         <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1.5">Type</label>
-          <select formControlName="type" class="input-field">
-            <option value="TASK">Tâche</option>
-            <option value="BUG">Bug</option>
-            <option value="STORY">Story</option>
-            <option value="EPIC">Épic</option>
-          </select>
+          <label for="new-task-type">Type de tâche</label>
+          <p>Classez le travail pour faciliter son suivi.</p>
         </div>
+        <select id="new-task-type" formControlName="type" class="input-field">
+          <option value="TASK">Tâche</option>
+          <option value="BUG">Bug</option>
+          <option value="STORY">Story</option>
+          <option value="EPIC">Épic</option>
+        </select>
       </div>
+      <div>
+        <label for="new-task-assignee">Assigner à <small>Facultatif</small></label>
+        <select id="new-task-assignee" formControlName="assigneeId" class="input-field">
+          <option [ngValue]="null">Non assignée</option>
+          @for (member of project?.memberses ?? []; track member.id) {
+            <option [ngValue]="member.id">{{ member.login }}</option>
+          }
+        </select>
+      </div>
+      <p class="task-create-note">
+        {{ targetSprintId ? 'Cette tâche sera ajoutée au sprint sélectionné.' : 'Cette tâche sera disponible dans le backlog du projet.' }}
+      </p>
     </form>
   </app-modal>
 
-  <div class="space-y-5">
-    @for (sprint of sprints; track sprint.id) {
+  <div class="backlog-timeline space-y-5">
+    @for (sprint of orderedSprints; track sprint.id; let sprintIndex = $index) {
       <section
-        class="rounded-xl border bg-white shadow-sm transition-all border-l-4"
-        [class]="sprintAccent(sprint.status)"
+        class="sprint-surface rounded-xl border bg-white shadow-sm transition-all border-l-4"
+        [attr.data-status]="sprint.status ?? 'PLANNED'"
+        [style.--entry-order]="sprintIndex < 8 ? sprintIndex : 8"
         [class.ring-2]="dragOverSprintId === sprint.id"
         [class.ring-\[#328cb1\]]="dragOverSprintId === sprint.id"
         [class.border-slate-200]="dragOverSprintId !== sprint.id"
@@ -228,116 +288,132 @@
         (dragleave)="onDragLeaveZone()"
         (drop)="onDropToSprint($event, sprint.id)"
       >
-        <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <button type="button" class="flex items-center gap-2.5 min-w-0 text-left" (click)="toggleSprint(sprint.id)">
-            <svg
-              class="w-4 h-4 text-slate-400 transition-transform flex-shrink-0"
-              [class.rotate-90]="isExpanded(sprint.id)"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <aside class="backlog-calendar">
+          <span class="calendar-caption">SPRINT #{{ sprint.id }}</span>
+          <strong>{{ fmtDate(sprint.startDate) | date: 'dd' }}</strong>
+          <span>{{ fmtDate(sprint.startDate) | date: 'MMM yyyy' }}</span>
+          <span class="calendar-status">{{ sprintStatusLabel(sprint.status) }}</span>
+          <span class="calendar-tasks"
+            >{{ getSprintTasks(sprint.id).length }} tâche{{ getSprintTasks(sprint.id).length > 1 ? 's' : '' }}</span
+          >
+        </aside>
+        <div class="backlog-section-main">
+          <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+            <button
+              type="button"
+              class="flex items-center gap-2.5 min-w-0 text-left"
+              (click)="toggleSprint(sprint.id)"
+              [attr.aria-expanded]="isExpanded(sprint.id)"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-            <span class="font-semibold text-slate-800 truncate">{{ sprint.name }}</span>
-            <span [class]="'flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ' + getSprintStatusColor(sprint.status ?? '')">
-              {{ sprintStatusLabel(sprint.status) }}
-            </span>
-            @if (sprint.status === 'ACTIVE') {
-              <span class="relative flex h-2 w-2 flex-shrink-0">
-                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-                <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-              </span>
-            }
-          </button>
-
-          <div class="flex items-center gap-3">
-            @if (getSprintTasks(sprint.id).length) {
-              <div class="hidden md:flex items-center gap-2">
-                <div class="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
-                  <div class="h-full rounded-full bg-green-500 transition-all" [style.width.%]="sprintProgress(sprint.id)"></div>
-                </div>
-                <span class="text-xs text-slate-500 whitespace-nowrap">
-                  {{ doneCount(getSprintTasks(sprint.id)) }}/{{ getSprintTasks(sprint.id).length }}
-                  @if (totalPoints(getSprintTasks(sprint.id))) {
-                    · {{ totalPoints(getSprintTasks(sprint.id)) }} pts
-                  }
-                </span>
-              </div>
-            }
-
-            <div class="flex items-center gap-1.5">
-              @if (sprint.status === 'PLANNED') {
-                @if (canEditSprint(sprint)) {
-                  <button (click)="openEditSprintForm(sprint)" class="btn-secondary text-xs px-3 py-1.5">Modifier</button>
-                }
-                <button (click)="activateSprint(sprint)" class="btn-primary text-xs px-3 py-1.5">Démarrer</button>
-              }
-              @if (sprint.status === 'ACTIVE') {
-                <a [routerLink]="['/projects', projectId, 'board']" class="btn-secondary text-xs px-3 py-1.5">Tableau</a>
-                <button (click)="completeSprint(sprint)" class="btn-secondary text-xs px-3 py-1.5">Terminer</button>
-              }
-              <button
-                (click)="openTaskForm(sprint.id)"
-                class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-[#d9eef6] hover:text-[#328cb1]"
-                title="Ajouter une tâche"
+              <svg
+                class="w-4 h-4 text-slate-400 transition-transform flex-shrink-0"
+                [class.rotate-90]="isExpanded(sprint.id)"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-              @if (canManageSprints) {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+              <span class="font-semibold text-slate-800 truncate">{{ sprint.name }}</span>
+              <span [class]="'flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ' + getSprintStatusColor(sprint.status ?? '')">
+                {{ sprintStatusLabel(sprint.status) }}
+              </span>
+              @if (sprint.status === 'ACTIVE') {
+                <span class="relative flex h-2 w-2 flex-shrink-0">
+                  <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                </span>
+              }
+            </button>
+
+            <div class="flex items-center gap-3">
+              @if (getSprintTasks(sprint.id).length) {
+                <div class="hidden md:flex items-center gap-2">
+                  <div class="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+                    <div class="h-full rounded-full bg-green-500 transition-all" [style.width.%]="sprintProgress(sprint.id)"></div>
+                  </div>
+                  <span class="text-xs text-slate-500 whitespace-nowrap">
+                    {{ doneCount(getSprintTasks(sprint.id)) }}/{{ getSprintTasks(sprint.id).length }}
+                    @if (totalPoints(getSprintTasks(sprint.id))) {
+                      · {{ totalPoints(getSprintTasks(sprint.id)) }} pts
+                    }
+                  </span>
+                </div>
+              }
+
+              <div class="flex items-center gap-1.5">
+                @if (sprint.status === 'PLANNED') {
+                  @if (canEditSprint(sprint)) {
+                    <button (click)="openEditSprintForm(sprint)" class="btn-secondary text-xs px-3 py-1.5">Modifier</button>
+                  }
+                  <button (click)="activateSprint(sprint)" class="btn-primary text-xs px-3 py-1.5">Démarrer</button>
+                }
+                @if (sprint.status === 'ACTIVE') {
+                  <a [routerLink]="['/projects', projectId, 'board']" class="btn-secondary text-xs px-3 py-1.5">Tableau</a>
+                  <button (click)="completeSprint(sprint)" class="btn-secondary text-xs px-3 py-1.5">Terminer</button>
+                }
                 <button
-                  (click)="deleteSprint(sprint.id)"
-                  class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                  title="Supprimer le sprint"
+                  (click)="openTaskForm(sprint.id)"
+                  class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-[#d9eef6] hover:text-[#328cb1]"
+                  title="Ajouter une tâche"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 01-1-1h-4a1 1 0 01-1 1v3M4 7h16"
-                    />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
+                @if (canManageSprints) {
+                  <button
+                    (click)="deleteSprint(sprint.id)"
+                    class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                    title="Supprimer le sprint"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 01-1-1h-4a1 1 0 01-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                }
+              </div>
+            </div>
+          </header>
+
+          <div class="px-5 pb-3 -mt-1 flex items-center gap-2 text-xs text-slate-400">
+            <span>{{ fmtDate(sprint.startDate) | date: 'd MMM' }} → {{ fmtDate(sprint.endDate) | date: 'd MMM y' }}</span>
+            @if (sprint.createdBy) {
+              <span class="hidden sm:inline-flex items-center gap-1.5"
+                >· <app-avatar [user]="sprint.createdBy" size="xs" /> {{ sprint.createdBy.login }}</span
+              >
+            }
+          </div>
+
+          @if (isExpanded(sprint.id)) {
+            <div class="backlog-task-list border-t border-slate-100">
+              @for (task of displayedSprintTasks(sprint.id); track task.id) {
+                <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ task: task, inSprint: true }" />
+              }
+              @if (!displayedSprintTasks(sprint.id).length) {
+                @if (hasActiveFilters && getSprintTasks(sprint.id).length) {
+                  <div class="px-5 py-6 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
+                } @else {
+                  <div class="px-5 py-8 text-center">
+                    <p class="text-sm text-slate-400">Glissez une tâche ici depuis le backlog</p>
+                    <button (click)="openTaskForm(sprint.id)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">
+                      ou ajoutez-en une
+                    </button>
+                  </div>
+                }
               }
             </div>
-          </div>
-        </header>
-
-        <div class="px-5 pb-3 -mt-1 flex items-center gap-2 text-xs text-slate-400">
-          <span>{{ fmtDate(sprint.startDate) | date: 'd MMM' }} → {{ fmtDate(sprint.endDate) | date: 'd MMM y' }}</span>
-          @if (sprint.createdBy) {
-            <span class="hidden sm:inline-flex items-center gap-1.5"
-              >· <app-avatar [user]="sprint.createdBy" size="xs" /> {{ sprint.createdBy.login }}</span
-            >
           }
         </div>
-
-        @if (isExpanded(sprint.id)) {
-          <div class="border-t border-slate-100">
-            @for (task of displayedSprintTasks(sprint.id); track task.id) {
-              <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ task: task, inSprint: true }" />
-            }
-            @if (!displayedSprintTasks(sprint.id).length) {
-              @if (hasActiveFilters && getSprintTasks(sprint.id).length) {
-                <div class="px-5 py-6 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
-              } @else {
-                <div class="px-5 py-8 text-center">
-                  <p class="text-sm text-slate-400">Glissez une tâche ici depuis le backlog</p>
-                  <button (click)="openTaskForm(sprint.id)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">
-                    ou ajoutez-en une
-                  </button>
-                </div>
-              }
-            }
-          </div>
-        }
       </section>
     }
     <section
-      class="rounded-xl border bg-white shadow-sm transition-all border-l-4 border-l-slate-300"
+      class="sprint-surface unplanned-surface rounded-xl border bg-white shadow-sm transition-all border-l-4 border-l-slate-300"
       [class.ring-2]="dragOverBacklog"
       [class.ring-\[#328cb1\]]="dragOverBacklog"
       [class.border-slate-200]="!dragOverBacklog"
@@ -345,61 +421,69 @@
       (dragleave)="onDragLeaveZone()"
       (drop)="onDropToBacklog($event)"
     >
-      <header class="flex items-center justify-between px-5 py-4">
-        <div class="flex items-center gap-2.5">
-          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-          </svg>
-          <h3 class="font-semibold text-slate-800">Backlog</h3>
-          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ backlogTasks.length }}</span>
-        </div>
-        <button
-          (click)="openTaskForm(null)"
-          class="flex items-center gap-1.5 rounded-lg bg-[#d9eef6] px-3 py-1.5 text-xs font-medium text-[#328cb1] transition-colors hover:bg-[#c4e4f0]"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Ajouter une tâche
-        </button>
-      </header>
+      <aside class="backlog-calendar unplanned-calendar">
+        <span class="calendar-caption">À PLANIFIER</span><strong>{{ backlogTasks.length }}</strong
+        ><span>Tâches du backlog</span><span class="calendar-status">Sans sprint</span>
+      </aside>
+      <div class="backlog-section-main">
+        <header class="flex items-center justify-between px-5 py-4">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            <h3 class="font-semibold text-slate-800">Backlog</h3>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ backlogTasks.length }}</span>
+          </div>
+          <button
+            (click)="openTaskForm(null)"
+            class="flex items-center gap-1.5 rounded-lg bg-[#d9eef6] px-3 py-1.5 text-xs font-medium text-[#328cb1] transition-colors hover:bg-[#c4e4f0]"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Ajouter une tâche
+          </button>
+        </header>
 
-      <div class="border-t border-slate-100">
-        @for (task of displayedBacklogTasks; track task.id) {
-          <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ task: task, inSprint: false }" />
-        }
-        @if (!displayedBacklogTasks.length) {
-          @if (hasActiveFilters && backlogTasks.length) {
-            <div class="px-5 py-8 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
-          } @else {
-            <div class="px-5 py-10 text-center">
-              <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100">
-                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
-              </div>
-              <p class="text-sm text-slate-500">Le backlog est vide.</p>
-              <button (click)="openTaskForm(null)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">Créer une tâche</button>
-            </div>
+        <div class="backlog-task-list border-t border-slate-100">
+          @for (task of displayedBacklogTasks; track task.id) {
+            <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ task: task, inSprint: false }" />
           }
-        }
+          @if (!displayedBacklogTasks.length) {
+            @if (hasActiveFilters && backlogTasks.length) {
+              <div class="px-5 py-8 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
+            } @else {
+              <div class="px-5 py-10 text-center">
+                <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100">
+                  <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <p class="text-sm text-slate-500">Le backlog est vide.</p>
+                <button (click)="openTaskForm(null)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">
+                  Créer une tâche
+                </button>
+              </div>
+            }
+          }
+        </div>
       </div>
     </section>
   </div>
 
   <ng-template #taskRow let-task="task" let-inSprint="inSprint">
     <div
-      class="group relative flex items-center gap-3 px-5 py-3 transition-colors"
+      class="backlog-task group relative flex items-center gap-3 px-5 py-3 transition-colors"
       [class.bg-red-50]="task.type === 'BUG'"
       [class.hover:bg-red-100]="task.type === 'BUG'"
       [class.hover:bg-slate-50]="task.type !== 'BUG'"
       [class.opacity-40]="draggingTaskId === task.id"
-      draggable="true"
+      [draggable]="canManage"
       (dragstart)="onDragStart($event, task)"
       (dragend)="onDragEnd()"
     >
@@ -421,7 +505,7 @@
           <span class="text-xs font-medium text-slate-400">{{ project?.projectKey }}-{{ task.id }}</span>
           <app-badge [type]="'priority'" [value]="task.priority ?? ''" />
           <app-badge [type]="'taskType'" [value]="task.type ?? ''" />
-          @if (inSprint) {
+          @if (inSprint && canManage) {
             <app-badge [type]="'status'" [value]="task.status ?? ''" />
           }
         </div>
@@ -438,13 +522,13 @@
           <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-600">{{ task.storyPoints }} pts</span>
         }
         @if (task.reporter) {
-          <div class="hidden items-center sm:flex" [title]="task.reporter.login ?? ''">
+          <div class="hidden items-center sm:flex" [title]="'Rapporteur : ' + (task.reporter.login ?? '')">
             <app-avatar [user]="task.reporter" size="xs" />
           </div>
         }
 
         <div class="flex items-center gap-0.5 opacity-80 transition-opacity group-hover:opacity-100">
-          @if (inSprint) {
+          @if (inSprint && canManage) {
             <button
               (click)="moveToBacklog(task)"
               title="Renvoyer au backlog"
@@ -454,7 +538,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </button>
-          } @else if (sprints.length) {
+          } @else if (!inSprint && sprints.length && canManage) {
             <select
               class="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600 outline-none transition focus:border-[#328cb1]"
               (change)="moveToSprint(task, +$any($event.target).value)"
@@ -468,7 +552,7 @@
               }
             </select>
           }
-          @if (canManage) {
+          @if (canManageTask(task)) {
             <button
               (click)="deleteTask(task.id)"
               class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"

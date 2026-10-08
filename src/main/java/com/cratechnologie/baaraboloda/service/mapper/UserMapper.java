@@ -121,6 +121,7 @@ public class UserMapper {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
     @Mapping(target = "login", source = "login")
+    @Mapping(target = "imageUrl", source = "imageUrl")
     public UserDTO toDtoLogin(User user) {
         if (user == null) {
             return null;
@@ -128,6 +129,7 @@ public class UserMapper {
         UserDTO userDto = new UserDTO();
         userDto.setId(user.getId());
         userDto.setLogin(user.getLogin());
+        userDto.setImageUrl(user.getImageUrl());
         return userDto;
     }
 
@@ -135,6 +137,7 @@ public class UserMapper {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
     @Mapping(target = "login", source = "login")
+    @Mapping(target = "imageUrl", source = "imageUrl")
     public Set<UserDTO> toDtoLoginSet(Set<User> users) {
         if (users == null) {
             return Set.of();

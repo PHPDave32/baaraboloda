@@ -4,7 +4,11 @@ import com.cratechnologie.baaraboloda.domain.Comment;
 import com.cratechnologie.baaraboloda.repository.CommentRepository;
 import com.cratechnologie.baaraboloda.service.dto.CommentDTO;
 import com.cratechnologie.baaraboloda.service.mapper.CommentMapper;
+import com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Optional;
+import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -24,10 +28,12 @@ public class CommentService {
     private final CommentRepository commentRepository;
 
     private final CommentMapper commentMapper;
+    private final NotificationService notifications;
 
-    public CommentService(CommentRepository commentRepository, CommentMapper commentMapper) {
+    public CommentService(CommentRepository commentRepository, CommentMapper commentMapper, NotificationService notifications) {
         this.commentRepository = commentRepository;
         this.commentMapper = commentMapper;
+        this.notifications = notifications;
     }
 
     /**
@@ -37,9 +43,12 @@ public class CommentService {
      * @return the persisted entity.
      */
     public CommentDTO save(CommentDTO commentDTO) {
+        ImageAttachmentValidator.validate(commentDTO.getImages());
+        validateImage(commentDTO);
         LOG.debug("Request to save Comment : {}", commentDTO);
         Comment comment = commentMapper.toEntity(commentDTO);
         comment = commentRepository.save(comment);
+        notifications.comment(comment.getTask().getId(), comment.getContent());
         return commentMapper.toDto(comment);
     }
 
@@ -50,6 +59,8 @@ public class CommentService {
      * @return the persisted entity.
      */
     public CommentDTO update(CommentDTO commentDTO) {
+        ImageAttachmentValidator.validate(commentDTO.getImages());
+        validateImage(commentDTO);
         LOG.debug("Request to update Comment : {}", commentDTO);
         Comment comment = commentMapper.toEntity(commentDTO);
         comment = commentRepository.save(comment);
@@ -63,6 +74,8 @@ public class CommentService {
      * @return the persisted entity.
      */
     public Optional<CommentDTO> partialUpdate(CommentDTO commentDTO) {
+        ImageAttachmentValidator.validate(commentDTO.getImages());
+        validateImage(commentDTO);
         LOG.debug("Request to partially update Comment : {}", commentDTO);
 
         return commentRepository
@@ -102,6 +115,39 @@ public class CommentService {
      *
      * @param id the id of the entity.
      */
+    private void validateImage(CommentDTO comment) {
+        if (comment.getImage() == null) {
+            return;
+        }
+        if (comment.getImage().length == 0 || comment.getImage().length > 2097152) {
+            throw new BadRequestAlertException("La capture doit faire au maximum 2 Mo.", "comment", "invalidimage");
+        }
+        try (var stream = ImageIO.createImageInputStream(new ByteArrayInputStream(comment.getImage()))) {
+            var readers = ImageIO.getImageReaders(stream);
+            if (!readers.hasNext()) {
+                throw new IOException("Invalid image");
+            }
+            var reader = readers.next();
+            try {
+                reader.setInput(stream);
+                String format = reader.getFormatName();
+                String contentType = "PNG".equalsIgnoreCase(format) ? "image/png" : "JPEG".equalsIgnoreCase(format) ? "image/jpeg" : null;
+                if (contentType == null || reader.getWidth(0) > 8192 || reader.getHeight(0) > 8192) {
+                    throw new IOException("Unsupported image");
+                }
+                comment.setImageContentType(contentType);
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException | IllegalArgumentException exception) {
+            throw new BadRequestAlertException(
+                "Choisissez une capture PNG ou JPEG valide (8192 pixels maximum).",
+                "comment",
+                "invalidimage"
+            );
+        }
+    }
+
     public void delete(Long id) {
         LOG.debug("Request to delete Comment : {}", id);
         commentRepository.deleteById(id);

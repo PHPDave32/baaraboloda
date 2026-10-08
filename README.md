@@ -293,3 +293,35 @@ To configure CI for your project, run the ci-cd sub-generator (`jhipster ci-cd`)
 - [Leaflet](https://leafletjs.com/)
 - [DefinitelyTyped](https://definitelytyped.org/)
 - [Angular CLI](https://angular.dev/tools/cli)
+
+### Photos de profil
+
+Les photos sont enregistrées dans `.data/user-photos` par défaut. Seule leur URL est conservée dans le compte utilisateur. Le dossier est exclu de Git.
+
+Configurer `STORAGE_USER_PHOTOS_DIRECTORY` ou `storage.user-photos-directory` pour utiliser un dossier persistant. En conteneur, monter un volume à cet emplacement. Sauvegarder ce dossier avec la base de données ; toutes les instances du backend doivent partager le même stockage.
+
+Les fichiers JPEG et PNG sont limités à 2 Mo et 4096 × 4096 pixels, puis recadrés au centre et réencodés en PNG de 256 × 256 pixels. La lecture passe par une API authentifiée. Le choix d’une photo transfère le fichier ; l’enregistrement du compte confirme son association. Les fichiers remplacés ou issus d’un formulaire annulé sont conservés sur disque.
+
+### Notifications d’équipe
+
+Les assignations, commentaires, mentions `@login` et changements de statut génèrent des notifications persistantes. L’auteur ne reçoit pas sa propre notification. La cloche permet de consulter les 50 dernières notifications et de marquer les notifications comme lues. Le temps réel utilise SSE authentifié, avec une actualisation de secours toutes les 30 secondes. Les sons sont facultatifs et doivent être activés sur chaque session de navigateur.
+
+Les emails sont désactivés par défaut. Configurer `NOTIFICATIONS_EMAIL_ENABLED=true`, `NOTIFICATIONS_BASE_URL` (URL publique de l’application), `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `JHIPSTER_MAIL_FROM` et les paramètres TLS du fournisseur SMTP. Chaque utilisateur active ensuite les emails dans ses préférences. Les notifications déjà lues ne sont pas envoyées ; les commentaires attendent 60 secondes avant envoi et sont regroupés par destinataire et tâche. Les erreurs d’envoi sont réessayées jusqu’à cinq fois et journalisées.
+
+Pour le Web Push, générer une paire de clés VAPID (par exemple `npx web-push generate-vapid-keys`), puis configurer `NOTIFICATIONS_VAPID_PUBLIC_KEY`, `NOTIFICATIONS_VAPID_PRIVATE_KEY` et `NOTIFICATIONS_VAPID_SUBJECT` avec une adresse `mailto:` de contact. Conserver la clé privée côté serveur. En production, HTTPS est nécessaire. L’utilisateur active le push et autorise le navigateur depuis la cloche. Le service worker affiche un message générique, puis ouvre la tâche au clic. Les abonnements expirés sont supprimés. Le son push dépend du navigateur et des réglages du système ; l’application ne peut pas le garantir.
+
+Si le démarrage affiche `Waiting for changelog lock` après un arrêt brutal, arrêter toutes les instances du backend avant de vérifier le verrou dans MySQL :
+
+```sql
+SELECT ID, LOCKED, LOCKGRANTED, LOCKEDBY FROM task_management.DATABASECHANGELOGLOCK;
+```
+
+Uniquement lorsqu’aucune migration n’est en cours, libérer le verrou abandonné puis relancer le backend :
+
+```sql
+UPDATE task_management.DATABASECHANGELOGLOCK
+SET LOCKED = FALSE, LOCKGRANTED = NULL, LOCKEDBY = NULL
+WHERE ID = 1 AND LOCKED = TRUE;
+```
+
+Les migrations s’exécutent désormais avant que l’application accepte les requêtes. La migration de reprise complète les tables de notifications manquantes sans supprimer les tables existantes.

@@ -75,19 +75,39 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new taskDTO, or with status {@code 400 (Bad Request)} if the task already has an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    private void checkTaskMovement(TaskDTO changes, TaskDTO original) {
+        boolean changedStatus = changes.getStatus() != null && changes.getStatus() != original.getStatus();
+        boolean changedPosition = changes.getPosition() != null && !Objects.equals(changes.getPosition(), original.getPosition());
+        boolean changedSprint =
+            changes.getSprint() != null &&
+            !Objects.equals(changes.getSprint().getId(), original.getSprint() == null ? null : original.getSprint().getId());
+        if (changedStatus || changedPosition || changedSprint) projectSecurityService.checkCanMoveTask(original.getId());
+        if (!projectSecurityService.canMoveTask(original.getId())) {
+            changes.setSprint(original.getSprint());
+            changes.setPosition(original.getPosition());
+            changes.setStatus(original.getStatus());
+        }
+    }
+
     @PostMapping("")
     public ResponseEntity<TaskDTO> createTask(@Valid @RequestBody TaskDTO taskDTO) throws URISyntaxException {
         LOG.debug("REST request to save Task : {}", taskDTO);
         if (taskDTO.getId() != null) {
             throw new BadRequestAlertException("A new task cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        if (taskDTO.getReporter() == null || taskDTO.getReporter().getId() == null) {
-            taskDTO.setReporter(
-                SecurityUtils.getCurrentUserLogin()
-                    .flatMap(userRepository::findOneByLogin)
-                    .map(UserDTO::new)
-                    .orElseThrow(() -> new BadRequestAlertException("Current user not found", ENTITY_NAME, "currentusernotfound"))
-            );
+        taskDTO.setReporter(
+            SecurityUtils.getCurrentUserLogin()
+                .flatMap(userRepository::findOneByLogin)
+                .map(UserDTO::new)
+                .orElseThrow(() -> new BadRequestAlertException("Current user not found", ENTITY_NAME, "currentusernotfound"))
+        );
+        if (
+            !projectSecurityService.isCurrentUserAdmin() &&
+            !userRepository.isMemberOfProject(taskDTO.getReporter().getId(), taskDTO.getProject().getId())
+        ) {
+            taskDTO.setStatus(com.cratechnologie.baaraboloda.domain.enumeration.TaskStatus.TODO);
+            taskDTO.setSprint(null);
+            taskDTO.setPosition(null);
         }
         taskDTO = taskService.save(taskDTO);
         return ResponseEntity.created(new URI("/api/tasks/" + taskDTO.getId()))
@@ -124,6 +144,10 @@ public class TaskResource {
 
         projectSecurityService.checkCanModifyTask(id);
 
+        TaskDTO original = taskService.findOne(id).orElseThrow();
+        checkTaskMovement(taskDTO, original);
+        taskDTO.setReporter(original.getReporter());
+        taskDTO.setProject(original.getProject());
         taskDTO = taskService.update(taskDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, taskDTO.getId().toString()))
@@ -160,6 +184,9 @@ public class TaskResource {
 
         projectSecurityService.checkCanModifyTask(id);
 
+        checkTaskMovement(taskDTO, taskService.findOne(id).orElseThrow());
+        taskDTO.setReporter(null);
+        taskDTO.setProject(null);
         Optional<TaskDTO> result = taskService.partialUpdate(taskDTO);
 
         return ResponseUtil.wrapOrNotFound(
@@ -213,7 +240,7 @@ public class TaskResource {
         if (!taskRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
-        projectSecurityService.checkCanModifyTask(id);
+        projectSecurityService.checkCanMoveTask(id);
         Long sprintId = body.get("sprintId");
         TaskDTO result = taskService.moveToSprint(id, sprintId);
         return ResponseEntity.ok(result);
@@ -229,7 +256,7 @@ public class TaskResource {
         if (sprintId == null) {
             throw new BadRequestAlertException("Target sprint is required", ENTITY_NAME, "sprintnull");
         }
-        projectSecurityService.checkCanModifyTask(id);
+        projectSecurityService.checkCanMoveTask(id);
         TaskDTO result = taskService.copyToSprint(id, sprintId);
         return ResponseEntity.ok(result);
     }

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+<changeSet id="20261005115900-preserve-legacy-documents" author="baaraboloda">
+<preConditions onFail="MARK_RAN">
+<columnExists tableName="project_document" columnName="file_name"/>
+</preConditions>
+<renameTable oldTableName="project_document" newTableName="project_document_legacy"/>
+</changeSet>
+<changeSet id="20261005120000" author="baaraboloda">
+<createTable tableName="project_document">
+<column name="id" type="bigint" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+<column name="project_id" type="bigint"><constraints nullable="false"/></column>
+<column name="task_id" type="bigint"><constraints/></column>
+<column name="title" type="varchar(200)"><constraints nullable="false"/></column>
+<column name="description" type="varchar(2000)"><constraints/></column>
+<column name="category" type="varchar(40)"><constraints nullable="false"/></column>
+<column name="url" type="varchar(2000)"><constraints/></column>
+<column name="filename" type="varchar(255)"><constraints/></column>
+<column name="content" type="${blobType}"><constraints/></column>
+<column name="file_size" type="bigint"><constraints/></column>
+<column name="author" type="varchar(50)"><constraints nullable="false"/></column>
+<column name="created_at" type="${datetimeType}"><constraints nullable="false"/></column>
+</createTable>
+<addForeignKeyConstraint baseTableName="project_document" baseColumnNames="project_id" referencedTableName="project" referencedColumnNames="id" constraintName="fk_document_project" onDelete="CASCADE"/>
+<addForeignKeyConstraint baseTableName="project_document" baseColumnNames="task_id" referencedTableName="task" referencedColumnNames="id" constraintName="fk_document_task" onDelete="SET NULL"/>
+<createIndex tableName="project_document" indexName="idx_document_project_created"><column name="project_id"/><column name="created_at"/></createIndex>
+</changeSet>
+<changeSet id="20261005120100-import-legacy-documents" author="baaraboloda">
+<preConditions onFail="MARK_RAN">
+<tableExists tableName="project_document_legacy"/>
+</preConditions>
+<sql>
+INSERT INTO project_document (id, project_id, title, description, category, filename, content, file_size, author, created_at)
+SELECT d.id, d.project_id, d.title, d.description, 'OTHER', d.file_name, d.content, d.size_bytes,
+       COALESCE(u.login, 'system'), COALESCE(d.created_at, CURRENT_TIMESTAMP)
+FROM project_document_legacy d
+LEFT JOIN jhi_user u ON u.id = d.uploaded_by_id
+WHERE NOT EXISTS (SELECT 1 FROM project_document current_document WHERE current_document.id = d.id)
+</sql>
+</changeSet>
+</databaseChangeLog>

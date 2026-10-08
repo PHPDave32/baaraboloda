@@ -31,6 +31,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpec
     )
     boolean isUserMemberOfCommentProject(@Param("commentId") Long commentId, @Param("login") String login);
 
+    boolean existsByIdAndAuthorLogin(Long id, String login);
+
     default Optional<Comment> findOneWithEagerRelationships(Long id) {
         return this.findOneWithToOneRelationships(id);
     }

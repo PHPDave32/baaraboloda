@@ -1,5 +1,6 @@
 package com.cratechnologie.baaraboloda.service.dto;
 
+import com.cratechnologie.baaraboloda.domain.ImageAttachment;
 import com.cratechnologie.baaraboloda.domain.enumeration.TaskPriority;
 import com.cratechnologie.baaraboloda.domain.enumeration.TaskStatus;
 import com.cratechnologie.baaraboloda.domain.enumeration.TaskType;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -52,6 +54,17 @@ public class TaskDTO implements Serializable {
     private ProjectDTO project;
 
     private SprintDTO sprint;
+
+    @Size(max = 5)
+    private List<ImageAttachment> images;
+
+    public List<ImageAttachment> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ImageAttachment> images) {
+        this.images = images;
+    }
 
     public Long getId() {
         return id;

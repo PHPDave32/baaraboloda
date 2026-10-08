@@ -1,3 +1,6 @@
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
+import { PhotoPicker } from 'app/shared/components/photo-picker/photo-picker';
+import { AvatarComponent } from 'app/shared/components/avatar/avatar.component';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,11 +18,21 @@ import { SearchBarComponent } from 'app/shared/components/search-bar/search-bar.
 @Component({
   selector: 'jhi-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ModalComponent, PaginationComponent, SearchBarComponent],
+  imports: [
+    NotificationCenterComponent,
+    PhotoPicker,
+    AvatarComponent,
+    CommonModule,
+    ReactiveFormsModule,
+    ModalComponent,
+    PaginationComponent,
+    SearchBarComponent,
+  ],
   templateUrl: './admin.html',
   styleUrls: ['./admin.css'],
 })
 export default class AdminComponent implements OnInit {
+  photoUploading = false;
   users: IUserManagement[] = [];
   projects: IProject[] = [];
   activeTab: 'users' | 'projects' = 'users';
@@ -68,6 +81,7 @@ export default class AdminComponent implements OnInit {
 
   constructor() {
     this.userForm = this.fb.group({
+      imageUrl: [null],
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -193,6 +207,7 @@ export default class AdminComponent implements OnInit {
     this.showUserForm = true;
     this.userError = '';
     this.userForm.patchValue({
+      imageUrl: user.imageUrl ?? null,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -204,7 +219,7 @@ export default class AdminComponent implements OnInit {
   }
 
   submitUser(): void {
-    if (this.userForm.invalid || this.loadingUser) return;
+    if (this.userForm.invalid || this.loadingUser || this.photoUploading) return;
     this.userError = '';
     this.loadingUser = true;
 

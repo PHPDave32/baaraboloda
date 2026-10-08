@@ -1,11 +1,13 @@
 package com.cratechnologie.baaraboloda.domain;
 
+import com.cratechnologie.baaraboloda.domain.ImageAttachment;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -31,6 +33,15 @@ public class Comment implements Serializable {
     @Column(name = "content", length = 5000, nullable = false)
     private String content;
 
+    @Size(max = 2097152)
+    @Lob
+    @Column(name = "image")
+    private byte[] image;
+
+    @Column(name = "image_content_type")
+    @Size(max = 32)
+    private String imageContentType;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -47,6 +58,34 @@ public class Comment implements Serializable {
     private Task task;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
+    public String getImageContentType() {
+        return imageContentType;
+    }
+
+    public void setImageContentType(String imageContentType) {
+        this.imageContentType = imageContentType;
+    }
+
+    @Convert(converter = com.cratechnologie.baaraboloda.domain.converter.ImageAttachmentsConverter.class)
+    @Column(name = "images", columnDefinition = "longtext")
+    private List<ImageAttachment> images;
+
+    public List<ImageAttachment> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ImageAttachment> images) {
+        this.images = images;
+    }
 
     public Long getId() {
         return this.id;
