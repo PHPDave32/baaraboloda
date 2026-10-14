@@ -68,7 +68,7 @@ public class CommentQueryService extends QueryService<Comment> {
      * @return the matching {@link Specification} of the entity.
      */
     protected Specification<Comment> createSpecification(CommentCriteria criteria) {
-        Specification<Comment> specification = Specification.unrestricted();
+        Specification<Comment> specification = com.cratechnologie.baaraboloda.security.ProjectScope.visible("task", "project");
         specification = specification.and((root, query, builder) -> {
             if (Long.class != query.getResultType()) {
                 root.fetch(Comment_.author, JoinType.LEFT);

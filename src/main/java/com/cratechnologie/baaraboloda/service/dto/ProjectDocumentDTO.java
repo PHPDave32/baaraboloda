@@ -12,5 +12,6 @@ public record ProjectDocumentDTO(
     Long fileSize,
     String author,
     Instant createdAt,
-    Long taskId
+    Long taskId,
+    boolean restricted
 ) {}

@@ -1,17 +1,19 @@
-<div [class.board-dragging]="draggingTaskId() !== null" class="board-page p-6 h-full overflow-hidden flex flex-col">
-  @if (assignMenuTaskId() !== null) {
-    <div class="fixed inset-0 z-20" (click)="closeAssignMenu()"></div>
+<div [class.board-dragging]="draggingTaskId() !== null" class="board-page workspace-page h-full overflow-hidden flex flex-col">
+  @if (project()?.status === 'CLOSED') {
+    <p role="status" class="mb-4 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+      Projet fermé · Consultation uniquement
+    </p>
   }
   @if (moveMenuTaskId() !== null) {
     <div class="fixed inset-0 z-20" (click)="closeMoveMenu()"></div>
   }
 
-  <div class="board-heading mb-6 flex items-center justify-between">
+  <div class="board-heading workspace-page-header">
     <div class="flex items-center gap-3">
       @if (project()) {
         <div>
           <span class="board-eyebrow">ESPACE DU PROJET</span>
-          <h1 class="text-2xl font-bold text-white leading-none">
+          <h1 class="workspace-project-focus text-2xl font-bold text-white leading-none">
             {{ project()!.name }}
           </h1>
 
@@ -328,21 +330,22 @@
                   <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
                       <app-badge [type]="'taskType'" [value]="task.type ?? ''" />
-
-                      @if (task.storyPoints) {
-                        <span
-                          class="text-xs px-1.5 py-0.5 rounded"
-                          [class]="task.type === 'BUG' ? 'bg-red-800/70 text-white' : 'bg-gray-800 text-gray-400'"
-                        >
-                          {{ task.storyPoints }}p
-                        </span>
-                      }
                     </div>
 
-                    <div class="relative">
+                    <div
+                      ngbDropdown
+                      #assignmentDropdown="ngbDropdown"
+                      container="body"
+                      placement="bottom-end top-end"
+                      [autoClose]="'outside'"
+                      (openChange)="!$event && assignMenuTaskId() === task.id && closeAssignMenu()"
+                      class="relative"
+                    >
                       <button
                         type="button"
-                        (click)="toggleAssignMenu(task, $event)"
+                        ngbDropdownAnchor
+                        [class.board-assign-toggle]="true"
+                        (click)="toggleAssignMenu(task, $event, assignmentDropdown)"
                         class="flex items-center gap-1.5 min-w-0 rounded-full px-1 py-0.5 transition hover:bg-black/5"
                         [class.hover:bg-white]="task.type === 'BUG'"
                         title="Assigner cette tâche"
@@ -376,43 +379,73 @@
                         }
                       </button>
 
-                      @if (assignMenuTaskId() === task.id) {
-                        <div
-                          class="absolute right-0 bottom-full z-30 mb-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,.22)]"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <div class="p-2">
-                            <input
-                              type="text"
-                              [ngModel]="assignSearch()"
-                              (ngModelChange)="assignSearch.set($event)"
-                              (click)="$event.stopPropagation()"
-                              placeholder="Rechercher des personnes"
-                              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-2 focus:ring-[#328cb1]/20"
-                            />
-                          </div>
+                      <div
+                        ngbDropdownMenu
+                        class="board-assignment-menu overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,.16)]"
+                        (click)="$event.stopPropagation()"
+                      >
+                        <div class="border-b border-slate-100 p-3">
+                          <p class="mb-2 text-sm font-semibold text-slate-700">Assigner la tâche</p>
+                          <input
+                            type="text"
+                            [ngModel]="assignSearch()"
+                            (ngModelChange)="assignSearch.set($event)"
+                            (click)="$event.stopPropagation()"
+                            placeholder="Rechercher des personnes"
+                            aria-label="Rechercher une personne à assigner"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-2 focus:ring-[#328cb1]/20"
+                          />
+                        </div>
 
-                          <div class="max-h-60 overflow-y-auto pb-1">
+                        <div class="max-h-60 overflow-y-auto py-1">
+                          <button
+                            type="button"
+                            ngbDropdownItem
+                            (click)="assign(task, null)"
+                            class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 transition hover:bg-slate-100"
+                          >
+                            <span
+                              class="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-dashed border-slate-300 text-slate-400"
+                            >
+                              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                />
+                              </svg>
+                            </span>
+                            <span>Non assigné</span>
+                            @if (!task.assignee) {
+                              <svg
+                                class="ml-auto h-4 w-4 text-[#328cb1]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                              >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            }
+                          </button>
+
+                          @for (member of filteredMembers(); track member.id) {
                             <button
                               type="button"
-                              (click)="assign(task, null)"
+                              ngbDropdownItem
+                              (click)="assign(task, member.id!)"
                               class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 transition hover:bg-slate-100"
                             >
-                              <span
-                                class="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-dashed border-slate-300 text-slate-400"
-                              >
-                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                  />
-                                </svg>
+                              <app-avatar [user]="member" size="xs" />
+                              <span class="truncate">
+                                {{ member.login }}
+                                @if (member.login === currentLogin()) {
+                                  <span class="text-slate-400">(m'assigner)</span>
+                                }
                               </span>
-                              <span>Non assigné</span>
-                              @if (!task.assignee) {
+                              @if (isAssignedTo(task, member.id!)) {
                                 <svg
-                                  class="ml-auto h-4 w-4 text-[#328cb1]"
+                                  class="ml-auto h-4 w-4 shrink-0 text-[#328cb1]"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
@@ -422,40 +455,13 @@
                                 </svg>
                               }
                             </button>
+                          }
 
-                            @for (member of filteredMembers(); track member.id) {
-                              <button
-                                type="button"
-                                (click)="assign(task, member.id!)"
-                                class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 transition hover:bg-slate-100"
-                              >
-                                <app-avatar [user]="member" size="xs" />
-                                <span class="truncate">
-                                  {{ member.login }}
-                                  @if (member.login === currentLogin()) {
-                                    <span class="text-slate-400">(m'assigner)</span>
-                                  }
-                                </span>
-                                @if (isAssignedTo(task, member.id!)) {
-                                  <svg
-                                    class="ml-auto h-4 w-4 shrink-0 text-[#328cb1]"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    stroke-width="2.5"
-                                  >
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                }
-                              </button>
-                            }
-
-                            @if (!filteredMembers().length) {
-                              <p class="px-3 py-3 text-center text-xs text-slate-400">Aucun membre trouvé</p>
-                            }
-                          </div>
+                          @if (!filteredMembers().length) {
+                            <p class="px-3 py-3 text-center text-xs text-slate-400">Aucun membre trouvé</p>
+                          }
                         </div>
-                      }
+                      </div>
                     </div>
                   </div>
                 </div>

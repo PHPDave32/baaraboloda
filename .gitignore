@@ -153,3 +153,7 @@ coverage/
 .nyc_output/
 
 .data/user-photos/
+
+# Local initial super administrator credentials
+.data/super-admin-bootstrap.properties
+.data/super-admin-access.txt

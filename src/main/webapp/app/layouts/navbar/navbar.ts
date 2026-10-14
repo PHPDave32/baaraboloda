@@ -1,5 +1,5 @@
 import { UserPhotoDirective } from 'app/shared/components/photo-picker/user-photo.directive';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AccountService } from 'app/core/auth';
@@ -16,6 +16,20 @@ import { filter } from 'rxjs';
 export default class Navbar implements OnInit {
   readonly activeProjectId = signal<number | null>(null);
   readonly showSprintAccessModal = signal(false);
+  readonly sidebarOpen = signal(false);
+  readonly sidebarCollapsed = signal(false);
+  readonly isMobile = signal(window.innerWidth <= 900);
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.isMobile.set(window.innerWidth <= 900);
+    if (!this.isMobile()) this.sidebarOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeSidebar();
+  }
 
   private readonly accountService = inject(AccountService);
   readonly account = this.accountService.account;
@@ -41,6 +55,15 @@ export default class Navbar implements OnInit {
 
   closeSprintAccessModal(): void {
     this.showSprintAccessModal.set(false);
+  }
+
+  toggleSidebar(): void {
+    if (this.isMobile()) this.sidebarOpen.update(open => !open);
+    else this.sidebarCollapsed.update(collapsed => !collapsed);
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen.set(false);
   }
 
   ngOnInit(): void {

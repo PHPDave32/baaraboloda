@@ -91,6 +91,12 @@ export class UserManagementService extends UserManagementsService {
     return this.http.delete<undefined>(`${this.resourceUrl}/${encodeURIComponent(login)}`);
   }
 
+  setActivation(login: string, activated: boolean): Observable<IUserManagement> {
+    return this.http
+      .patch<RestUserManagement>(`${this.resourceUrl}/${encodeURIComponent(login)}/activation`, { activated })
+      .pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
   getUserManagementIdentifier(userManagement: Pick<IUserManagement, 'login'>): string {
     return userManagement.login;
   }

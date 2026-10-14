@@ -41,16 +41,23 @@ public class UserService {
 
     private final CacheManager cacheManager;
 
+    private final UserAdministrationPolicy administrationPolicy;
+    private final com.cratechnologie.baaraboloda.repository.AccessProfileRepository accessProfiles;
+
     public UserService(
         UserRepository userRepository,
         PasswordEncoder passwordEncoder,
         AuthorityRepository authorityRepository,
-        CacheManager cacheManager
+        CacheManager cacheManager,
+        UserAdministrationPolicy administrationPolicy,
+        com.cratechnologie.baaraboloda.repository.AccessProfileRepository accessProfiles
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authorityRepository = authorityRepository;
         this.cacheManager = cacheManager;
+        this.administrationPolicy = administrationPolicy;
+        this.accessProfiles = accessProfiles;
     }
 
     public Optional<User> activateRegistration(String key) {
@@ -123,6 +130,7 @@ public class UserService {
         Set<Authority> authorities = new HashSet<>();
         authorityRepository.findById(AuthoritiesConstants.USER).ifPresent(authorities::add);
         newUser.setAuthorities(authorities);
+        accessProfiles.findById(4L).ifPresent(newUser::setAccessProfile);
         userRepository.save(newUser);
         this.clearUserCaches(newUser);
         LOG.debug("Created Information for User: {}", newUser);
@@ -140,7 +148,10 @@ public class UserService {
     }
 
     public User createUser(AdminUserDTO userDTO) {
+        administrationPolicy.checkCreate(userDTO);
         User user = new User();
+        applyAccessProfile(user, userDTO);
+        applyPermissionOverrides(user, userDTO);
         user.setLogin(userDTO.getLogin().toLowerCase());
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
@@ -191,6 +202,9 @@ public class UserService {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .map(user -> {
+                administrationPolicy.checkUpdate(user, userDTO);
+                applyAccessProfile(user, userDTO);
+                applyPermissionOverrides(user, userDTO);
                 this.clearUserCaches(user);
                 user.setLogin(userDTO.getLogin().toLowerCase());
                 user.setFirstName(userDTO.getFirstName());
@@ -218,11 +232,57 @@ public class UserService {
             .map(AdminUserDTO::new);
     }
 
+    private void applyAccessProfile(User user, AdminUserDTO dto) {
+        if (dto.getAccessProfileId() == null) {
+            user.setAccessProfile(null);
+        } else {
+            user.setAccessProfile(
+                accessProfiles
+                    .findById(dto.getAccessProfileId())
+                    .orElseThrow(() ->
+                        new com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException(
+                            "Profil introuvable.",
+                            "userManagement",
+                            "profilenotfound"
+                        )
+                    )
+            );
+        }
+    }
+
+    private void applyPermissionOverrides(User user, AdminUserDTO dto) {
+        Set<String> granted = dto.getGrantedPermissions() == null ? Set.of() : dto.getGrantedPermissions();
+        Set<String> revoked = dto.getRevokedPermissions() == null ? Set.of() : dto.getRevokedPermissions();
+        if (
+            !com.cratechnologie.baaraboloda.security.PermissionCatalog.KEYS.containsAll(granted) ||
+            !com.cratechnologie.baaraboloda.security.PermissionCatalog.KEYS.containsAll(revoked)
+        ) {
+            throw new com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException(
+                "Permissions personnalisées invalides.",
+                "userManagement",
+                "invalidpermissions"
+            );
+        }
+        user.setGrantedPermissions(new HashSet<>(granted));
+        user.setRevokedPermissions(new HashSet<>(revoked));
+    }
+
     public void deleteUser(String login) {
         userRepository.findOneByLogin(login).ifPresent(user -> {
+            administrationPolicy.checkDelete(user);
             userRepository.delete(user);
             this.clearUserCaches(user);
             LOG.debug("Deleted User: {}", user);
+        });
+    }
+
+    public Optional<AdminUserDTO> setUserActivation(String login, boolean activated) {
+        return userRepository.findOneWithAuthoritiesByLogin(login).map(user -> {
+            administrationPolicy.checkActivation(user, activated);
+            user.setActivated(activated);
+            userRepository.save(user);
+            this.clearUserCaches(user);
+            return new AdminUserDTO(user);
         });
     }
 
@@ -236,9 +296,15 @@ public class UserService {
      * @param imageUrl  image URL of user.
      */
     public void updateUser(String firstName, String lastName, String email, String langKey, String imageUrl) {
+        updateUser(firstName, lastName, email, langKey, imageUrl, null);
+    }
+
+    public void updateUser(String firstName, String lastName, String email, String langKey, String imageUrl, String login) {
         SecurityUtils.getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .ifPresent(user -> {
+                this.clearUserCaches(user);
+                if (login != null) user.setLogin(login.toLowerCase(java.util.Locale.ROOT));
                 user.setFirstName(firstName);
                 user.setLastName(lastName);
                 if (email != null) {

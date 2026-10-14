@@ -189,6 +189,17 @@ describe('Account Service', () => {
   });
 
   describe('hasAnyAuthority', () => {
+    it('allows super administrators to access administrator routes', () => {
+      service.authenticate(accountWithAuthorities([Authority.SUPER_ADMIN]));
+      expect(service.hasAnyAuthority(Authority.ADMIN)).toBe(true);
+      expect(service.hasAnyAuthority(Authority.SUPER_ADMIN)).toBe(true);
+    });
+
+    it('does not grant super administrator access to ordinary administrators', () => {
+      service.authenticate(accountWithAuthorities([Authority.ADMIN]));
+      expect(service.hasAnyAuthority(Authority.SUPER_ADMIN)).toBe(false);
+    });
+
     describe('hasAnyAuthority string parameter', () => {
       it('should return false if user is not logged', () => {
         const hasAuthority = service.hasAnyAuthority(Authority.USER);

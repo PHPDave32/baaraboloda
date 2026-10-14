@@ -39,6 +39,8 @@ export class NotificationCenterComponent {
     void this.notifications.markRead(item.id);
     this.opened.set(false);
     this.notifications.notice.set(null);
-    void this.router.navigate(['/projects', item.projectId, 'tasks', item.taskId]);
+    void this.router.navigate(
+      item.kind === 'TASK_DELETED' ? ['/projects', item.projectId, 'board'] : ['/projects', item.projectId, 'tasks', item.taskId],
+    );
   }
 }

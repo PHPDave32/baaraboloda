@@ -6,12 +6,13 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import PasswordStrengthBar from 'app/account/password/password-strength-bar/password-strength-bar';
 import { TranslateDirective } from 'app/shared/language';
+import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.directive';
 
 import { PasswordResetFinishService } from './password-reset-finish.service';
 
 @Component({
   selector: 'jhi-password-reset-finish',
-  imports: [TranslateDirective, TranslatePipe, RouterLink, ReactiveFormsModule, PasswordStrengthBar],
+  imports: [TranslateDirective, TranslatePipe, RouterLink, ReactiveFormsModule, PasswordStrengthBar, PasswordToggleDirective],
   templateUrl: './password-reset-finish.html',
 })
 export default class PasswordResetFinish implements OnInit, AfterViewInit {

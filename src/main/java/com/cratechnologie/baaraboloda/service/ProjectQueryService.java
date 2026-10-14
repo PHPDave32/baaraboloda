@@ -68,7 +68,7 @@ public class ProjectQueryService extends QueryService<Project> {
      * @return the matching {@link Specification} of the entity.
      */
     protected Specification<Project> createSpecification(ProjectCriteria criteria) {
-        Specification<Project> specification = Specification.unrestricted();
+        Specification<Project> specification = com.cratechnologie.baaraboloda.security.ProjectScope.visible();
         specification = specification.and((root, query, builder) -> {
             if (Long.class != query.getResultType()) {
                 root.fetch(Project_.owner, JoinType.LEFT);

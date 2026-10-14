@@ -1,12 +1,15 @@
 package com.cratechnologie.baaraboloda.service;
 
+import com.cratechnologie.baaraboloda.domain.Sprint;
 import com.cratechnologie.baaraboloda.domain.Task;
+import com.cratechnologie.baaraboloda.domain.enumeration.SprintStatus;
 import com.cratechnologie.baaraboloda.repository.CommentRepository;
 import com.cratechnologie.baaraboloda.repository.SprintRepository;
 import com.cratechnologie.baaraboloda.repository.TaskRepository;
 import com.cratechnologie.baaraboloda.repository.UserRepository;
 import com.cratechnologie.baaraboloda.service.dto.TaskDTO;
 import com.cratechnologie.baaraboloda.service.mapper.TaskMapper;
+import com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -62,10 +65,23 @@ public class TaskService {
         }
     }
 
+    private Sprint resolveTargetSprint(Long sprintId, Sprint currentSprint, Long projectId) {
+        if (sprintId == null) return null;
+        Sprint sprint = sprintRepository
+            .findById(sprintId)
+            .orElseThrow(() -> new BadRequestAlertException("Sprint introuvable.", "task", "sprintnotfound"));
+        if (projectId == null || sprint.getProject() == null || !projectId.equals(sprint.getProject().getId())) {
+            throw new BadRequestAlertException("Le sprint doit appartenir au même projet que la tâche.", "task", "sprintprojectmismatch");
+        }
+        if (sprint.getStatus() == SprintStatus.COMPLETED && (currentSprint == null || !sprintId.equals(currentSprint.getId()))) {
+            throw new BadRequestAlertException("Impossible d’ajouter une tâche à un sprint terminé.", "task", "sprintcompleted");
+        }
+        return sprint;
+    }
+
     public TaskDTO assign(Long taskId, Long userId) {
         LOG.debug("Request to assign Task {} to user {}", taskId, userId);
         Task task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
-        Long previousAssignee = task.getAssignee() == null ? null : task.getAssignee().getId();
         validateAssignee(userId, task.getProject().getId());
         if (userId != null) {
             task.setAssignee(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found: " + userId)));
@@ -73,7 +89,7 @@ public class TaskService {
             task.setAssignee(null);
         }
         task = taskRepository.save(task);
-        notifications.assignment(task, previousAssignee);
+        notifications.taskUpdated(task);
         return taskMapper.toDto(task);
     }
 
@@ -88,11 +104,17 @@ public class TaskService {
             taskDTO.getAssignee() == null ? null : taskDTO.getAssignee().getId(),
             taskDTO.getProject() == null ? null : taskDTO.getProject().getId()
         );
-        ImageAttachmentValidator.validate(taskDTO.getImages());
+        ImageAttachmentValidator.validate(taskDTO.getImages(), true);
         LOG.debug("Request to save Task : {}", taskDTO);
+        Sprint targetSprint = resolveTargetSprint(
+            taskDTO.getSprint() == null ? null : taskDTO.getSprint().getId(),
+            null,
+            taskDTO.getProject() == null ? null : taskDTO.getProject().getId()
+        );
         Task task = taskMapper.toEntity(taskDTO);
+        task.setSprint(targetSprint);
         task = taskRepository.save(task);
-        notifications.assignment(task, null);
+        notifications.taskCreated(task);
         return taskMapper.toDto(task);
     }
 
@@ -107,15 +129,18 @@ public class TaskService {
             taskDTO.getAssignee() == null ? null : taskDTO.getAssignee().getId(),
             taskDTO.getProject() == null ? null : taskDTO.getProject().getId()
         );
-        ImageAttachmentValidator.validate(taskDTO.getImages());
+        ImageAttachmentValidator.validate(taskDTO.getImages(), true);
         LOG.debug("Request to update Task : {}", taskDTO);
         Task original = taskRepository.findById(taskDTO.getId()).orElseThrow();
-        Long previous = original.getAssignee() == null ? null : original.getAssignee().getId();
-        var previousStatus = original.getStatus();
+        Sprint targetSprint = resolveTargetSprint(
+            taskDTO.getSprint() == null ? null : taskDTO.getSprint().getId(),
+            original.getSprint(),
+            original.getProject().getId()
+        );
         Task task = taskMapper.toEntity(taskDTO);
+        task.setSprint(targetSprint);
         task = taskRepository.save(task);
-        notifications.assignment(task, previous);
-        notifications.status(task, previousStatus);
+        notifications.taskUpdated(task);
         return taskMapper.toDto(task);
     }
 
@@ -133,21 +158,21 @@ public class TaskService {
         Task task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
 
         if (sprintId != null) {
-            task.setSprint(sprintRepository.findById(sprintId).orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId)));
+            task.setSprint(resolveTargetSprint(sprintId, task.getSprint(), task.getProject().getId()));
         } else {
             task.setSprint(null);
         }
 
-        return taskMapper.toDto(taskRepository.save(task));
+        Task saved = taskRepository.save(task);
+        notifications.taskUpdated(saved);
+        return taskMapper.toDto(saved);
     }
 
     public TaskDTO copyToSprint(Long taskId, Long targetSprintId) {
         LOG.debug("Request to copy Task {} to Sprint {}", taskId, targetSprintId);
         Task source = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
 
-        com.cratechnologie.baaraboloda.domain.Sprint targetSprint = sprintRepository
-            .findById(targetSprintId)
-            .orElseThrow(() -> new RuntimeException("Sprint not found: " + targetSprintId));
+        Sprint targetSprint = resolveTargetSprint(targetSprintId, null, source.getProject().getId());
 
         Task copy = new Task();
         copy.setTitle(source.getTitle());
@@ -165,7 +190,9 @@ public class TaskService {
         copy.setProject(source.getProject());
         copy.setSprint(targetSprint);
 
-        return taskMapper.toDto(taskRepository.save(copy));
+        Task saved = taskRepository.save(copy);
+        notifications.taskCreated(saved);
+        return taskMapper.toDto(saved);
     }
 
     /**
@@ -175,7 +202,7 @@ public class TaskService {
      * de modifier l'identifiant de l'objet Sprint géré par la session Hibernate.
      */
     public Optional<TaskDTO> partialUpdate(TaskDTO taskDTO) {
-        ImageAttachmentValidator.validate(taskDTO.getImages());
+        ImageAttachmentValidator.validate(taskDTO.getImages(), true);
         LOG.debug("Request to partially update Task : {}", taskDTO);
 
         // Sauvegarder le sprint du DTO avant de le passer à MapStruct
@@ -188,9 +215,11 @@ public class TaskService {
         return taskRepository
             .findById(taskDTO.getId())
             .map(existingTask -> {
-                Long previous = existingTask.getAssignee() == null ? null : existingTask.getAssignee().getId();
-                var previousStatus = existingTask.getStatus();
                 validateAssignee(taskDTO.getAssignee() == null ? null : taskDTO.getAssignee().getId(), existingTask.getProject().getId());
+                Sprint targetSprint =
+                    hasSprint && incomingSprintDTO.getId() != null
+                        ? resolveTargetSprint(incomingSprintDTO.getId(), existingTask.getSprint(), existingTask.getProject().getId())
+                        : existingTask.getSprint();
                 // MapStruct applique tous les champs sauf sprint (qui est null maintenant)
                 taskMapper.partialUpdate(existingTask, taskDTO);
 
@@ -200,12 +229,11 @@ public class TaskService {
                 // NullValuePropertyMappingStrategy.IGNORE dans MapStruct ne permet pas
                 // de distinguer "non envoyé" de "null", donc on gère ici via le DTO original
                 if (hasSprint && incomingSprintDTO.getId() != null) {
-                    sprintRepository.findById(incomingSprintDTO.getId()).ifPresent(existingTask::setSprint);
+                    existingTask.setSprint(targetSprint);
                 }
                 // Si sprint était absent du DTO (null), MapStruct l'ignore — comportement voulu
 
-                notifications.assignment(existingTask, previous);
-                notifications.status(existingTask, previousStatus);
+                notifications.taskUpdated(existingTask);
                 return existingTask;
             })
             .map(taskRepository::save)
@@ -256,6 +284,7 @@ public class TaskService {
      */
     public void delete(Long id) {
         LOG.debug("Request to delete Task : {}", id);
+        taskRepository.findById(id).ifPresent(notifications::taskDeleted);
         commentRepository.deleteByTaskId(id);
         taskRepository.deleteById(id);
     }

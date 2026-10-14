@@ -254,7 +254,9 @@
           >
             <option [ngValue]="null"></option>
             @for (sprintOption of sprintsSharedCollection(); track $index) {
-              <option [ngValue]="sprintOption">{{ sprintOption.name }}</option>
+              @if (sprintOption.status !== 'COMPLETED' || sprintOption.id === task?.sprint?.id) {
+                <option [ngValue]="sprintOption">{{ sprintOption.name }}</option>
+              }
             }
           </select>
         </div>

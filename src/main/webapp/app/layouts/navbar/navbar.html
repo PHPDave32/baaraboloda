@@ -1,11 +1,39 @@
 @if (account()) {
-  <aside data-cy="navbar" class="workspace-sidebar">
+  <button
+    type="button"
+    class="workspace-menu-toggle"
+    [class.is-collapsed]="sidebarCollapsed()"
+    [class.menu-expanded]="isMobile() ? sidebarOpen() : !sidebarCollapsed()"
+    (click)="toggleSidebar()"
+    aria-controls="workspace-sidebar"
+    [attr.aria-expanded]="isMobile() ? sidebarOpen() : !sidebarCollapsed()"
+    [attr.aria-label]="(isMobile() ? sidebarOpen() : !sidebarCollapsed()) ? 'Replier le menu' : 'Ouvrir le menu'"
+    [attr.title]="(isMobile() ? sidebarOpen() : !sidebarCollapsed()) ? 'Replier le menu' : 'Ouvrir le menu'"
+  >
+    <span class="menu-glyph" aria-hidden="true"><span></span><span></span><span></span></span>
+  </button>
+  @if (sidebarOpen()) {
+    <button type="button" class="workspace-sidebar-backdrop" (click)="closeSidebar()" aria-label="Fermer le menu"></button>
+  }
+  <aside
+    id="workspace-sidebar"
+    [class.is-collapsed]="sidebarCollapsed()"
+    data-cy="navbar"
+    class="workspace-sidebar"
+    [class.is-open]="sidebarOpen()"
+  >
     <div class="workspace-brand">
       <img src="/content/images/figma-logo-cra.png" alt="Logo" class="workspace-brand-logo" />
     </div>
 
     <nav class="workspace-nav">
-      <a routerLink="/dashboard" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="workspace-nav-link">
+      <a
+        (click)="closeSidebar()"
+        routerLink="/dashboard"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="workspace-nav-link"
+      >
         <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -17,7 +45,13 @@
         Tableau de bord
       </a>
 
-      <a routerLink="/projects" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="workspace-nav-link">
+      <a
+        (click)="closeSidebar()"
+        routerLink="/projects"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="workspace-nav-link"
+      >
         <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -29,7 +63,12 @@
         Projets
       </a>
 
-      @if (account()?.authorities?.includes('ROLE_ADMIN')) {
+      @if (
+        account()?.authorities?.includes('ROLE_ADMIN') ||
+        account()?.authorities?.includes('ROLE_SUPER_ADMIN') ||
+        account()?.authorities?.includes('PERM_USER_MANAGE') ||
+        account()?.authorities?.includes('PERM_USER_DISABLE')
+      ) {
         <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="workspace-nav-link">
           <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

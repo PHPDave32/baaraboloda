@@ -68,7 +68,7 @@ public class TaskQueryService extends QueryService<Task> {
      * @return the matching {@link Specification} of the entity.
      */
     protected Specification<Task> createSpecification(TaskCriteria criteria) {
-        Specification<Task> specification = Specification.unrestricted();
+        Specification<Task> specification = com.cratechnologie.baaraboloda.security.ProjectScope.visible("project");
         specification = specification.and((root, query, builder) -> {
             if (Long.class != query.getResultType()) {
                 root.fetch(Task_.assignee, JoinType.LEFT);

@@ -33,7 +33,7 @@ import tools.jackson.databind.ObjectMapper;
  * Integration tests for the {@link UserResource} REST controller.
  */
 @AutoConfigureMockMvc
-@WithMockUser(authorities = AuthoritiesConstants.ADMIN)
+@WithMockUser(username = "admin", authorities = AuthoritiesConstants.ADMIN)
 @IntegrationTest
 class UserResourceIT {
 
@@ -62,6 +62,9 @@ class UserResourceIT {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private com.cratechnologie.baaraboloda.repository.AuthorityRepository authorityRepository;
 
     @Autowired
     private UserService userService;
@@ -115,14 +118,15 @@ class UserResourceIT {
     void initTest() {
         numberOfUsers = userRepository.count();
         user = initTestUser();
+        user.getAuthorities().add(authorityRepository.findById(AuthoritiesConstants.USER).orElseThrow());
     }
 
     @AfterEach
     void cleanupAndCheck() {
-        userService.deleteUser(DEFAULT_LOGIN);
-        userService.deleteUser(UPDATED_LOGIN);
-        userService.deleteUser(user.getLogin());
-        userService.deleteUser("anotherlogin");
+        userRepository.findOneByLogin(DEFAULT_LOGIN).ifPresent(userRepository::delete);
+        userRepository.findOneByLogin(UPDATED_LOGIN).ifPresent(userRepository::delete);
+        userRepository.findOneByLogin(user.getLogin()).ifPresent(userRepository::delete);
+        userRepository.findOneByLogin("anotherlogin").ifPresent(userRepository::delete);
         assertThat(userRepository.count()).isEqualTo(numberOfUsers);
         numberOfUsers = null;
         cacheManager

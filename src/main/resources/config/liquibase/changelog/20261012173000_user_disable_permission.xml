@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+    <changeSet id="20261012173000-user-disable-permission" author="cra">
+        <insert tableName="jhi_authority">
+            <column name="name" value="PERM_USER_DISABLE"/>
+        </insert>
+        <rollback>
+            <delete tableName="jhi_authority"><where>name = 'PERM_USER_DISABLE'</where></delete>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

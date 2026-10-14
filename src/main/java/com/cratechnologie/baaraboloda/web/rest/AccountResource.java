@@ -130,12 +130,18 @@ public class AccountResource {
         if (user.isEmpty()) {
             throw new AccountResourceException("User could not be found");
         }
+        userRepository.findOneByLogin(userDTO.getLogin().toLowerCase(java.util.Locale.ROOT)).ifPresent(other -> {
+            if (!other.getId().equals(user.orElseThrow().getId())) {
+                throw new com.cratechnologie.baaraboloda.web.rest.errors.LoginAlreadyUsedException();
+            }
+        });
         userService.updateUser(
             userDTO.getFirstName(),
             userDTO.getLastName(),
             userDTO.getEmail(),
             userDTO.getLangKey(),
-            userDTO.getImageUrl()
+            userDTO.getImageUrl(),
+            userDTO.getLogin()
         );
     }
 

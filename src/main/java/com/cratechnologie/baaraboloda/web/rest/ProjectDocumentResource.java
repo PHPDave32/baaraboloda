@@ -36,10 +36,60 @@ public class ProjectDocumentResource {
         @RequestParam String category,
         @RequestParam(required = false) String url,
         @RequestParam(required = false) Long taskId,
+        @RequestParam(required = false) MultipartFile file,
+        @RequestParam(defaultValue = "false") boolean restricted,
+        @RequestParam(required = false) java.util.Set<String> allowedLogins
+    ) throws IOException {
+        service.create(
+            projectId,
+            title,
+            description,
+            category,
+            url,
+            taskId,
+            file,
+            restricted,
+            allowedLogins == null ? java.util.Set.of() : allowedLogins
+        );
+        return ResponseEntity.status(201).build();
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> update(
+        @PathVariable Long projectId,
+        @PathVariable Long id,
+        @RequestParam String title,
+        @RequestParam(defaultValue = "") String description,
+        @RequestParam String category,
+        @RequestParam(required = false) String url,
+        @RequestParam(required = false) Long taskId,
         @RequestParam(required = false) MultipartFile file
     ) throws IOException {
-        service.create(projectId, title, description, category, url, taskId, file);
-        return ResponseEntity.status(201).build();
+        service.update(projectId, id, title, description, category, url, taskId, file);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/recipients")
+    public List<com.cratechnologie.baaraboloda.service.dto.ResourceRecipientDTO> recipients(@PathVariable Long projectId) {
+        return service.recipients(projectId);
+    }
+
+    @GetMapping("/{id}/visibility")
+    public com.cratechnologie.baaraboloda.service.dto.ResourceVisibilityDTO visibility(
+        @PathVariable Long projectId,
+        @PathVariable Long id
+    ) {
+        return service.visibility(projectId, id);
+    }
+
+    @PutMapping("/{id}/visibility")
+    public ResponseEntity<Void> updateVisibility(
+        @PathVariable Long projectId,
+        @PathVariable Long id,
+        @jakarta.validation.Valid @RequestBody com.cratechnologie.baaraboloda.service.dto.ResourceVisibilityDTO input
+    ) {
+        service.updateVisibility(projectId, id, input);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/download")

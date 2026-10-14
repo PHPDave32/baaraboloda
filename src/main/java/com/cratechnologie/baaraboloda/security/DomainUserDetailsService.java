@@ -82,7 +82,7 @@ public class DomainUserDetailsService implements UserDetailsService {
             return new UserWithId(
                 user.getLogin(),
                 user.getPassword(),
-                user.getAuthorities().stream().map(Authority::getName).map(SimpleGrantedAuthority::new).toList(),
+                EffectiveAuthorities.of(user).stream().map(SimpleGrantedAuthority::new).toList(),
                 user.getId()
             );
         }

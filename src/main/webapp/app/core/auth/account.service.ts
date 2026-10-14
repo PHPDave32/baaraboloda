@@ -41,7 +41,9 @@ export class AccountService {
     if (!Array.isArray(authorities)) {
       authorities = [authorities];
     }
-    return userIdentity.authorities.some((authority: string) => authorities.includes(authority));
+    return userIdentity.authorities.some(
+      (authority: string) => authorities.includes(authority) || (authority === 'ROLE_SUPER_ADMIN' && authorities.includes('ROLE_ADMIN')),
+    );
   }
 
   identity(force?: boolean): Observable<Account | null> {

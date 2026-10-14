@@ -55,6 +55,14 @@ export class ProjectsService {
 export class ProjectService extends ProjectsService {
   protected readonly http = inject(HttpClient);
 
+  reopen(id: number): Observable<IProject> {
+    return this.http.post<RestProject>(`${this.resourceUrl}/${id}/reopen`, {}).pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
+  close(id: number): Observable<IProject> {
+    return this.http.post<RestProject>(`${this.resourceUrl}/${id}/close`, {}).pipe(map(res => this.convertResponseFromServer(res)));
+  }
+
   create(project: NewProject): Observable<IProject> {
     const copy = this.convertValueFromClient(project);
     return this.http.post<RestProject>(this.resourceUrl, copy).pipe(map(res => this.convertResponseFromServer(res)));

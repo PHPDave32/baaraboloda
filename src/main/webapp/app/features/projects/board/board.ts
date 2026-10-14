@@ -1,3 +1,4 @@
+import { NgbDropdown, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { CardDepthDirective } from 'app/shared/directives/card-depth.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
@@ -16,7 +17,7 @@ type BoardStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 
 @Component({
   selector: 'jhi-project-board',
-  imports: [NotificationCenterComponent, CardDepthDirective, RouterLink, BadgeComponent, AvatarComponent, FormsModule],
+  imports: [NgbDropdownModule, NotificationCenterComponent, CardDepthDirective, RouterLink, BadgeComponent, AvatarComponent, FormsModule],
   templateUrl: './board.html',
   styleUrl: './board.scss',
 })
@@ -123,31 +124,42 @@ export default class Board implements OnInit {
     this.filterAssignee.set(value === 'ALL' || value === 'UNASSIGNED' ? value : Number(value));
   }
 
+  private activeAssignDropdown?: NgbDropdown;
   private readonly route = inject(ActivatedRoute);
   private readonly workspaceService = inject(WorkspaceService);
   private readonly accountService = inject(AccountService);
 
   get canEdit(): boolean {
-    return true;
+    return this.project()?.status !== 'CLOSED';
   }
 
   private canAssign(): boolean {
+    if (this.project()?.status === 'CLOSED') return false;
     const login = this.accountService.account()?.login;
     if (!login) return false;
     if (this.accountService.hasAnyAuthority('ROLE_ADMIN')) return true;
     return this.projectMembers().some(m => m.login === login) || this.project()?.owner?.login === login;
   }
 
-  toggleAssignMenu(task: ITask, event: Event): void {
+  toggleAssignMenu(task: ITask, event: Event, dropdown: NgbDropdown): void {
     event.stopPropagation();
     event.preventDefault();
     if (!this.canAssignTask(task)) return;
-    this.assignSearch.set('');
-    this.assignMenuTaskId.set(this.assignMenuTaskId() === task.id ? null : task.id);
+    if (dropdown.isOpen()) {
+      this.closeAssignMenu();
+      return;
+    }
+    this.closeAssignMenu();
+    this.activeAssignDropdown = dropdown;
+    this.assignMenuTaskId.set(task.id);
+    dropdown.open();
   }
 
   closeAssignMenu(): void {
+    const dropdown = this.activeAssignDropdown;
+    this.activeAssignDropdown = undefined;
     this.assignMenuTaskId.set(null);
+    dropdown?.close();
     this.assignSearch.set('');
   }
 
@@ -157,7 +169,7 @@ export default class Board implements OnInit {
 
   assign(task: ITask, memberId: number | null): void {
     if (!this.canAssignTask(task) || (memberId !== null && !this.projectMembers().some(member => member.id === memberId))) return;
-    this.assignMenuTaskId.set(null);
+    this.closeAssignMenu();
     const member = memberId ? (this.projectMembers().find(m => m.id === memberId) ?? null) : null;
     const previous = task.assignee ?? null;
     this.tasks.update(list => list.map(t => (t.id === task.id ? { ...t, assignee: member } : t)));
@@ -176,7 +188,7 @@ export default class Board implements OnInit {
     event.stopPropagation();
     event.preventDefault();
     if (!this.canMoveTask(task)) return;
-    this.assignMenuTaskId.set(null);
+    this.closeAssignMenu();
     this.moveMenuTaskId.set(this.moveMenuTaskId() === task.id ? null : task.id);
   }
 
@@ -193,6 +205,7 @@ export default class Board implements OnInit {
   moveToIteration(task: ITask, sprintId: number | null): void {
     this.moveMenuTaskId.set(null);
     if ((task.sprint?.id ?? null) === sprintId) return;
+    if (this.sprints().some(sprint => sprint.id === sprintId && sprint.status === 'COMPLETED')) return;
 
     if (this.isFromCompletedSprint(task) && sprintId !== null) {
       this.copyToIteration(task, sprintId);
@@ -318,6 +331,7 @@ export default class Board implements OnInit {
   }
 
   canMoveTask(_task: ITask): boolean {
+    if (this.project()?.status === 'CLOSED') return false;
     return this.canAssign();
   }
 

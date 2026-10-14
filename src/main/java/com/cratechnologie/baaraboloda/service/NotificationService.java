@@ -108,6 +108,24 @@ public class NotificationService {
         );
     }
 
+    public void taskCreated(Task task) {
+        taskEvent(task, "TASK_CREATED", "a créé la tâche");
+    }
+
+    public void taskUpdated(Task task) {
+        taskEvent(task, "TASK_UPDATED", "a modifié la tâche");
+    }
+
+    public void taskDeleted(Task task) {
+        taskEvent(task, "TASK_DELETED", "a supprimé la tâche");
+    }
+
+    private void taskEvent(Task task, String kind, String action) {
+        Set<Long> recipients = recipients(task);
+        recipients.addAll(users.findProjectNotificationRecipientIds(task.getProject().getId()));
+        recipients.forEach(id -> record(id, task, kind, action));
+    }
+
     public void assignment(Task task, Long previousAssignee) {
         Long next = task.getAssignee() == null ? null : task.getAssignee().getId();
         if (next != null && !Objects.equals(previousAssignee, next)) record(next, task, "ASSIGNMENT", "vous a assigné la tâche");

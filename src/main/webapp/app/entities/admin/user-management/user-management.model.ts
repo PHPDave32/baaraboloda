@@ -16,6 +16,10 @@ export interface IUserManagement {
   lastModifiedBy?: string | null;
   lastModifiedDate?: dayjs.Dayjs | null;
   authorities?: string[] | null;
+  accessProfileId?: number | null;
+  accessProfileName?: string | null;
+  grantedPermissions?: string[] | null;
+  revokedPermissions?: string[] | null;
 }
 
 export type NewUserManagement = Omit<IUserManagement, 'login'> & { login: null };

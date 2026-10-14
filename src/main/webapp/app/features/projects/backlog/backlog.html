@@ -1,7 +1,13 @@
-<div class="backlog-workspace p-8">
-  <div class="backlog-heading flex items-center justify-between mb-8">
+<div class="backlog-workspace workspace-page">
+  @if (project?.status === 'CLOSED') {
+    <p role="status" class="mb-4 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+      Projet fermé · Consultation uniquement
+    </p>
+  }
+  <div class="backlog-heading workspace-page-header">
     <div>
-      <span class="backlog-eyebrow">PLANIFICATION · {{ project?.name }}</span>
+      <span class="backlog-eyebrow">PLANIFICATION</span>
+      <div class="workspace-project-focus">{{ project?.name }}</div>
       <h1 class="text-3xl font-bold text-white mb-1">Backlog</h1>
       <p class="text-gray-400">
         Répartissez le travail, du backlog aux sprints. · {{ backlogTasks.length }} tâche{{ backlogTasks.length > 1 ? 's' : '' }} non
@@ -9,13 +15,13 @@
       </p>
     </div>
     <div class="page-header-actions flex items-center flex-wrap gap-3">
-      <button (click)="openSprintForm()" class="btn-secondary text-sm flex items-center gap-2">
+      <button [disabled]="project?.status === 'CLOSED'" (click)="openSprintForm()" class="btn-secondary text-sm flex items-center gap-2">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Nouveau sprint
       </button>
-      <button (click)="openTaskForm(null)" class="btn-primary text-sm flex items-center gap-2">
+      <button [disabled]="project?.status === 'CLOSED'" (click)="openTaskForm(null)" class="btn-primary text-sm flex items-center gap-2">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -29,7 +35,6 @@
     <div class="mb-4 px-4 py-3 rounded-lg bg-red-950 border border-red-800 text-red-400 text-sm">{{ error }}</div>
   }
 
-  <!-- Barre de filtres -->
   <div class="backlog-filters mb-3 flex flex-wrap items-center gap-2">
     <div class="relative w-64 flex-shrink-0">
       <svg
@@ -227,7 +232,13 @@
           placeholder="Précisez le contexte, les étapes ou le résultat attendu…"
         ></textarea>
       </div>
-      <jhi-image-attachments [editable]="true" [disabled]="loading" [(images)]="taskImages" (readingChange)="readingImages = $event" />
+      <jhi-image-attachments
+        [allowPdf]="true"
+        [editable]="true"
+        [disabled]="loading"
+        [(images)]="taskImages"
+        (readingChange)="readingImages = $event"
+      />
 
       <fieldset class="task-create-priority">
         <legend>Priorité</legend>
@@ -346,23 +357,39 @@
                   @if (canEditSprint(sprint)) {
                     <button (click)="openEditSprintForm(sprint)" class="btn-secondary text-xs px-3 py-1.5">Modifier</button>
                   }
-                  <button (click)="activateSprint(sprint)" class="btn-primary text-xs px-3 py-1.5">Démarrer</button>
+                  <button
+                    [disabled]="project?.status === 'CLOSED'"
+                    (click)="activateSprint(sprint)"
+                    class="btn-primary text-xs px-3 py-1.5"
+                  >
+                    Démarrer
+                  </button>
                 }
                 @if (sprint.status === 'ACTIVE') {
                   <a [routerLink]="['/projects', projectId, 'board']" class="btn-secondary text-xs px-3 py-1.5">Tableau</a>
-                  <button (click)="completeSprint(sprint)" class="btn-secondary text-xs px-3 py-1.5">Terminer</button>
+                  <button
+                    [disabled]="project?.status === 'CLOSED'"
+                    (click)="completeSprint(sprint)"
+                    class="btn-secondary text-xs px-3 py-1.5"
+                  >
+                    Terminer
+                  </button>
                 }
-                <button
-                  (click)="openTaskForm(sprint.id)"
-                  class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-[#d9eef6] hover:text-[#328cb1]"
-                  title="Ajouter une tâche"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
+                @if (sprint.status !== 'COMPLETED') {
+                  <button
+                    [disabled]="project?.status === 'CLOSED'"
+                    (click)="openTaskForm(sprint.id)"
+                    class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-[#d9eef6] hover:text-[#328cb1]"
+                    title="Ajouter une tâche"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                }
                 @if (canManageSprints) {
                   <button
+                    [disabled]="project?.status === 'CLOSED'"
                     (click)="deleteSprint(sprint.id)"
                     class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
                     title="Supprimer le sprint"
@@ -398,10 +425,16 @@
               @if (!displayedSprintTasks(sprint.id).length) {
                 @if (hasActiveFilters && getSprintTasks(sprint.id).length) {
                   <div class="px-5 py-6 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
+                } @else if (sprint.status === 'COMPLETED') {
+                  <div class="px-5 py-6 text-center text-sm text-slate-400">Ce sprint terminé ne contient aucune tâche.</div>
                 } @else {
                   <div class="px-5 py-8 text-center">
                     <p class="text-sm text-slate-400">Glissez une tâche ici depuis le backlog</p>
-                    <button (click)="openTaskForm(sprint.id)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">
+                    <button
+                      [disabled]="project?.status === 'CLOSED'"
+                      (click)="openTaskForm(sprint.id)"
+                      class="mt-1 text-sm font-medium text-[#328cb1] hover:underline"
+                    >
                       ou ajoutez-en une
                     </button>
                   </div>
@@ -435,6 +468,7 @@
             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ backlogTasks.length }}</span>
           </div>
           <button
+            [disabled]="project?.status === 'CLOSED'"
             (click)="openTaskForm(null)"
             class="flex items-center gap-1.5 rounded-lg bg-[#d9eef6] px-3 py-1.5 text-xs font-medium text-[#328cb1] transition-colors hover:bg-[#c4e4f0]"
           >
@@ -465,7 +499,11 @@
                   </svg>
                 </div>
                 <p class="text-sm text-slate-500">Le backlog est vide.</p>
-                <button (click)="openTaskForm(null)" class="mt-1 text-sm font-medium text-[#328cb1] hover:underline">
+                <button
+                  [disabled]="project?.status === 'CLOSED'"
+                  (click)="openTaskForm(null)"
+                  class="mt-1 text-sm font-medium text-[#328cb1] hover:underline"
+                >
                   Créer une tâche
                 </button>
               </div>
@@ -538,14 +576,14 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </button>
-          } @else if (!inSprint && sprints.length && canManage) {
+          } @else if (!inSprint && availableSprints.length && canManage) {
             <select
               class="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600 outline-none transition focus:border-[#328cb1]"
               (change)="moveToSprint(task, +$any($event.target).value)"
               (click)="$event.stopPropagation()"
             >
               <option value="">Vers un sprint</option>
-              @for (sprint of sprints; track sprint.id) {
+              @for (sprint of availableSprints; track sprint.id) {
                 @if (sprint.status !== 'COMPLETED') {
                   <option [value]="sprint.id">{{ sprint.name }}</option>
                 }
@@ -554,6 +592,7 @@
           }
           @if (canManageTask(task)) {
             <button
+              [disabled]="project?.status === 'CLOSED'"
               (click)="deleteTask(task.id)"
               class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
               title="Supprimer la tâche"

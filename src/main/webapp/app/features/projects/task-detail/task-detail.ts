@@ -1,3 +1,4 @@
+import { TaskDocuments } from '../documents/preview/task-documents';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { ImageAttachment, ImageAttachmentsComponent } from 'app/shared/components/image-attachments/image-attachments';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
@@ -16,6 +17,7 @@ import { ModalComponent } from 'app/shared/components/modal/modal.component';
 @Component({
   selector: 'jhi-task-detail',
   imports: [
+    TaskDocuments,
     NotificationCenterComponent,
     ImageAttachmentsComponent,
     CommonModule,
@@ -58,7 +60,6 @@ export default class TaskDetail implements OnInit {
     status: ['TODO'],
     priority: ['MEDIUM'],
     type: ['TASK'],
-    storyPoints: [null as number | null],
     dueDate: [''],
   });
 
@@ -93,7 +94,6 @@ export default class TaskDetail implements OnInit {
           status: task.status,
           priority: task.priority,
           type: task.type,
-          storyPoints: task.storyPoints,
           dueDate: task.dueDate?.format('YYYY-MM-DD'),
         });
         this.loading = false;
@@ -125,7 +125,6 @@ export default class TaskDetail implements OnInit {
         status: this.canManageProject ? (value.status as ITask['status']) : this.task.status,
         priority: value.priority as ITask['priority'],
         type: value.type as ITask['type'],
-        storyPoints: value.storyPoints,
         dueDate: value.dueDate ? undefined : null,
       })
       .subscribe({
@@ -172,7 +171,7 @@ export default class TaskDetail implements OnInit {
   }
 
   canManageComment(comment: TaskComment): boolean {
-    return comment.author?.login === this.accountService.account()?.login || this.canManageProject;
+    return this.canManage && (comment.author?.login === this.accountService.account()?.login || this.canManageProject);
   }
 
   editComment(comment: TaskComment): void {
@@ -243,14 +242,6 @@ export default class TaskDetail implements OnInit {
     this.canManageProject = false;
     this.form.controls.status.disable();
     this.canManage = Boolean(this.accountService.account()?.login) && this.task?.reporter?.login === this.accountService.account()?.login;
-    if (this.accountService.hasAnyAuthority('ROLE_ADMIN')) {
-      this.canManageProject = true;
-      this.form.controls.status.enable();
-      this.canManage = true;
-      this.cdr.markForCheck();
-      return;
-    }
-
     const projectId = this.task?.project?.id ?? this.projectId;
     if (!projectId) {
       this.canManage = false;
@@ -260,10 +251,16 @@ export default class TaskDetail implements OnInit {
 
     this.planningService.getProject(projectId).subscribe({
       next: project => {
+        if (project.status === 'CLOSED') {
+          this.canManage = false;
+          this.canManageProject = false;
+          this.cdr.markForCheck();
+          return;
+        }
         const login = this.accountService.account()?.login;
         const isOwner = project.owner?.login === login;
         const isMember = project.memberses?.some(member => member.login === login) ?? false;
-        this.canManageProject = Boolean(login) && (isOwner || isMember);
+        this.canManageProject = this.accountService.hasAnyAuthority('ROLE_ADMIN') || (Boolean(login) && (isOwner || isMember));
         if (this.canManageProject) this.form.controls.status.enable();
         this.canManage = this.canManageProject || (Boolean(login) && this.task?.reporter?.login === login);
         this.cdr.markForCheck();

@@ -68,7 +68,7 @@ public class SprintQueryService extends QueryService<Sprint> {
      * @return the matching {@link Specification} of the entity.
      */
     protected Specification<Sprint> createSpecification(SprintCriteria criteria) {
-        Specification<Sprint> specification = Specification.unrestricted();
+        Specification<Sprint> specification = com.cratechnologie.baaraboloda.security.ProjectScope.visible("project");
         specification = specification.and((root, query, builder) -> {
             if (Long.class != query.getResultType()) {
                 root.fetch(Sprint_.createdBy, JoinType.LEFT);

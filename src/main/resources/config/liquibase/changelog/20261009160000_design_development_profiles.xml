@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+  <changeSet id="20261009160000-design-development-profiles" author="cra">
+    <insert tableName="access_profile"><column name="id" valueNumeric="5"/><column name="name" value="Designer"/><column name="description" value="Conçoit les interfaces et contribue aux tâches, commentaires et documents."/><column name="all_projects" valueBoolean="false"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="5"/><column name="permission" value="PERM_TASK_MANAGE"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="5"/><column name="permission" value="PERM_COMMENT_MANAGE"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="5"/><column name="permission" value="PERM_DOCUMENT_MANAGE"/></insert>
+    <insert tableName="access_profile"><column name="id" valueNumeric="6"/><column name="name" value="Développeur"/><column name="description" value="Développe et maintient les fonctionnalités des projets."/><column name="all_projects" valueBoolean="false"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="6"/><column name="permission" value="PERM_PROJECT_EDIT"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="6"/><column name="permission" value="PERM_SPRINT_MANAGE"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="6"/><column name="permission" value="PERM_TASK_MANAGE"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="6"/><column name="permission" value="PERM_COMMENT_MANAGE"/></insert>
+    <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="6"/><column name="permission" value="PERM_DOCUMENT_MANAGE"/></insert>
+  </changeSet>
+</databaseChangeLog>

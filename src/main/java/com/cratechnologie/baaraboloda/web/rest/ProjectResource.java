@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +64,26 @@ public class ProjectResource {
     private final TaskRepository taskRepository;
 
     private final SprintRepository sprintRepository;
+    private final com.cratechnologie.baaraboloda.service.ProjectSecurityService security;
+
+    @Autowired
+    public ProjectResource(
+        ProjectService projectService,
+        ProjectRepository projectRepository,
+        ProjectQueryService projectQueryService,
+        UserRepository userRepository,
+        TaskRepository taskRepository,
+        SprintRepository sprintRepository,
+        com.cratechnologie.baaraboloda.service.ProjectSecurityService security
+    ) {
+        this.projectService = projectService;
+        this.projectRepository = projectRepository;
+        this.projectQueryService = projectQueryService;
+        this.taskRepository = taskRepository;
+        this.sprintRepository = sprintRepository;
+        this.security = security;
+        this.userRepository = userRepository;
+    }
 
     public ProjectResource(
         ProjectService projectService,
@@ -72,12 +93,7 @@ public class ProjectResource {
         TaskRepository taskRepository,
         SprintRepository sprintRepository
     ) {
-        this.projectService = projectService;
-        this.projectRepository = projectRepository;
-        this.projectQueryService = projectQueryService;
-        this.taskRepository = taskRepository;
-        this.sprintRepository = sprintRepository;
-        this.userRepository = userRepository;
+        this(projectService, projectRepository, projectQueryService, userRepository, taskRepository, sprintRepository, null);
     }
 
     /**
@@ -87,11 +103,38 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new projectDTO, or with status {@code 400 (Bad Request)} if the project already has an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @PostMapping("/{id}/reopen")
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_REOPEN')")
+    public ResponseEntity<ProjectDTO> reopenProject(@PathVariable Long id) {
+        security.checkProjectAccess(id);
+        ProjectDTO project = projectService
+            .findOne(id)
+            .orElseThrow(() -> new BadRequestAlertException("Projet introuvable", ENTITY_NAME, "idnotfound"));
+        if (project.getStatus() != com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED) {
+            throw new BadRequestAlertException("Seul un projet fermé peut être réouvert", ENTITY_NAME, "projectnotclosed");
+        }
+        project.setStatus(com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.ACTIVE);
+        return ResponseEntity.ok(projectService.update(project));
+    }
+
+    @PostMapping("/{id}/close")
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_CLOSE')")
+    public ResponseEntity<ProjectDTO> closeProject(@PathVariable Long id) {
+        security.checkProjectAccess(id);
+        security.checkProjectWritable(id);
+        ProjectDTO project = projectService
+            .findOne(id)
+            .orElseThrow(() -> new BadRequestAlertException("Projet introuvable", ENTITY_NAME, "idnotfound"));
+        project.setStatus(com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED);
+        return ResponseEntity.ok(projectService.update(project));
+    }
+
     @PostMapping("")
-    @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_PROJECT_CREATE + "\")"
-    )
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_CREATE')")
     public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody ProjectDTO projectDTO) throws URISyntaxException {
+        if (projectDTO.getStatus() == com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED) {
+            throw new BadRequestAlertException("Utilisez l’action Fermer le projet", ENTITY_NAME, "closeactionrequired");
+        }
         LOG.debug("REST request to save Project : {}", projectDTO);
         if (projectDTO.getId() != null) {
             throw new BadRequestAlertException("A new project cannot already have an ID", ENTITY_NAME, "idexists");
@@ -112,10 +155,10 @@ public class ProjectResource {
     }
 
     @PostMapping("/{id}/members/{userId}")
-    @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_MANAGE_MEMBERS + "\")"
-    )
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_MANAGE_MEMBERS')")
     public ResponseEntity<ProjectDTO> addMember(@PathVariable Long id, @PathVariable Long userId) {
+        security.checkProjectAccess(id);
+        security.checkProjectWritable(id);
         ProjectDTO project = projectService
             .findOne(id)
             .orElseThrow(() -> new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"));
@@ -128,10 +171,10 @@ public class ProjectResource {
     }
 
     @DeleteMapping("/{id}/members/{userId}")
-    @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_MANAGE_MEMBERS + "\")"
-    )
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_MANAGE_MEMBERS')")
     public ResponseEntity<ProjectDTO> removeMember(@PathVariable Long id, @PathVariable Long userId) {
+        security.checkProjectAccess(id);
+        security.checkProjectWritable(id);
         ProjectDTO project = projectService
             .findOne(id)
             .orElseThrow(() -> new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"));
@@ -150,13 +193,14 @@ public class ProjectResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
-    @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_PROJECT_CREATE + "\")"
-    )
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_EDIT')")
     public ResponseEntity<ProjectDTO> updateProject(
         @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody ProjectDTO projectDTO
     ) throws URISyntaxException {
+        if (projectDTO.getStatus() == com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED) {
+            throw new BadRequestAlertException("Utilisez l’action Fermer le projet", ENTITY_NAME, "closeactionrequired");
+        }
         LOG.debug("REST request to update Project : {}, {}", id, projectDTO);
         if (projectDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
@@ -169,6 +213,13 @@ public class ProjectResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
+        security.checkProjectAccess(id);
+        security.checkProjectWritable(id);
+        if (!security.hasPermission("PERM_MANAGE_MEMBERS")) {
+            ProjectDTO original = projectService.findOne(id).orElseThrow();
+            projectDTO.setOwner(original.getOwner());
+            projectDTO.setMemberses(original.getMemberses());
+        }
         projectDTO = projectService.update(projectDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, projectDTO.getId().toString()))
@@ -187,13 +238,14 @@ public class ProjectResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
-    @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_PROJECT_CREATE + "\")"
-    )
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_EDIT')")
     public ResponseEntity<ProjectDTO> partialUpdateProject(
         @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody ProjectDTO projectDTO
     ) throws URISyntaxException {
+        if (projectDTO.getStatus() == com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED) {
+            throw new BadRequestAlertException("Utilisez l’action Fermer le projet", ENTITY_NAME, "closeactionrequired");
+        }
         LOG.debug("REST request to partially update Project : {}, {}", id, projectDTO);
         if (projectDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
@@ -206,6 +258,12 @@ public class ProjectResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
+        security.checkProjectAccess(id);
+        security.checkProjectWritable(id);
+        if (!security.hasPermission("PERM_MANAGE_MEMBERS")) {
+            projectDTO.setOwner(null);
+            projectDTO.setMemberses(null);
+        }
         Optional<ProjectDTO> result = projectService.partialUpdate(projectDTO);
 
         return ResponseUtil.wrapOrNotFound(
@@ -254,6 +312,7 @@ public class ProjectResource {
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDTO> getProject(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Project : {}", id);
+        security.checkProjectAccess(id);
         Optional<ProjectDTO> projectDTO = projectService.findOne(id);
         return ResponseUtil.wrapOrNotFound(projectDTO);
     }
@@ -265,9 +324,7 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_PROJECT_DELETE + "\")"
-    )
+    @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_DELETE')")
     public ResponseEntity<Void> deleteProject(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Project : {}", id);
         if (taskRepository.existsByProject_Id(id) || sprintRepository.existsByProject_Id(id)) {
@@ -277,6 +334,8 @@ public class ProjectResource {
                 "projecthaschildren"
             );
         }
+        security.checkProjectAccess(id);
+        security.checkProjectWritable(id);
         projectService.delete(id);
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))

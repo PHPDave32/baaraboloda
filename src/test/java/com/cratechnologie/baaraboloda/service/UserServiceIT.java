@@ -88,7 +88,7 @@ class UserServiceIT {
             .map(cacheName -> this.cacheManager.getCache(cacheName))
             .filter(Objects::nonNull)
             .forEach(Cache::clear);
-        userService.deleteUser(DEFAULT_LOGIN);
+        userRepository.findOneByLogin(DEFAULT_LOGIN).ifPresent(userRepository::delete);
         assertThat(userRepository.count()).isEqualTo(numberOfUsers);
         numberOfUsers = null;
     }

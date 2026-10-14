@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+    <changeSet id="20261012171000-user-permission-overrides" author="cra">
+        <createTable tableName="jhi_user_permission_grant">
+            <column name="user_id" type="bigint"><constraints nullable="false"/></column>
+            <column name="permission" type="varchar(50)"><constraints nullable="false"/></column>
+        </createTable>
+        <addPrimaryKey tableName="jhi_user_permission_grant" columnNames="user_id,permission" constraintName="pk_user_permission_grant"/>
+        <addForeignKeyConstraint baseTableName="jhi_user_permission_grant" baseColumnNames="user_id"
+                                 referencedTableName="jhi_user" referencedColumnNames="id"
+                                 constraintName="fk_user_permission_grant" onDelete="CASCADE"/>
+
+        <createTable tableName="jhi_user_permission_revoke">
+            <column name="user_id" type="bigint"><constraints nullable="false"/></column>
+            <column name="permission" type="varchar(50)"><constraints nullable="false"/></column>
+        </createTable>
+        <addPrimaryKey tableName="jhi_user_permission_revoke" columnNames="user_id,permission" constraintName="pk_user_permission_revoke"/>
+        <addForeignKeyConstraint baseTableName="jhi_user_permission_revoke" baseColumnNames="user_id"
+                                 referencedTableName="jhi_user" referencedColumnNames="id"
+                                 constraintName="fk_user_permission_revoke" onDelete="CASCADE"/>
+    </changeSet>
+</databaseChangeLog>

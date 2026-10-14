@@ -1,12 +1,17 @@
-<div class="documents-page">
+<div class="documents-page workspace-page">
+  @if (project()?.status === 'CLOSED') {
+    <p role="status" class="mb-4 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+      Projet fermé · Consultation uniquement
+    </p>
+  }
   <a [routerLink]="['/projects', projectId, 'board']" class="documents-back">← Tableau du projet</a>
-  <header class="documents-hero">
+  <header class="documents-hero workspace-page-header">
     <div class="documents-heading">
       <span class="documents-kicker">BIBLIOTHÈQUE DU PROJET</span>
       <h1>Documents et ressources</h1>
       <p>Tout ce dont votre équipe a besoin, au même endroit.</p>
       @if (project(); as currentProject) {
-        <span class="documents-project"><span aria-hidden="true"></span>{{ currentProject.name }}</span>
+        <div class="workspace-project-focus">{{ currentProject.name }}</div>
       }
     </div>
     <div class="documents-hero-action">
@@ -48,7 +53,9 @@
         </div>
         <div>
           <p class="resource-eyebrow">ESPACE PROJET</p>
-          <h2 id="resource-dialog-title">Nouvelle ressource</h2>
+          <h2 id="resource-dialog-title">
+            {{ editingVisibility() ? 'Visibilité de la ressource' : editingResource() ? 'Modifier la ressource' : 'Nouvelle ressource' }}
+          </h2>
           <p id="resource-dialog-description">Vos documents et liens, au même endroit.</p>
         </div>
         <button type="button" class="resource-close" aria-label="Fermer la fenêtre" (click)="closeForm()" [disabled]="saving()">×</button>
@@ -58,121 +65,209 @@
           <p role="alert" class="resource-error">{{ error() }}</p>
         }
         <fieldset [disabled]="saving()" class="resource-fields space-y-4">
-          <div class="resource-types" role="group" aria-label="Type de ressource">
-            <button
-              type="button"
-              class="resource-type"
-              [class.is-selected]="kind() === 'file'"
-              [attr.aria-pressed]="kind() === 'file'"
-              (click)="kind.set('file')"
-            >
-              <span class="resource-type-icon" aria-hidden="true"
-                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                  <path d="M12 16V4m-5 5 5-5 5 5M4 15v5h16v-5" /></svg
-              ></span>
-              <span><strong>Fichier</strong><small>Documents, images, livrables</small></span
-              ><span class="resource-choice" aria-hidden="true"></span>
-            </button>
-            <button
-              type="button"
-              class="resource-type"
-              [class.is-selected]="kind() === 'link'"
-              [attr.aria-pressed]="kind() === 'link'"
-              (click)="kind.set('link')"
-            >
-              <span class="resource-type-icon" aria-hidden="true"
-                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                  <path
-                    d="m10 13 4-4m-6 6-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m4 2 2-2a4 4 0 0 0-6-6l-2 2"
-                    transform="translate(3 2)"
-                  /></svg
-              ></span>
-              <span><strong>Lien externe</strong><small>Figma, Drive et autres liens</small></span
-              ><span class="resource-choice" aria-hidden="true"></span>
-            </button>
-          </div>
-          <div>
-            <label for="document-title" class="block text-gray-300 mb-1">Titre *</label
-            ><input
-              id="document-title"
-              autofocus
-              placeholder="Ex. Cahier des charges du projet"
-              formControlName="title"
-              maxlength="200"
-              class="input-field w-full"
-            />
-            @if (form.controls.title.touched && form.controls.title.invalid) {
-              <p class="text-red-300 text-sm">Un titre est obligatoire (200 caractères maximum).</p>
-            }
-          </div>
-          <div class="grid md:grid-cols-2 gap-4">
-            <div>
-              <label for="document-category" class="block text-gray-300 mb-1">Catégorie</label
-              ><select id="document-category" formControlName="category" class="input-field w-full">
-                @for (category of categories; track category.value) {
-                  <option [value]="category.value">{{ category.label }}</option>
-                }
-              </select>
+          @if (!editingVisibility()) {
+            <div class="resource-types" role="group" aria-label="Type de ressource">
+              <button
+                type="button"
+                class="resource-type"
+                [class.is-selected]="kind() === 'file'"
+                [attr.aria-pressed]="kind() === 'file'"
+                (click)="kind.set('file')"
+              >
+                <span class="resource-type-icon" aria-hidden="true"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M12 16V4m-5 5 5-5 5 5M4 15v5h16v-5" /></svg
+                ></span>
+                <span><strong>Fichier</strong><small>Documents, images, livrables</small></span
+                ><span class="resource-choice" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                class="resource-type"
+                [class.is-selected]="kind() === 'link'"
+                [attr.aria-pressed]="kind() === 'link'"
+                (click)="kind.set('link')"
+              >
+                <span class="resource-type-icon" aria-hidden="true"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path
+                      d="m10 13 4-4m-6 6-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m4 2 2-2a4 4 0 0 0-6-6l-2 2"
+                      transform="translate(3 2)"
+                    /></svg
+                ></span>
+                <span><strong>Lien externe</strong><small>Figma, Drive et autres liens</small></span
+                ><span class="resource-choice" aria-hidden="true"></span>
+              </button>
             </div>
             <div>
-              <label for="document-task" class="block text-gray-300 mb-1">Tâche associée</label
-              ><select id="document-task" formControlName="taskId" class="input-field w-full">
-                <option value="">Tout le projet</option>
-                @for (task of tasks(); track task.id) {
-                  <option [value]="task.id">#{{ task.id }} · {{ task.title }}</option>
-                }
-              </select>
-            </div>
-          </div>
-          <div>
-            <label for="document-description" class="block text-gray-300 mb-1">Description</label
-            ><textarea
-              id="document-description"
-              formControlName="description"
-              maxlength="2000"
-              rows="3"
-              class="input-field w-full"
-            ></textarea>
-          </div>
-          @if (kind() === 'file') {
-            <label for="document-file" class="resource-upload" [class.has-file]="file()">
-              <span class="upload-illustration" aria-hidden="true"
-                ><span class="upload-sheet"></span
-                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                  <path d="M12 17V7m-4 4 4-4 4 4M5 17v3h14v-3" /></svg
-              ></span>
-              <strong>{{ file() ? file()!.name : 'Choisir un fichier' }}</strong>
-              <span>{{ file() ? 'Cliquez pour remplacer le fichier' : 'Parcourez les fichiers de votre appareil' }}</span>
-              <small>10 Mo maximum · PDF, Office, texte, CSV, images et ZIP</small>
-              <input
-                id="document-file"
-                type="file"
-                (change)="selectFile($event)"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.webp,.zip"
-                aria-label="Choisir un fichier de 10 Mo maximum"
-              />
-            </label>
-          } @else {
-            <div>
-              <label for="document-url" class="block text-gray-300 mb-1">Lien HTTPS *</label
+              <label for="document-title" class="block text-gray-300 mb-1">Titre *</label
               ><input
-                id="document-url"
-                type="url"
-                formControlName="url"
-                placeholder="https://www.figma.com/…"
-                maxlength="2000"
+                id="document-title"
+                autofocus
+                placeholder="Ex. Cahier des charges du projet"
+                formControlName="title"
+                maxlength="200"
                 class="input-field w-full"
               />
-              <p class="text-sm text-gray-400 mt-2">Les accès au service externe restent nécessaires.</p>
+              @if (form.controls.title.touched && form.controls.title.invalid) {
+                <p class="text-red-300 text-sm">Un titre est obligatoire (200 caractères maximum).</p>
+              }
             </div>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label for="document-category" class="block text-gray-300 mb-1">Catégorie</label
+                ><select id="document-category" formControlName="category" class="input-field w-full">
+                  @for (category of categories; track category.value) {
+                    <option [value]="category.value">{{ category.label }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label for="document-task" class="block text-gray-300 mb-1">Tâche associée</label
+                ><select id="document-task" formControlName="taskId" class="input-field w-full">
+                  <option value="">Tout le projet</option>
+                  @for (task of tasks(); track task.id) {
+                    <option [value]="task.id">#{{ task.id }} · {{ task.title }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div>
+              <label for="document-description" class="block text-gray-300 mb-1">Description</label
+              ><textarea
+                id="document-description"
+                formControlName="description"
+                maxlength="2000"
+                rows="3"
+                class="input-field w-full"
+              ></textarea>
+            </div>
+            @if (kind() === 'file') {
+              <label for="document-file" class="resource-upload" [class.has-file]="file()">
+                <span class="upload-illustration" aria-hidden="true"
+                  ><span class="upload-sheet"></span
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M12 17V7m-4 4 4-4 4 4M5 17v3h14v-3" /></svg
+                ></span>
+                <strong>{{ file() ? file()!.name : editingResource()?.filename || 'Choisir un fichier' }}</strong>
+                <span>{{
+                  editingResource()?.filename && !file()
+                    ? 'Fichier actuel conservé. Cliquez pour le remplacer.'
+                    : file()
+                      ? 'Cliquez pour remplacer le fichier'
+                      : 'Parcourez les fichiers de votre appareil'
+                }}</span>
+                <small>10 Mo maximum · PDF, Office, texte, CSV, images et ZIP</small>
+                <input
+                  id="document-file"
+                  type="file"
+                  (change)="selectFile($event)"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.webp,.zip"
+                  aria-label="Choisir un fichier de 10 Mo maximum"
+                />
+              </label>
+            } @else {
+              <div>
+                <label for="document-url" class="block text-gray-300 mb-1">Lien HTTPS *</label
+                ><input
+                  id="document-url"
+                  type="url"
+                  formControlName="url"
+                  placeholder="https://www.figma.com/…"
+                  maxlength="2000"
+                  class="input-field w-full"
+                />
+                <p class="text-sm text-gray-400 mt-2">Les accès au service externe restent nécessaires.</p>
+              </div>
+            }
+          }
+          @if (canManageVisibility() && !editingResource()) {
+            <section class="rounded-xl border border-slate-200 p-4 space-y-3" aria-label="Visibilité">
+              <strong class="block text-sm">Visibilité de la ressource</strong>
+              @if (editingVisibility(); as document) {
+                <p class="text-sm">{{ document.title }}</p>
+              }
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" [checked]="restricted()" (change)="restricted.set(!restricted())" />
+                Restreindre l’accès à certaines personnes
+              </label>
+              @if (restricted()) {
+                <p class="text-xs text-slate-500">
+                  Vous conservez l’accès. Seules les personnes cochées pourront également voir cette ressource.
+                </p>
+                <p class="text-xs text-slate-500">
+                  Tous les utilisateurs du système sont proposés. L’accès au projet reste nécessaire pour consulter la ressource.
+                </p>
+                <div class="recipient-picker">
+                  <label for="recipient-search" class="block">Rechercher une personne</label>
+                  <div class="recipient-search">
+                    <input
+                      id="recipient-search"
+                      type="search"
+                      class="input-field w-full"
+                      placeholder="Nom, prénom ou identifiant…"
+                      autocomplete="off"
+                      [ngModel]="recipientSearch()"
+                      (ngModelChange)="recipientSearch.set($event)"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                  </div>
+                  <div class="recipient-toolbar">
+                    <span role="status">{{ allowedLogins().length }} personne(s) sélectionnée(s)</span>
+                    <button type="button" [attr.aria-pressed]="selectedOnly()" (click)="selectedOnly.set(!selectedOnly())">
+                      {{ selectedOnly() ? 'Tous les utilisateurs' : 'Sélectionnés' }}
+                    </button>
+                  </div>
+                  @if (allowedLogins().length) {
+                    <div class="recipient-chips" aria-label="Personnes sélectionnées">
+                      @for (login of allowedLogins(); track login) {
+                        <button type="button" (click)="toggleReader(login)" [attr.aria-label]="'Retirer ' + recipientName(login)">
+                          {{ recipientName(login) }} <span aria-hidden="true">×</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                  <div class="recipient-list" [attr.aria-busy]="recipientsLoading()">
+                    @if (recipientsLoading()) {
+                      <p role="status" class="recipient-empty">Chargement des utilisateurs…</p>
+                    } @else if (recipientsError()) {
+                      <div class="recipient-empty" role="alert">
+                        <p>{{ recipientsError() }}</p>
+                        <button type="button" class="underline" (click)="loadRecipients()">Réessayer</button>
+                      </div>
+                    } @else {
+                      @for (user of visibilityCandidates(); track user.login) {
+                        <label class="recipient-row" [class.is-selected]="allowedLogins().includes(user.login)">
+                          <input type="checkbox" [checked]="allowedLogins().includes(user.login)" (change)="toggleReader(user.login)" />
+                          <span class="recipient-initial" aria-hidden="true">{{
+                            recipientName(user.login).slice(0, 1).toUpperCase()
+                          }}</span>
+                          <span class="recipient-identity"
+                            ><strong>{{ recipientName(user.login) }}</strong
+                            ><small>&#64;{{ user.login }}</small></span
+                          >
+                        </label>
+                      } @empty {
+                        <p role="status" class="recipient-empty">
+                          {{ recipientSearch() ? 'Aucun utilisateur ne correspond à votre recherche.' : 'Aucune personne sélectionnée.' }}
+                        </p>
+                      }
+                    }
+                  </div>
+                </div>
+                @if (!allowedLogins().length) {
+                  <p class="text-xs text-slate-500">Cette ressource sera visible uniquement par vous.</p>
+                }
+              }
+            </section>
           }
         </fieldset>
         <div class="resource-footer">
-          <span class="resource-privacy">Visible par les membres du projet</span>
+          <span class="resource-privacy">{{ restricted() ? 'Accès restreint' : 'Visible par les membres du projet' }}</span>
           <div class="resource-actions">
             <button type="button" class="btn-secondary" (click)="closeForm()" [disabled]="saving()">Annuler</button
             ><button type="submit" class="resource-submit" [disabled]="saving()">
-              {{ saving() ? 'Enregistrement…' : 'Ajouter la ressource' }}
+              {{ saving() ? 'Enregistrement…' : editingVisibility() || editingResource() ? 'Enregistrer' : 'Ajouter la ressource' }}
             </button>
           </div>
         </div>
@@ -258,22 +353,73 @@
                 ><time [attr.datetime]="document.createdAt">Ajouté le {{ document.createdAt | date: 'dd/MM/yyyy' }}</time>
               </div>
             </div>
+            @if (document.restricted) {
+              <span class="px-4 text-xs text-slate-500">Accès restreint</span>
+            }
             <footer class="document-actions">
-              @if (document.url) {
-                <a [href]="document.url" target="_blank" rel="noopener noreferrer" class="document-open"
-                  >Ouvrir le lien <span aria-hidden="true">↗</span></a
-                >
-              } @else {
-                <button type="button" class="document-open" (click)="download(document)" [disabled]="downloading() !== null">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                    <path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5" /></svg
-                  >{{ downloading() === document.id ? 'Téléchargement…' : 'Télécharger' }}
+              @if (canEditResource(document)) {
+                <button type="button" class="resource-icon-action" title="Modifier" aria-label="Modifier" (click)="editResource(document)">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m16 3 5 5-12 12H4v-5L16 3ZM14 5l5 5" />
+                  </svg>
                 </button>
+              }
+              @if (canChangeVisibility(document)) {
+                <button
+                  type="button"
+                  class="resource-icon-action"
+                  title="Visibilité"
+                  aria-label="Visibilité"
+                  (click)="editVisibility(document)"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="5" y="10" width="14" height="11" rx="2" />
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+                  </svg>
+                </button>
+              }
+              @if (document.url) {
+                <a
+                  [href]="document.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="resource-icon-action"
+                  title="Ouvrir le lien"
+                  aria-label="Ouvrir le lien"
+                  ><svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M14 3h7v7M21 3 10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" /></svg
+                ></a>
+              } @else {
+                <jhi-document-actions [projectId]="projectId" [document]="document" />
               }
               @if (canDelete()) {
                 <button
                   type="button"
-                  class="document-delete"
+                  class="resource-icon-action resource-icon-action-danger"
                   (click)="pendingDelete.set(document)"
                   [disabled]="saving()"
                   [attr.aria-label]="'Supprimer ' + document.title"
@@ -298,7 +444,9 @@
               }}
             </p>
             @if (!documents().length) {
-              <button type="button" class="documents-add" (click)="openForm()">＋ Ajouter une ressource</button>
+              <button [disabled]="project()?.status === 'CLOSED'" type="button" class="documents-add" (click)="openForm()">
+                ＋ Ajouter une ressource
+              </button>
             }
           </div>
         }

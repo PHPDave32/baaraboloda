@@ -7,19 +7,20 @@ import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AccountService } from 'app/core/auth';
+import { Router } from '@angular/router';
+import { LoginService } from 'app/login/login.service';
 import { PasswordService } from 'app/account/password/password.service';
+import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'jhi-profile',
   standalone: true,
-  imports: [NotificationCenterComponent, ReactiveFormsModule, PhotoPicker, UserPhotoDirective],
+  imports: [NotificationCenterComponent, ReactiveFormsModule, PhotoPicker, UserPhotoDirective, PasswordToggleDirective],
   templateUrl: './profile.html',
 })
 export default class ProfileComponent {
   readonly photoSaving = signal(false);
   readonly photoMessage = signal('');
-  private readonly http = inject(HttpClient);
-  private readonly accountService = inject(AccountService);
   readonly success = signal(false);
   readonly error = signal<string | null>(null);
   readonly doNotMatch = signal(false);
@@ -47,10 +48,55 @@ export default class ProfileComponent {
     return value || account.login.charAt(0).toUpperCase();
   });
 
-  readonly isAdmin = computed(() => this.account()?.authorities?.includes('ROLE_ADMIN') ?? false);
+  readonly isSuperAdmin = computed(() => this.account()?.authorities.includes('ROLE_SUPER_ADMIN') ?? false);
+  readonly isAdmin = computed(() => this.isSuperAdmin() || (this.account()?.authorities.includes('ROLE_ADMIN') ?? false));
+
+  readonly profileSaving = signal(false);
+  readonly profileMessage = signal('');
+  readonly profileForm = inject(FormBuilder).nonNullable.group({
+    firstName: [this.account()?.firstName ?? '', [Validators.required, Validators.maxLength(50)]],
+    lastName: [this.account()?.lastName ?? '', [Validators.required, Validators.maxLength(50)]],
+    login: [
+      this.account()?.login ?? '',
+      [Validators.required, Validators.maxLength(50), Validators.pattern('^[a-zA-Z0-9!$&*+=?^_`{|}~.@-]+$')],
+    ],
+  });
+  private readonly loginService = inject(LoginService);
+  private readonly router = inject(Router);
+
+  saveProfile(): void {
+    const account = this.account();
+    if (!account || this.profileForm.invalid || this.profileSaving()) return;
+    const fields = this.profileForm.getRawValue();
+    fields.login = fields.login.toLowerCase();
+    this.profileSaving.set(true);
+    this.profileMessage.set('');
+    this.accountService.save({ ...account, ...fields }).subscribe({
+      next: () => {
+        this.profileSaving.set(false);
+        if (fields.login !== account.login) {
+          this.loginService.logout();
+          this.router.navigate(['/login']);
+        } else {
+          this.accountService.identity(true).subscribe();
+          this.profileMessage.set('Informations mises à jour.');
+        }
+      },
+      error: err => {
+        this.profileSaving.set(false);
+        this.profileMessage.set(
+          err?.error?.errorKey === 'userexists'
+            ? 'Cet identifiant est déjà utilisé.'
+            : 'Impossible de mettre à jour le profil. Vérifiez votre identifiant.',
+        );
+      },
+    });
+  }
 
   passwordForm: FormGroup;
 
+  private readonly http = inject(HttpClient);
+  private readonly accountService = inject(AccountService);
   private readonly fb = inject(FormBuilder);
   private readonly passwordService = inject(PasswordService);
   private readonly cdr = inject(ChangeDetectorRef);

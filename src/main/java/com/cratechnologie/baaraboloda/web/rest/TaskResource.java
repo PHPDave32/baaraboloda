@@ -95,6 +95,7 @@ public class TaskResource {
         if (taskDTO.getId() != null) {
             throw new BadRequestAlertException("A new task cannot already have an ID", ENTITY_NAME, "idexists");
         }
+        projectSecurityService.checkProjectAction(taskDTO.getProject() == null ? null : taskDTO.getProject().getId(), "PERM_TASK_MANAGE");
         taskDTO.setReporter(
             SecurityUtils.getCurrentUserLogin()
                 .flatMap(userRepository::findOneByLogin)
@@ -216,16 +217,19 @@ public class TaskResource {
 
     @GetMapping("/projects/{projectId}/tasks")
     public ResponseEntity<List<TaskDTO>> getTasksByProject(@PathVariable Long projectId) {
+        projectSecurityService.checkProjectAccess(projectId);
         return ResponseEntity.ok(taskService.findByProjectId(projectId));
     }
 
     @GetMapping("/projects/{projectId}/backlog")
     public ResponseEntity<List<TaskDTO>> getBacklog(@PathVariable Long projectId) {
+        projectSecurityService.checkProjectAccess(projectId);
         return ResponseEntity.ok(taskService.findBacklogByProjectId(projectId));
     }
 
     @GetMapping("/sprints/{sprintId}/tasks")
     public ResponseEntity<List<TaskDTO>> getTasksBySprint(@PathVariable Long sprintId) {
+        projectSecurityService.checkSprintAccess(sprintId);
         return ResponseEntity.ok(taskService.findBySprintId(sprintId));
     }
 
@@ -242,6 +246,7 @@ public class TaskResource {
         }
         projectSecurityService.checkCanMoveTask(id);
         Long sprintId = body.get("sprintId");
+        if (sprintId != null) projectSecurityService.checkSprintAccess(sprintId);
         TaskDTO result = taskService.moveToSprint(id, sprintId);
         return ResponseEntity.ok(result);
     }
@@ -253,6 +258,7 @@ public class TaskResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
         Long sprintId = body.get("sprintId");
+        if (sprintId != null) projectSecurityService.checkSprintAccess(sprintId);
         if (sprintId == null) {
             throw new BadRequestAlertException("Target sprint is required", ENTITY_NAME, "sprintnull");
         }
@@ -293,6 +299,7 @@ public class TaskResource {
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> getTask(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Task : {}", id);
+        projectSecurityService.checkTaskAccess(id);
         Optional<TaskDTO> taskDTO = taskService.findOne(id);
         return ResponseUtil.wrapOrNotFound(taskDTO);
     }

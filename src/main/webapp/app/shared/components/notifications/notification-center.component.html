@@ -89,7 +89,13 @@
                   ? 'Mention'
                   : item.kind === 'COMMENT'
                     ? 'Commentaire'
-                    : 'Statut'
+                    : item.kind === 'TASK_CREATED'
+                      ? 'Création'
+                      : item.kind === 'TASK_UPDATED'
+                        ? 'Modification'
+                        : item.kind === 'TASK_DELETED'
+                          ? 'Suppression'
+                          : 'Statut'
             }}
             · Tâche #{{ item.taskId }}</span
           >

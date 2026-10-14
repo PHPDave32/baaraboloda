@@ -18,19 +18,19 @@
         </div>
 
         @if (authenticationError()) {
-          <div class="error-message" role="alert">Adresse e-mail ou mot de passe incorrect.</div>
+          <div class="error-message" role="alert">Identifiant ou mot de passe incorrect.</div>
         }
 
         <form [formGroup]="loginForm" (ngSubmit)="login()" class="login-form">
           <div class="field-group">
-            <label class="field-label" for="username">Adresse e-mail</label>
+            <label class="field-label" for="username">Identifiant de connexion</label>
             <input
               #username
               id="username"
               type="text"
               formControlName="username"
               class="login-input"
-              placeholder="you@example.com"
+              placeholder="Saisissez votre identifiant"
               autocomplete="username"
             />
           </div>
@@ -40,6 +40,7 @@
             <input
               id="password"
               type="password"
+              jhiPasswordToggle
               formControlName="password"
               class="login-input"
               placeholder="Saisissez votre mot de passe"

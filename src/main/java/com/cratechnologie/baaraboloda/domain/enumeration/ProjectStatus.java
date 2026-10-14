@@ -5,6 +5,7 @@ package com.cratechnologie.baaraboloda.domain.enumeration;
  */
 public enum ProjectStatus {
     ACTIVE,
+    CLOSED,
     ARCHIVED,
     COMPLETED,
 }

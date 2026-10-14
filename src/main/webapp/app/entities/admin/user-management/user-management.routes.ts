@@ -9,7 +9,7 @@ const userManagementRoute: Routes = [
     path: '',
     loadComponent: () => import('./list/user-management').then(m => m.UserManagement),
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },
@@ -20,7 +20,7 @@ const userManagementRoute: Routes = [
       userManagement: UserManagementResolve,
     },
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },
@@ -31,7 +31,7 @@ const userManagementRoute: Routes = [
       userManagement: UserManagementResolve,
     },
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },
@@ -42,7 +42,7 @@ const userManagementRoute: Routes = [
       userManagement: UserManagementResolve,
     },
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },

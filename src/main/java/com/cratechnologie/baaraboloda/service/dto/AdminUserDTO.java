@@ -52,6 +52,42 @@ public class AdminUserDTO implements Serializable {
     private Instant lastModifiedDate;
 
     private Set<String> authorities;
+    private Long accessProfileId;
+    private String accessProfileName;
+    private Set<String> grantedPermissions;
+    private Set<String> revokedPermissions;
+
+    public Long getAccessProfileId() {
+        return accessProfileId;
+    }
+
+    public void setAccessProfileId(Long id) {
+        accessProfileId = id;
+    }
+
+    public String getAccessProfileName() {
+        return accessProfileName;
+    }
+
+    public void setAccessProfileName(String name) {
+        accessProfileName = name;
+    }
+
+    public Set<String> getGrantedPermissions() {
+        return grantedPermissions;
+    }
+
+    public void setGrantedPermissions(Set<String> permissions) {
+        grantedPermissions = permissions;
+    }
+
+    public Set<String> getRevokedPermissions() {
+        return revokedPermissions;
+    }
+
+    public void setRevokedPermissions(Set<String> permissions) {
+        revokedPermissions = permissions;
+    }
 
     public AdminUserDTO() {
         // Empty constructor needed for Jackson.
@@ -70,7 +106,13 @@ public class AdminUserDTO implements Serializable {
         this.createdDate = user.getCreatedDate();
         this.lastModifiedBy = user.getLastModifiedBy();
         this.lastModifiedDate = user.getLastModifiedDate();
-        this.authorities = user.getAuthorities().stream().map(Authority::getName).collect(Collectors.toSet());
+        this.authorities = com.cratechnologie.baaraboloda.security.EffectiveAuthorities.of(user);
+        this.grantedPermissions = new java.util.HashSet<>(user.getGrantedPermissions());
+        this.revokedPermissions = new java.util.HashSet<>(user.getRevokedPermissions());
+        if (user.getAccessProfile() != null) {
+            this.accessProfileId = user.getAccessProfile().getId();
+            this.accessProfileName = user.getAccessProfile().getName();
+        }
     }
 
     public Long getId() {

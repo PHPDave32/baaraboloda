@@ -21,10 +21,18 @@ import { AppNotification, NotificationService } from './notification.service';
                 ? 'On vous a mentionné'
                 : notice.kind === 'COMMENT'
                   ? 'Un nouveau commentaire'
-                  : 'Votre projet avance'
+                  : notice.kind === 'TASK_CREATED'
+                    ? 'Nouvelle tâche'
+                    : notice.kind === 'TASK_UPDATED'
+                      ? 'Tâche modifiée'
+                      : notice.kind === 'TASK_DELETED'
+                        ? 'Tâche supprimée'
+                        : 'Votre projet avance'
           }}</strong>
           <span class="notification-toast-message">{{ notice.message }}</span>
-          <span class="toast-action">Voir la tâche <span aria-hidden="true">↗</span></span>
+          <span class="toast-action"
+            >{{ notice.kind === 'TASK_DELETED' ? 'Voir le projet' : 'Voir la tâche' }} <span aria-hidden="true">↗</span></span
+          >
         </button>
         <button type="button" class="toast-close" aria-label="Fermer la notification" (click)="notifications.notice.set(null)">×</button>
         <span class="toast-progress" aria-hidden="true"></span>
@@ -40,6 +48,8 @@ export class NotificationToastComponent {
   openTask(item: AppNotification): void {
     void this.notifications.markRead(item.id);
     this.notifications.notice.set(null);
-    void this.router.navigate(['/projects', item.projectId, 'tasks', item.taskId]);
+    void this.router.navigate(
+      item.kind === 'TASK_DELETED' ? ['/projects', item.projectId, 'board'] : ['/projects', item.projectId, 'tasks', item.taskId],
+    );
   }
 }

@@ -72,23 +72,18 @@
                 <p class="text-white">{{ task.dueDate?.toDate() | date: 'd MMM y' }}</p>
               </div>
             }
-
-            @if (task.storyPoints) {
-              <div>
-                <p class="text-sm font-medium text-gray-400 mb-2">Points</p>
-                <p class="text-white">{{ task.storyPoints }}</p>
-              </div>
-            }
           </div>
         </div>
 
         <!-- Section commentaires -->
         @if (task.images?.length) {
           <section class="task-panel" style="padding: 24px; margin-bottom: 24px">
-            <h2 class="comments-heading">Images de la tâche</h2>
+            <h2 class="comments-heading">Pièces jointes de la tâche</h2>
             <jhi-image-attachments [images]="task.images!" />
           </section>
         }
+        <jhi-task-documents [projectId]="projectId" [taskId]="taskId" />
+
         <div class="task-panel task-comments">
           <div class="px-6 py-4 border-b border-gray-800">
             <h2 class="comments-heading">
@@ -145,6 +140,7 @@
                   [editable]="true"
                   [disabled]="sendingComment"
                   [(images)]="captures"
+                  [allowPdf]="true"
                   (readingChange)="readingCapture = $event"
                 >
                   <textarea
@@ -239,21 +235,6 @@
           <div class="mt-3">
             <app-badge [type]="'taskType'" [value]="task.type ?? ''" />
           </div>
-        </div>
-
-        <div class="property-field">
-          <label for="task-storyPoints" class="property-label">Estimation</label>
-          <form [formGroup]="form">
-            <input
-              type="number"
-              id="task-storyPoints"
-              formControlName="storyPoints"
-              (change)="save()"
-              [disabled]="!canManage"
-              class="input-field text-sm disabled:cursor-not-allowed disabled:opacity-60"
-              placeholder="0"
-            />
-          </form>
         </div>
 
         @if (canManage) {

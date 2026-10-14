@@ -43,7 +43,7 @@ public class CommentService {
      * @return the persisted entity.
      */
     public CommentDTO save(CommentDTO commentDTO) {
-        ImageAttachmentValidator.validate(commentDTO.getImages());
+        ImageAttachmentValidator.validate(commentDTO.getImages(), true);
         validateImage(commentDTO);
         LOG.debug("Request to save Comment : {}", commentDTO);
         Comment comment = commentMapper.toEntity(commentDTO);
@@ -59,7 +59,7 @@ public class CommentService {
      * @return the persisted entity.
      */
     public CommentDTO update(CommentDTO commentDTO) {
-        ImageAttachmentValidator.validate(commentDTO.getImages());
+        ImageAttachmentValidator.validate(commentDTO.getImages(), true);
         validateImage(commentDTO);
         LOG.debug("Request to update Comment : {}", commentDTO);
         Comment comment = commentMapper.toEntity(commentDTO);
@@ -74,7 +74,7 @@ public class CommentService {
      * @return the persisted entity.
      */
     public Optional<CommentDTO> partialUpdate(CommentDTO commentDTO) {
-        ImageAttachmentValidator.validate(commentDTO.getImages());
+        ImageAttachmentValidator.validate(commentDTO.getImages(), true);
         validateImage(commentDTO);
         LOG.debug("Request to partially update Comment : {}", commentDTO);
 

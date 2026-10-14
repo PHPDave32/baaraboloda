@@ -9,7 +9,7 @@ const authorityRoute: Routes = [
     path: '',
     loadComponent: () => import('./list/authority').then(m => m.Authority),
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },
@@ -20,7 +20,7 @@ const authorityRoute: Routes = [
       authority: AuthorityResolve,
     },
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },
@@ -31,7 +31,7 @@ const authorityRoute: Routes = [
       authority: AuthorityResolve,
     },
     data: {
-      authorities: ['ROLE_ADMIN'],
+      authorities: ['ROLE_SUPER_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },

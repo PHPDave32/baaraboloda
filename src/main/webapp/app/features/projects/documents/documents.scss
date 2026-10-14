@@ -431,7 +431,7 @@
 }
 .documents-heading h1 {
   margin: 10px 0;
-  font-size: clamp(24px, 2.4vw, 30px);
+  font-size: clamp(22px, 2vw, 26px);
   font-weight: 750;
   color: #1c3449;
   line-height: 1.2;
@@ -748,7 +748,8 @@
 .document-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px 0;
   border-top: 1px solid #eaf0f5;
@@ -865,4 +866,97 @@
   .documents-add:hover:not(:disabled) {
     transform: none;
   }
+}
+
+.recipient-picker {
+  border: 1px solid #dce6ed;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f9fbfd;
+}
+.recipient-search {
+  margin-top: 8px;
+}
+.recipient-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+  font-size: 12px;
+  color: #526b7e;
+}
+.recipient-toolbar button {
+  color: #247b9c;
+  font-weight: 600;
+}
+.recipient-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 100px;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+.recipient-chips button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #b8dbe8;
+  border-radius: 20px;
+  background: #eaf6fb;
+  color: #236984;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.recipient-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border-top: 1px solid #e0e9ee;
+}
+.recipient-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.recipient-row:hover,
+.recipient-row.is-selected {
+  background: #eaf4f9;
+}
+.recipient-row input {
+  accent-color: #328cb1;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.recipient-initial {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dcecf3;
+  color: #286e8c;
+  flex-shrink: 0;
+}
+.recipient-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.recipient-identity small {
+  font-weight: 400;
+  color: #71889a;
+}
+
+.recipient-empty {
+  padding: 20px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #71889a;
 }

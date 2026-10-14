@@ -54,6 +54,37 @@ class NotificationServiceTest {
         database.shutdown();
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = { "TASK_CREATED", "TASK_UPDATED", "TASK_DELETED" })
+    void taskEventsNotifyOtherProjectMembersOnce(String kind) {
+        for (long id = 3; id <= 6; id++) {
+            User user = new User();
+            user.setId(id);
+            user.setActivated(id != 6);
+            user.setLogin(id == 5 ? "alice" : "member" + id);
+            when(users.findById(id)).thenReturn(Optional.of(user));
+        }
+        when(users.findProjectNotificationRecipientIds(1L)).thenReturn(java.util.Set.of(2L, 3L, 4L, 5L, 6L));
+        switch (kind) {
+            case "TASK_CREATED" -> service.taskCreated(task);
+            case "TASK_UPDATED" -> service.taskUpdated(task);
+            case "TASK_DELETED" -> service.taskDeleted(task);
+            default -> throw new IllegalArgumentException(kind);
+        }
+        for (String login : java.util.List.of("bob", "member3", "member4")) {
+            assertThat(service.list(login)).hasSize(1);
+            assertThat(service.list(login).getFirst().kind()).isEqualTo(kind);
+            assertThat(service.list(login).getFirst().message()).contains("alice", task.getTitle());
+        }
+        assertThat(service.list("alice")).isEmpty();
+        assertThat(service.list("member6")).isEmpty();
+        assertThat(service.list("outsider")).isEmpty();
+        if (kind.equals("TASK_DELETED")) {
+            when(tasks.findById(10L)).thenReturn(Optional.empty());
+            assertThat(service.list("bob").getFirst().projectId()).isEqualTo(1L);
+        }
+    }
+
     @Test
     void repairsMissingTablesWithoutLosingNotifications() throws Exception {
         service.assignment(task, null);

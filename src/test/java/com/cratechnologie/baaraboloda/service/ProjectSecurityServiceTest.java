@@ -34,6 +34,18 @@ class ProjectSecurityServiceTest {
     }
 
     @Test
+    void superAdministratorCanManageAllProjectsWithoutMembership() {
+        SecurityContextHolder.getContext().setAuthentication(
+            new UsernamePasswordAuthenticationToken("superadmin", "", List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")))
+        );
+        assertThat(service.canModifyTask(1L)).isTrue();
+        assertThat(service.canMoveTask(1L)).isTrue();
+        assertThat(service.canModifySprint(1L)).isTrue();
+        assertThat(service.canModifyComment(1L)).isTrue();
+        verifyNoInteractions(tasks, comments, sprints);
+    }
+
+    @Test
     void externalReporterCanManageOwnTask() {
         when(tasks.existsByIdAndReporterLogin(1L, "reporter")).thenReturn(true);
         assertThat(service.canModifyTask(1L)).isTrue();

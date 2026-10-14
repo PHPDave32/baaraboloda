@@ -514,7 +514,7 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
   border-color: #cbd5e1 !important;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   .app-shell.has-sidebar .workspace-main {
     margin-left: 0;
   }
@@ -784,6 +784,57 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
   }
 }
 
+.password-field {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.password-field .password-field-input {
+  width: 100%;
+  padding-right: 3rem !important;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.7rem;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: #71869a;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.password-toggle:hover {
+  background: #eaf4f9;
+  color: #328cb1;
+}
+
+.password-toggle:focus-visible {
+  outline: 3px solid rgba(50, 140, 177, 0.25);
+  outline-offset: 1px;
+}
+
+.password-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .app-shell
   :is(.btn-primary, .btn-secondary, .btn-danger, .modal-btn, .resource-submit, .documents-add, .document-open, .access-manage)
   .text-white {
@@ -1018,4 +1069,140 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
   flex-wrap: wrap;
   gap: 0.75rem;
   flex-shrink: 0;
+}
+
+.app-shell.has-sidebar:has(.workspace-sidebar.is-collapsed) .workspace-main {
+  margin-left: 0;
+}
+.app-shell.has-sidebar .workspace-main {
+  transition: margin-left 0.2s ease;
+}
+@media (max-width: 900px) {
+  .app-shell.has-sidebar .workspace-main {
+    padding-top: 0;
+  }
+}
+
+@media (min-width: 901px) {
+  .app-shell.has-sidebar:has(.workspace-sidebar.is-collapsed) .workspace-main {
+    padding-top: 0;
+  }
+}
+
+/* Shared page geometry and heading hierarchy across the workspace. */
+.app-shell .workspace-main .workspace-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 32px;
+  padding-top: 32px;
+}
+.app-shell .workspace-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  min-height: 104px;
+  margin: 0 0 28px;
+  padding: 0 0 24px;
+  border-bottom: 1px solid #dce6ed;
+}
+.app-shell .workspace-main .workspace-page .workspace-page-header h1 {
+  margin: 8px 0;
+  font-size: clamp(22px, 2vw, 26px);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  color: #1c344a;
+}
+.app-shell .workspace-page-header p {
+  margin: 0;
+  color: #6a8295;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.app-shell .workspace-page-header :is(.eyebrow, .admin-eyebrow, .backlog-eyebrow, .board-eyebrow, .sprints-eyebrow, .documents-kicker) {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #328cb1;
+}
+@media (max-width: 600px) {
+  .app-shell .workspace-main .workspace-page {
+    padding: 20px 16px;
+  }
+  .app-shell .workspace-page-header {
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+}
+
+/* Keep the menu beside the heading rather than reserving an empty top row. */
+.app-shell .workspace-main .dashboard-page {
+  padding: 0;
+}
+.app-shell.has-sidebar:has(.workspace-sidebar.is-collapsed) .workspace-page-header {
+  padding-left: 52px;
+}
+@media (max-width: 900px) {
+  .app-shell.has-sidebar .workspace-page-header {
+    padding-left: 52px;
+  }
+}
+
+.app-shell .workspace-page-header .workspace-project-focus {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 10px 0 14px;
+  padding: 4px 0 4px 14px;
+  border-left: 4px solid #328cb1;
+  color: #216e8d;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.resource-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #dce8ef;
+  border-radius: 10px;
+  background: #f5f9fc;
+  color: #337c9a;
+  cursor: pointer;
+  transition:
+    background 150ms,
+    border-color 150ms;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  &:hover:not(:disabled) {
+    background: #e5f2f8;
+    border-color: #b6d5e4;
+  }
+  &:focus-visible {
+    outline: 2px solid #328cb1;
+    outline-offset: 3px;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+  &.resource-icon-action-danger {
+    color: #b34e60;
+    &:hover:not(:disabled) {
+      background: #fff1f2;
+      border-color: #f3c8cf;
+    }
+  }
 }

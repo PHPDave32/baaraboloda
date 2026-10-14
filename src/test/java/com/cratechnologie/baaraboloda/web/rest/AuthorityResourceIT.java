@@ -27,7 +27,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 @IntegrationTest
 @AutoConfigureMockMvc
-@WithMockUser(authorities = { "ROLE_ADMIN" })
+@WithMockUser(authorities = { "ROLE_SUPER_ADMIN" })
 class AuthorityResourceIT {
 
     private static final String ENTITY_API_URL = "/api/authorities";

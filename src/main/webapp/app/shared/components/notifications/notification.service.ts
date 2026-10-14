@@ -43,6 +43,7 @@ export class NotificationService {
   private readonly api = `${serverApiUrl}api/notifications`;
   private publicKey = '';
   private audio: AudioContext | null = null;
+  private toneEndsAt = 0;
   private known: Set<string> | null = null;
   private controller: AbortController | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -253,22 +254,33 @@ export class NotificationService {
   }
 
   private tone(): void {
-    if (this.audio?.state !== 'running') return;
+    if (this.audio?.state !== 'running' || this.audio.currentTime < this.toneEndsAt) return;
     const now = this.audio.currentTime;
+    this.toneEndsAt = now + 3.5;
     for (const [offset, frequency] of [
-      [0, 740],
-      [0.1, 988],
+      [0, 660],
+      [0.32, 880],
+      [0.64, 1100],
+      [1.25, 660],
+      [1.57, 880],
+      [1.89, 1100],
+      [2.5, 880],
+      [2.82, 1100],
     ]) {
       const oscillator = this.audio.createOscillator();
       const gain = this.audio.createGain();
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(0, now + offset);
-      gain.gain.linearRampToValueAtTime(0.12, now + offset + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22);
+      gain.gain.linearRampToValueAtTime(0.16, now + offset + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.6);
       oscillator.connect(gain);
       gain.connect(this.audio.destination);
       oscillator.start(now + offset);
-      oscillator.stop(now + offset + 0.24);
+      oscillator.stop(now + offset + 0.65);
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gain.disconnect();
+      };
     }
   }
 
@@ -279,7 +291,7 @@ export class NotificationService {
       const key = `notification-sound-${login}`;
       try {
         const last = Number(localStorage.getItem(key) ?? '0');
-        if (Date.now() - last < 2500) return;
+        if (Date.now() - last < 4000) return;
         localStorage.setItem(key, String(Date.now()));
       } catch {
         this.soundReady.set(this.audio?.state === 'running');

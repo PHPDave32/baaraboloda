@@ -29,7 +29,13 @@ class ProjectDocumentServiceTest {
     private final ProjectRepository projects = mock(ProjectRepository.class);
     private final TaskRepository tasks = mock(TaskRepository.class);
     private final ProjectSecurityService security = mock(ProjectSecurityService.class);
-    private final ProjectDocumentService service = new ProjectDocumentService(documents, projects, tasks, security);
+    private final ProjectDocumentService service = new ProjectDocumentService(
+        documents,
+        projects,
+        tasks,
+        security,
+        mock(com.cratechnologie.baaraboloda.repository.UserRepository.class)
+    );
 
     @BeforeEach
     void setUp() {
@@ -47,7 +53,7 @@ class ProjectDocumentServiceTest {
 
     @Test
     void deniesEveryOperationToAnOutsider() {
-        when(projects.findAccessibleProjectIds("member")).thenReturn(List.of());
+        doThrow(new AccessDeniedException("Denied")).when(security).checkProjectAccess(1L);
         assertThatThrownBy(() -> service.list(1L)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> service.download(1L, 2L)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> service.create(1L, "Design", "", "DESIGN", "https://figma.com/design/a", null, null)).isInstanceOf(
@@ -94,6 +100,7 @@ class ProjectDocumentServiceTest {
 
     @Test
     void preventsMembersFromDeletingAndCrossProjectDownloads() {
+        doThrow(new AccessDeniedException("Denied")).when(security).requirePermission("PERM_DOCUMENT_MANAGE");
         assertThatThrownBy(() -> service.delete(1L, 2L)).isInstanceOf(AccessDeniedException.class);
         when(documents.findByIdAndProject_Id(2L, 1L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.download(1L, 2L)).isInstanceOf(ResponseStatusException.class);

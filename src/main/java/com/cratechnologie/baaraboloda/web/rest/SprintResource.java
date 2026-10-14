@@ -72,13 +72,23 @@ public class SprintResource {
      */
     @PostMapping("")
     @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_SPRINT_MANAGE + "\")"
+        "hasAnyAuthority(\"" +
+            AuthoritiesConstants.ADMIN +
+            "\", \"" +
+            AuthoritiesConstants.SUPER_ADMIN +
+            "\") or hasAuthority(\"" +
+            AuthoritiesConstants.PERM_SPRINT_MANAGE +
+            "\")"
     )
     public ResponseEntity<SprintDTO> createSprint(@Valid @RequestBody SprintDTO sprintDTO) throws URISyntaxException {
         LOG.debug("REST request to save Sprint : {}", sprintDTO);
         if (sprintDTO.getId() != null) {
             throw new BadRequestAlertException("A new sprint cannot already have an ID", ENTITY_NAME, "idexists");
         }
+        projectSecurityService.checkProjectAction(
+            sprintDTO.getProject() == null ? null : sprintDTO.getProject().getId(),
+            "PERM_SPRINT_MANAGE"
+        );
         sprintDTO = sprintService.save(sprintDTO);
         return ResponseEntity.created(new URI("/api/sprints/" + sprintDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, sprintDTO.getId().toString()))
@@ -114,6 +124,7 @@ public class SprintResource {
 
         projectSecurityService.checkCanModifySprint(id);
 
+        sprintDTO.setProject(sprintService.findOne(id).orElseThrow().getProject());
         sprintDTO = sprintService.update(sprintDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, sprintDTO.getId().toString()))
@@ -150,6 +161,7 @@ public class SprintResource {
 
         projectSecurityService.checkCanModifySprint(id);
 
+        sprintDTO.setProject(null);
         Optional<SprintDTO> result = sprintService.partialUpdate(sprintDTO);
 
         return ResponseUtil.wrapOrNotFound(
@@ -198,6 +210,7 @@ public class SprintResource {
     @GetMapping("/{id}")
     public ResponseEntity<SprintDTO> getSprint(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Sprint : {}", id);
+        projectSecurityService.checkSprintAccess(id);
         Optional<SprintDTO> sprintDTO = sprintService.findOne(id);
         return ResponseUtil.wrapOrNotFound(sprintDTO);
     }
@@ -210,7 +223,13 @@ public class SprintResource {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize(
-        "hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\") or hasAuthority(\"" + AuthoritiesConstants.PERM_SPRINT_MANAGE + "\")"
+        "hasAnyAuthority(\"" +
+            AuthoritiesConstants.ADMIN +
+            "\", \"" +
+            AuthoritiesConstants.SUPER_ADMIN +
+            "\") or hasAuthority(\"" +
+            AuthoritiesConstants.PERM_SPRINT_MANAGE +
+            "\")"
     )
     public ResponseEntity<Void> deleteSprint(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Sprint : {}", id);

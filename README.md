@@ -325,3 +325,16 @@ WHERE ID = 1 AND LOCKED = TRUE;
 ```
 
 Les migrations s’exécutent désormais avant que l’application accepte les requêtes. La migration de reprise complète les tables de notifications manquantes sans supprimer les tables existantes.
+
+### Super administrateur
+
+`ROLE_SUPER_ADMIN` donne accès à l’ensemble de l’administration. Seul ce rôle peut nommer des administrateurs, modifier les permissions et gérer les comptes administrateurs. Les administrateurs ordinaires continuent de gérer les employés (sans changer leurs permissions) et les projets. Le dernier super administrateur actif ne peut pas être supprimé, désactivé ou rétrogradé. Les règles métier, notamment l’interdiction d’ajouter une tâche à un sprint terminé, restent applicables.
+
+Pour initialiser le premier compte sur une installation, définissez `SECURITY_BOOTSTRAPSUPERADMIN_EMAIL` et `SECURITY_BOOTSTRAPSUPERADMIN_PASSWORD` dans l’environnement du serveur, ou créez le fichier local `.data/super-admin-bootstrap.properties` :
+
+```properties
+security.bootstrap-super-admin.email=adresse-du-compte@example.com
+security.bootstrap-super-admin.password=mot-de-passe-initial-long-et-unique
+```
+
+Ce fichier est exclu de Git. Au démarrage, la migration ajoute le rôle ; l’initialisation crée le compte demandé avec l’adresse email comme identifiant. Si un compte actif possède déjà cette adresse, il conserve son identifiant et son mot de passe. Aucun compte n’est modifié si un super administrateur existe déjà. Sans configuration explicite, aucun compte privilégié n’est créé. Retirez la configuration d’initialisation après la première connexion et changez le mot de passe initial dans le profil. Les utilisateurs dont le rôle change doivent se reconnecter pour renouveler leur session.

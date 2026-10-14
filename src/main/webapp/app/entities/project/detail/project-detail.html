@@ -34,7 +34,7 @@
           <dt><span jhiTranslate="baaraBolodaApp.project.status">Status</span></dt>
           <dd>
             <span [jhiTranslate]="'baaraBolodaApp.ProjectStatus.' + (projectRef.status ?? 'null')">{{
-              { null: '', ACTIVE: 'ACTIVE', ARCHIVED: 'ARCHIVED', COMPLETED: 'COMPLETED' }[projectRef.status ?? 'null']
+              { null: '', ACTIVE: 'ACTIVE', CLOSED: 'Fermé', ARCHIVED: 'ARCHIVED', COMPLETED: 'COMPLETED' }[projectRef.status ?? 'null']
             }}</span>
           </dd>
           <dt><span jhiTranslate="baaraBolodaApp.project.createdAt">Created At</span></dt>

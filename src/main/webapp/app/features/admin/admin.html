@@ -33,52 +33,86 @@
     @if (userError) {
       <p class="mb-4 text-sm text-red-500">{{ userError }}</p>
     }
-    <form [formGroup]="userForm" (ngSubmit)="submitUser()" class="space-y-3">
+    <form [formGroup]="userForm" (ngSubmit)="submitUser()" class="space-y-4">
       <jhi-photo-picker
         [imageUrl]="userForm.get('imageUrl')?.value"
         (imageUrlChange)="userForm.patchValue({ imageUrl: $event })"
         (uploading)="photoUploading = $event"
         [disabled]="loadingUser"
       />
-      <div class="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
-        <input
-          formControlName="firstName"
-          class="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-          placeholder="Prénom"
-        />
-        <input
-          formControlName="lastName"
-          class="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-          placeholder="Nom"
-        />
+      <div class="grid grid-cols-2 items-start gap-4 max-[600px]:grid-cols-1">
+        <div class="min-w-0">
+          <label for="user-firstName" class="mb-1.5 block text-xs font-medium text-[#172033]">Prénom</label>
+          <input
+            id="user-firstName"
+            formControlName="firstName"
+            class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+            placeholder="Prénom"
+          />
+        </div>
+        <div class="min-w-0">
+          <label for="user-lastName" class="mb-1.5 block text-xs font-medium text-[#172033]">Nom</label>
+          <input
+            id="user-lastName"
+            formControlName="lastName"
+            class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+            placeholder="Nom"
+          />
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
-        <input
-          formControlName="login"
-          class="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-          placeholder="Login (identifiant)"
-        />
-        <input
-          type="email"
-          formControlName="email"
-          class="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-          placeholder="Adresse e-mail"
-        />
+      <div class="grid grid-cols-2 items-start gap-4 max-[600px]:grid-cols-1">
+        <div class="min-w-0">
+          <label for="user-login" class="mb-1.5 block text-xs font-medium text-[#172033]">Identifiant</label>
+          <input
+            id="user-login"
+            formControlName="login"
+            class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+            placeholder="Login (identifiant)"
+          />
+        </div>
+        <div class="min-w-0">
+          <label for="user-email" class="mb-1.5 block text-xs font-medium text-[#172033]">Adresse e-mail</label>
+          <input
+            id="user-email"
+            type="email"
+            formControlName="email"
+            class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+            placeholder="Adresse e-mail"
+          />
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
-        <input
-          type="password"
-          formControlName="password"
-          class="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-          placeholder="Mot de passe temporaire"
-        />
-        <select
-          formControlName="authorities"
-          class="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-        >
-          <option value="ROLE_USER">Employé</option>
-          <option value="ROLE_ADMIN">Administrateur</option>
-        </select>
+      <div class="grid grid-cols-2 items-start gap-4 max-[600px]:grid-cols-1">
+        <div class="min-w-0">
+          <label for="user-password" class="mb-1.5 block text-xs font-medium text-[#172033]">Mot de passe temporaire</label>
+          <input
+            id="user-password"
+            type="password"
+            jhiPasswordToggle
+            formControlName="password"
+            class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+            placeholder="Mot de passe temporaire"
+          />
+        </div>
+        @if (canManageUsers) {
+          <div class="min-w-0">
+            <label for="user-access-profile" class="mb-1.5 block text-xs font-medium text-[#172033]">Profil</label>
+            <select
+              id="user-access-profile"
+              formControlName="accessProfileId"
+              [attr.aria-busy]="profilesLoading"
+              class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+            >
+              <option [ngValue]="null">{{ profilesLoading ? 'Chargement des profils…' : 'Aucun profil personnalisé' }}</option>
+              @for (profile of profiles; track profile.id) {
+                <option [ngValue]="profile.id">{{ profile.name }}</option>
+              }
+            </select>
+            @if (profilesError) {
+              <p role="alert" class="mt-1 text-xs text-red-500">{{ profilesError }}</p>
+              <button type="button" class="text-xs underline" (click)="loadProfiles()">Réessayer</button>
+            }
+          </div>
+        }
       </div>
       <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 max-[600px]:justify-start">
         <button type="button" (click)="showUserForm = false" class="btn-secondary">Annuler</button>
@@ -87,11 +121,11 @@
     </form>
   </app-modal>
 
-  <div class="admin-content">
-    <header class="admin-hero">
+  <div class="admin-content workspace-page">
+    <header class="admin-hero workspace-page-header">
       <div>
         <span class="admin-eyebrow">ÉQUIPE &amp; ORGANISATION</span>
-        <h1>Administration</h1>
+        <h1>{{ isSuperAdmin ? 'Super administration' : 'Administration' }}</h1>
         <p>Gérez les comptes de votre équipe et leur accès aux projets.</p>
       </div>
       <jhi-notification-center />
@@ -115,37 +149,63 @@
           </svg>
           Employés <span class="tab-count">{{ users.length }}</span>
         </button>
-        <button
-          type="button"
-          class="admin-tab"
-          [class.is-active]="activeTab === 'projects'"
-          [attr.aria-pressed]="activeTab === 'projects'"
-          (click)="activeTab = 'projects'"
-        >
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-            />
-          </svg>
-          Projets et accès <span class="tab-count">{{ projects.length }}</span>
-        </button>
+        @if (canManageUsers) {
+          <button
+            type="button"
+            class="admin-tab"
+            [class.is-active]="activeTab === 'projects'"
+            [attr.aria-pressed]="activeTab === 'projects'"
+            (click)="activeTab = 'projects'"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+              />
+            </svg>
+            Projets et accès <span class="tab-count">{{ projects.length }}</span>
+          </button>
+        }
+        @if (isSuperAdmin) {
+          <button
+            type="button"
+            class="admin-tab"
+            [class.is-active]="activeTab === 'profiles'"
+            [attr.aria-pressed]="activeTab === 'profiles'"
+            (click)="activeTab = 'profiles'"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 2l2.2 4.5L19 8l-3.5 3.4.8 4.8-4.3-2.2-4.3 2.2.8-4.8L5 8l4.8-1.5L12 2z"
+              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 20h14M8 17h8" />
+            </svg>
+            Profils et permissions
+          </button>
+        }
       </div>
 
       <div class="admin-panel-body">
+        @if (userError && !showUserForm && !showPermissionPanel) {
+          <p class="mb-4 text-sm text-red-500" role="alert">{{ userError }}</p>
+        }
         @if (activeTab === 'users') {
           <div class="mb-5 flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
             <div>
               <h2 class="text-base font-semibold text-[#172033]">Répertoire de l'équipe</h2>
               <p class="mt-0.5 text-xs text-slate-500">{{ users.length }} compte{{ users.length > 1 ? 's' : '' }} sous votre gestion</p>
             </div>
-            <button type="button" (click)="openCreateUser()" class="btn-primary">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Nouvel employé
-            </button>
+            @if (canManageUsers) {
+              <button type="button" (click)="openCreateUser()" class="btn-primary">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Nouvel employé
+              </button>
+            }
           </div>
 
           <div class="mb-4">
@@ -159,25 +219,64 @@
           <div class="space-y-3">
             @for (user of pagedUsers; track user.login) {
               <div
+                #userCard
+                (mouseenter)="userPreview.open(userCard)"
+                (mouseleave)="userPreview.close()"
+                (click)="userPreview.close()"
                 class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/75 p-4 shadow-[0_8px_22px_rgba(100,116,139,.06)] transition hover:-translate-y-px hover:border-[#a8d4e8] hover:bg-white max-[600px]:flex-col max-[600px]:items-start"
               >
-                <div class="flex min-w-0 items-center gap-3">
-                  <app-avatar [user]="user" size="md" />
-                  <div class="min-w-0">
-                    <p class="truncate text-[.85rem] font-semibold text-[#172033]">{{ user.firstName }} {{ user.lastName }}</p>
-                    <div class="mt-1 flex flex-wrap items-center gap-2">
-                      <span class="truncate text-[.7rem] text-slate-500">{{ user.email }}</span>
-                      <span
-                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[.62rem] font-semibold uppercase tracking-wide"
-                        [class]="isAdmin(user) ? 'bg-[#328cb1]/12 text-[#2a7a9e]' : 'bg-slate-100 text-slate-500'"
-                      >
-                        {{ isAdmin(user) ? 'Administrateur' : 'Employé' }}
-                      </span>
+                <app-user-preview #userPreview [externalHover]="true" [user]="user" [profile]="roleLabel(user)">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <app-avatar [user]="user" size="md" />
+                    <div class="min-w-0">
+                      <p class="truncate text-[.85rem] font-semibold text-[#172033]">{{ user.firstName }} {{ user.lastName }}</p>
+                      <div class="mt-1 flex flex-wrap items-center gap-2">
+                        <span class="truncate text-[.7rem] text-slate-500">{{ user.email }}</span>
+                        <span
+                          class="inline-flex items-center rounded-full px-2 py-0.5 text-[.62rem] font-semibold uppercase tracking-wide"
+                          [class]="isAdmin(user) ? 'bg-[#328cb1]/12 text-[#2a7a9e]' : 'bg-slate-100 text-slate-500'"
+                        >
+                          {{ roleLabel(user) }}
+                        </span>
+                        @if (!user.activated) {
+                          <span
+                            class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[.62rem] font-semibold uppercase tracking-wide text-amber-700"
+                          >
+                            Désactivé
+                          </span>
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
+                </app-user-preview>
                 <div class="flex shrink-0 items-center gap-1.5 max-[600px]:w-full max-[600px]:justify-end">
-                  @if (!isAdmin(user)) {
+                  @if (canDisableUsers && !isAdmin(user)) {
+                    <button
+                      type="button"
+                      (click)="toggleUserActivation(user)"
+                      class="grid h-9 w-9 place-items-center rounded-[10px] transition"
+                      [class]="
+                        user.activated
+                          ? 'bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white'
+                          : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'
+                      "
+                      [title]="user.activated ? 'Désactiver le compte' : 'Réactiver le compte'"
+                      [attr.aria-label]="user.activated ? 'Désactiver le compte' : 'Réactiver le compte'"
+                    >
+                      @if (user.activated) {
+                        <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="9" />
+                          <path stroke-linecap="round" d="M9 9v6m6-6v6" />
+                        </svg>
+                      } @else {
+                        <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="9" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10 8l6 4-6 4V8z" />
+                        </svg>
+                      }
+                    </button>
+                  }
+                  @if (isSuperAdmin && !isAdmin(user)) {
                     <button
                       type="button"
                       (click)="openPermissionPanel(user)"
@@ -191,36 +290,40 @@
                       </svg>
                     </button>
                   }
-                  <button
-                    type="button"
-                    (click)="openEditUser(user)"
-                    class="grid h-9 w-9 place-items-center rounded-[10px] bg-[#e8edf4] text-slate-600 transition hover:bg-[#dbe3ef] hover:text-[#328cb1]"
-                    title="Modifier l'employé"
-                    aria-label="Modifier l'employé"
-                  >
-                    <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M15.232 5.232l3.536 3.536M9 13l6.293-6.293a1 1 0 011.414 0l1.586 1.586a1 1 0 010 1.414L12 16H9v-3z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    (click)="openDeleteUserModal(user)"
-                    class="grid h-9 w-9 place-items-center rounded-[10px] bg-red-50 text-red-500 transition hover:bg-red-600 hover:text-white"
-                    title="Supprimer l'employé"
-                    aria-label="Supprimer l'employé"
-                  >
-                    <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M10 7V4a1 1 0 011-1h2a1 1 0 011 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
+                  @if (canManageUsers) {
+                    <button
+                      type="button"
+                      (click)="openEditUser(user)"
+                      [disabled]="!canEditUser(user)"
+                      class="grid h-9 w-9 place-items-center rounded-[10px] bg-[#e8edf4] text-slate-600 transition hover:bg-[#dbe3ef] hover:text-[#328cb1]"
+                      title="Modifier l'employé"
+                      aria-label="Modifier l'employé"
+                    >
+                      <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M15.232 5.232l3.536 3.536M9 13l6.293-6.293a1 1 0 011.414 0l1.586 1.586a1 1 0 010 1.414L12 16H9v-3z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="openDeleteUserModal(user)"
+                      [disabled]="!canEditUser(user) || user.login === currentAccount?.login"
+                      class="grid h-9 w-9 place-items-center rounded-[10px] bg-red-50 text-red-500 transition hover:bg-red-600 hover:text-white"
+                      title="Supprimer l'employé"
+                      aria-label="Supprimer l'employé"
+                    >
+                      <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M10 7V4a1 1 0 011-1h2a1 1 0 011 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  }
                 </div>
               </div>
             }
@@ -228,8 +331,11 @@
 
           <app-pagination class="mt-5 block" [page]="userPage" [pageCount]="userPageCount" (pageChange)="goToUserPage($event)" />
         }
+        @if (activeTab === 'profiles' && isSuperAdmin) {
+          <jhi-access-profile />
+        }
 
-        @if (activeTab === 'projects') {
+        @if (activeTab === 'projects' && canManageUsers) {
           <div class="mb-5 flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
             <div>
               <h2 class="text-base font-semibold text-[#172033]">Accès aux projets</h2>
@@ -256,7 +362,7 @@
                     <div class="min-w-0">
                       <h3 class="truncate text-[.85rem] font-semibold text-[#172033]">{{ project.name }}</h3>
                       <p class="mt-0.5 truncate text-[.7rem] text-slate-500">
-                        {{ project.projectKey }} · Propriétaire : {{ project.owner?.login }}
+                        {{ project.status === 'CLOSED' ? 'Fermé' : project.projectKey }} · Propriétaire : {{ project.owner?.login }}
                       </p>
                     </div>
                   </div>
@@ -295,13 +401,13 @@
     </section>
   </div>
 
-  @if (showPermissionPanel && permissionUser) {
+  @if (isSuperAdmin && showPermissionPanel && permissionUser) {
     <div class="fixed inset-0 z-20 grid place-items-center bg-slate-900/35 p-4 backdrop-blur-[8px]" (click)="closePermissionPanel()">
       <div
-        class="max-h-[min(38rem,90vh)] w-full max-w-lg overflow-auto rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(71,85,105,.3)]"
+        class="flex max-h-[min(42rem,90vh)] w-full max-w-lg flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(71,85,105,.3)]"
         (click)="$event.stopPropagation()"
       >
-        <div class="mb-4 flex items-start justify-between gap-4">
+        <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 px-5 py-5">
           <div class="flex items-center gap-3">
             <app-avatar [user]="permissionUser" size="md" />
             <div>
@@ -315,31 +421,36 @@
             Fermer
           </button>
         </div>
-        @if (userError) {
-          <p class="mb-3 text-xs text-red-500">{{ userError }}</p>
-        }
-        <div class="space-y-2.5">
-          @for (perm of permissionCatalog; track perm.key) {
-            <label
-              class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white/70 p-3 transition hover:border-[#a8d4e8] hover:bg-[#f4f9fc]"
-            >
-              <input
-                type="checkbox"
-                class="mt-0.5 h-4 w-4 shrink-0 accent-[#328cb1]"
-                [checked]="hasPermission(permissionUser, perm.key)"
-                [disabled]="savingPermissions"
-                (change)="togglePermission(permissionUser, perm.key, $any($event.target).checked)"
-              />
-              <span>
-                <span class="block text-[.8rem] font-semibold text-[#172033]">{{ perm.label }}</span>
-                <span class="mt-0.5 block text-[.7rem] text-slate-500">{{ perm.description }}</span>
-              </span>
-            </label>
+        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          @if (userError) {
+            <p class="mb-3 text-xs text-red-500">{{ userError }}</p>
           }
+          <div class="space-y-2.5">
+            @for (perm of permissionCatalog; track perm.key) {
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white/70 p-3 transition hover:border-[#a8d4e8] hover:bg-[#f4f9fc]"
+              >
+                <input
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 shrink-0 accent-[#328cb1]"
+                  [checked]="hasSelectedPermission(perm.key)"
+                  [disabled]="savingPermissions"
+                  (change)="toggleSelectedPermission(perm.key, $any($event.target).checked)"
+                />
+                <span>
+                  <span class="block text-[.8rem] font-semibold text-[#172033]">{{ perm.label }}</span>
+                  <span class="mt-0.5 block text-[.7rem] text-slate-500">{{ perm.description }}</span>
+                </span>
+              </label>
+            }
+          </div>
         </div>
-        @if (savingPermissions) {
-          <p class="mt-3 text-[.7rem] text-slate-400">Enregistrement…</p>
-        }
+        <div class="flex shrink-0 items-center justify-end gap-2 border-t border-slate-100 bg-white px-5 py-4">
+          <button type="button" class="btn-secondary" [disabled]="savingPermissions" (click)="closePermissionPanel()">Annuler</button>
+          <button type="button" class="btn-primary" [disabled]="savingPermissions" (click)="saveUserPermissions()">
+            {{ savingPermissions ? 'Enregistrement…' : 'Enregistrer les accès' }}
+          </button>
+        </div>
       </div>
     </div>
   }
@@ -370,6 +481,7 @@
             @if (isMember(selectedProject, user.id!)) {
               <button
                 type="button"
+                [disabled]="selectedProject.status === 'CLOSED'"
                 (click)="removeMember(selectedProject.id!, user.id!)"
                 class="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] bg-red-50 px-3 py-1.5 text-[.7rem] font-semibold text-red-600 transition hover:bg-red-600 hover:text-white"
                 title="Retirer du projet"
@@ -380,7 +492,13 @@
                 Retirer
               </button>
             } @else {
-              <button type="button" (click)="addMember(selectedProject.id!, user.id!)" class="btn-primary" title="Assigner au projet">
+              <button
+                type="button"
+                [disabled]="selectedProject.status === 'CLOSED'"
+                (click)="addMember(selectedProject.id!, user.id!)"
+                class="btn-primary"
+                title="Assigner au projet"
+              >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+    <changeSet id="20261013130000-resource-visibility" author="cra">
+        <insert tableName="jhi_authority"><column name="name" value="PERM_RESOURCE_VISIBILITY"/></insert>
+        <addColumn tableName="project_document"><column name="restricted" type="boolean" defaultValueBoolean="false"><constraints nullable="false"/></column></addColumn>
+        <createTable tableName="project_document_reader">
+            <column name="document_id" type="bigint"><constraints nullable="false" primaryKey="true" primaryKeyName="pk_document_reader"/></column>
+            <column name="login" type="varchar(50)"><constraints nullable="false" primaryKey="true" primaryKeyName="pk_document_reader"/></column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="project_document_reader" baseColumnNames="document_id" referencedTableName="project_document" referencedColumnNames="id" constraintName="fk_document_reader_document" onDelete="CASCADE"/>
+        <rollback>
+            <dropTable tableName="project_document_reader"/>
+            <dropColumn tableName="project_document" columnName="restricted"/>
+            <delete tableName="jhi_authority"><where>name = 'PERM_RESOURCE_VISIBILITY'</where></delete>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

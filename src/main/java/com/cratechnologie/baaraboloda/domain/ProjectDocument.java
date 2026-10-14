@@ -46,6 +46,30 @@ public class ProjectDocument {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(nullable = false)
+    private boolean restricted = false;
+
+    @ElementCollection
+    @CollectionTable(name = "project_document_reader", joinColumns = @JoinColumn(name = "document_id"))
+    @Column(name = "login", nullable = false, length = 50)
+    private java.util.Set<String> allowedLogins = new java.util.HashSet<>();
+
+    public boolean isRestricted() {
+        return restricted;
+    }
+
+    public void setRestricted(boolean restricted) {
+        this.restricted = restricted;
+    }
+
+    public java.util.Set<String> getAllowedLogins() {
+        return allowedLogins;
+    }
+
+    public void setAllowedLogins(java.util.Set<String> logins) {
+        this.allowedLogins = logins;
+    }
+
     public Long getId() {
         return id;
     }

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { userRouteAccessService } from 'app/core/auth';
 /* jhipster-needle-add-admin-module-import - JHipster will add admin modules imports here */
 
 const routes: Routes = [
@@ -16,6 +17,13 @@ const routes: Routes = [
     path: 'configuration',
     loadComponent: () => import('./configuration/configuration'),
     title: 'configuration.title',
+  },
+  {
+    path: 'access-profiles',
+    loadComponent: () => import('../entities/admin/access-profile/access-profile.component'),
+    title: 'Profils et permissions',
+    data: { authorities: ['ROLE_SUPER_ADMIN'] },
+    canActivate: [userRouteAccessService],
   },
   {
     path: 'health',

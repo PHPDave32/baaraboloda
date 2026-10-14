@@ -153,6 +153,7 @@ export default class Backlog implements OnInit {
   }
 
   private computeCanManage(project: IProject | null): boolean {
+    if (project?.status === 'CLOSED') return false;
     if (this.accountService.hasAnyAuthority('ROLE_ADMIN')) {
       return true;
     }
@@ -172,6 +173,14 @@ export default class Backlog implements OnInit {
         rank[a.status ?? 'PLANNED'] - rank[b.status ?? 'PLANNED'] ||
         String(this.fmtDate(b.startDate) ?? '').localeCompare(String(this.fmtDate(a.startDate) ?? '')),
     );
+  }
+
+  get availableSprints(): ISprint[] {
+    return this.sprints.filter(sprint => sprint.status !== 'COMPLETED');
+  }
+
+  private isCompletedSprint(sprintId: number | null): boolean {
+    return this.sprints.some(sprint => sprint.id === sprintId && sprint.status === 'COMPLETED');
   }
 
   get canManageSprints(): boolean {
@@ -241,6 +250,7 @@ export default class Backlog implements OnInit {
   }
 
   openTaskForm(sprintId: number | null = null): void {
+    if (this.isCompletedSprint(sprintId)) return;
     this.taskImages = [];
     this.targetSprintId = sprintId;
     this.showTaskForm = true;
@@ -305,6 +315,10 @@ export default class Backlog implements OnInit {
 
   submitTask(): void {
     if (this.taskForm.invalid || this.loading || this.readingImages) return;
+    if (this.isCompletedSprint(this.taskForm.value.sprintId)) {
+      this.error = 'Impossible d’ajouter une tâche à un sprint terminé.';
+      return;
+    }
     this.loading = true;
     this.error = '';
     const login = this.accountService.account()?.login ?? '';
@@ -401,7 +415,7 @@ export default class Backlog implements OnInit {
 
   moveToSprint(task: ITask, sprintId: number): void {
     if (!this.canManage) return;
-    if (task.sprint?.id === sprintId) return;
+    if (task.sprint?.id === sprintId || this.isCompletedSprint(sprintId)) return;
     const targetSprint = this.sprints.find(s => s.id === sprintId) ?? null;
     this.applyLocalMove(task, targetSprint ? { id: sprintId, name: targetSprint.name } : { id: sprintId });
 
@@ -456,6 +470,7 @@ export default class Backlog implements OnInit {
   }
 
   canManageTask(task: ITask): boolean {
+    if (this.project?.status === 'CLOSED') return false;
     const login = this.accountService.account()?.login;
     return this.canManage || (Boolean(login) && task.reporter?.login === login);
   }
@@ -615,6 +630,7 @@ export default class Backlog implements OnInit {
   }
 
   onSprintDragOver(event: DragEvent, sprintId: number): void {
+    if (this.isCompletedSprint(sprintId)) return;
     event.preventDefault();
     this.dragOverSprintId = sprintId;
     this.dragOverBacklog = false;

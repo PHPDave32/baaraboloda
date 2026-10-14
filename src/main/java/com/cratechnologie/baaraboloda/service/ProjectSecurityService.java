@@ -7,6 +7,7 @@ import com.cratechnologie.baaraboloda.security.AuthoritiesConstants;
 import com.cratechnologie.baaraboloda.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,27 +23,58 @@ public class ProjectSecurityService {
     private final CommentRepository commentRepository;
 
     private final SprintRepository sprintRepository;
+    private final com.cratechnologie.baaraboloda.repository.ProjectRepository projectRepository;
 
-    public ProjectSecurityService(TaskRepository taskRepository, CommentRepository commentRepository, SprintRepository sprintRepository) {
+    @Autowired
+    public ProjectSecurityService(
+        TaskRepository taskRepository,
+        CommentRepository commentRepository,
+        SprintRepository sprintRepository,
+        com.cratechnologie.baaraboloda.repository.ProjectRepository projectRepository
+    ) {
         this.taskRepository = taskRepository;
         this.commentRepository = commentRepository;
         this.sprintRepository = sprintRepository;
+        this.projectRepository = projectRepository;
+    }
+
+    public ProjectSecurityService(TaskRepository taskRepository, CommentRepository commentRepository, SprintRepository sprintRepository) {
+        this(taskRepository, commentRepository, sprintRepository, null);
     }
 
     /**
      * @return {@code true} if the current user is an administrator.
      */
     public boolean isCurrentUserAdmin() {
-        return SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
+        return SecurityUtils.hasCurrentUserAnyOfAuthorities(AuthoritiesConstants.ADMIN, AuthoritiesConstants.SUPER_ADMIN);
     }
 
     /**
      * @param taskId the task id.
      * @return {@code true} if the current user is an admin, or a member/owner of the task's project.
      */
+    public void checkProjectWritable(Long projectId) {
+        if (
+            projectRepository != null &&
+            projectId != null &&
+            projectRepository
+                .findById(projectId)
+                .map(p -> p.getStatus() == com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED)
+                .orElse(false)
+        ) {
+            throw new AccessDeniedException("Ce projet est fermé et disponible en lecture seule.");
+        }
+    }
+
+    public void checkTaskWritable(Long taskId) {
+        taskRepository.findById(taskId).ifPresent(task -> checkProjectWritable(task.getProject().getId()));
+    }
+
     public boolean canMoveTask(Long taskId) {
+        checkTaskWritable(taskId);
+        if (!hasPermission("PERM_TASK_MANAGE")) return false;
         return (
-            isCurrentUserAdmin() ||
+            canAccessAllProjects() ||
             SecurityUtils.getCurrentUserLogin()
                 .map(login -> taskRepository.isUserMemberOfTaskProject(taskId, login))
                 .orElse(false)
@@ -54,13 +86,13 @@ public class ProjectSecurityService {
     }
 
     public boolean canModifyTask(Long taskId) {
-        if (isCurrentUserAdmin()) {
+        checkTaskWritable(taskId);
+        if (!hasPermission("PERM_TASK_MANAGE")) return false;
+        if (canAccessAllProjects()) {
             return true;
         }
         return SecurityUtils.getCurrentUserLogin()
-            .map(
-                login -> taskRepository.isUserMemberOfTaskProject(taskId, login) || taskRepository.existsByIdAndReporterLogin(taskId, login)
-            )
+            .map(login -> taskRepository.isUserMemberOfTaskProject(taskId, login))
             .orElse(false);
     }
 
@@ -69,15 +101,13 @@ public class ProjectSecurityService {
      * @return {@code true} if the current user is an admin, or a member/owner of the comment's project.
      */
     public boolean canModifyComment(Long commentId) {
-        if (isCurrentUserAdmin()) {
+        commentRepository.findById(commentId).ifPresent(c -> checkTaskWritable(c.getTask().getId()));
+        if (!hasPermission("PERM_COMMENT_MANAGE")) return false;
+        if (canAccessAllProjects()) {
             return true;
         }
         return SecurityUtils.getCurrentUserLogin()
-            .map(
-                login ->
-                    commentRepository.isUserMemberOfCommentProject(commentId, login) ||
-                    commentRepository.existsByIdAndAuthorLogin(commentId, login)
-            )
+            .map(login -> commentRepository.isUserMemberOfCommentProject(commentId, login))
             .orElse(false);
     }
 
@@ -86,7 +116,9 @@ public class ProjectSecurityService {
      * @return {@code true} if the current user is an admin, or a member/owner of the sprint's project.
      */
     public boolean canModifySprint(Long sprintId) {
-        if (isCurrentUserAdmin()) {
+        sprintRepository.findById(sprintId).ifPresent(s -> checkProjectWritable(s.getProject().getId()));
+        if (!hasPermission("PERM_SPRINT_MANAGE")) return false;
+        if (canAccessAllProjects()) {
             return true;
         }
         return SecurityUtils.getCurrentUserLogin()
@@ -143,5 +175,65 @@ public class ProjectSecurityService {
             );
             throw new AccessDeniedException("Vous devez être l’auteur du commentaire ou appartenir au projet pour le modifier.");
         }
+    }
+
+    public boolean hasPermission(String permission) {
+        return isCurrentUserAdmin() || SecurityUtils.hasCurrentUserThisAuthority(permission);
+    }
+
+    public boolean canAccessAllProjects() {
+        return isCurrentUserAdmin() || SecurityUtils.hasCurrentUserThisAuthority("PERM_PROJECT_VIEW_ALL");
+    }
+
+    public void requirePermission(String permission) {
+        if (!hasPermission(permission)) throw new AccessDeniedException("Votre profil ne permet pas cette action.");
+    }
+
+    public boolean canAccessProject(Long projectId) {
+        return (
+            projectId != null &&
+            (canAccessAllProjects() ||
+                (projectRepository != null &&
+                    SecurityUtils.getCurrentUserLogin()
+                        .map(login -> projectRepository.findAccessibleProjectIds(login).contains(projectId))
+                        .orElse(false)))
+        );
+    }
+
+    public void checkProjectAccess(Long projectId) {
+        if (!canAccessProject(projectId)) throw new AccessDeniedException("Ce projet n’est pas accessible à votre profil.");
+    }
+
+    public void checkProjectAction(Long projectId, String permission) {
+        requirePermission(permission);
+        checkProjectAccess(projectId);
+        checkProjectWritable(projectId);
+    }
+
+    public void checkTaskAccess(Long id) {
+        checkProjectAccess(
+            taskRepository
+                .findById(id)
+                .map(task -> task.getProject().getId())
+                .orElse(null)
+        );
+    }
+
+    public void checkSprintAccess(Long id) {
+        checkProjectAccess(
+            sprintRepository
+                .findById(id)
+                .map(sprint -> sprint.getProject().getId())
+                .orElse(null)
+        );
+    }
+
+    public void checkCommentAccess(Long id) {
+        checkProjectAccess(
+            commentRepository
+                .findById(id)
+                .map(comment -> comment.getTask().getProject().getId())
+                .orElse(null)
+        );
     }
 }

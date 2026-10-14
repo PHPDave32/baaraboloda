@@ -1,3 +1,4 @@
+import { DocumentActions } from './preview/document-actions';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,11 +11,11 @@ import { AccountService } from 'app/core/auth';
 import { IProject } from 'app/entities/project/project.model';
 import { ITask } from 'app/entities/task/task.model';
 import { WorkspaceService } from '../workspace.service';
-import { DocumentsService, ProjectDocument } from './documents.service';
+import { DocumentsService, ProjectDocument, ResourceRecipient } from './documents.service';
 
 @Component({
   selector: 'jhi-project-documents',
-  imports: [NotificationCenterComponent, DatePipe, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [DocumentActions, NotificationCenterComponent, DatePipe, FormsModule, ReactiveFormsModule, RouterLink],
   templateUrl: './documents.html',
   styleUrl: './documents.scss',
 })
@@ -42,6 +43,29 @@ export default class Documents implements OnInit {
   readonly downloading = signal<number | null>(null);
   readonly kind = signal<'file' | 'link'>('file');
   readonly file = signal<File | null>(null);
+  readonly editingResource = signal<ProjectDocument | null>(null);
+  readonly editingVisibility = signal<ProjectDocument | null>(null);
+  readonly restricted = signal(false);
+  readonly allowedLogins = signal<string[]>([]);
+  readonly canManageVisibility = computed(() => this.account.hasAnyAuthority(['ROLE_SUPER_ADMIN', 'PERM_RESOURCE_VISIBILITY']));
+  readonly recipients = signal<ResourceRecipient[]>([]);
+  readonly recipientNames = computed(
+    () => new Map(this.recipients().map(user => [user.login, [user.firstName, user.lastName].filter(Boolean).join(' ') || user.login])),
+  );
+  readonly recipientsLoading = signal(false);
+  readonly recipientsError = signal('');
+  readonly recipientSearch = signal('');
+  readonly selectedOnly = signal(false);
+  readonly visibilityCandidates = computed(() => {
+    const term = this.normalizeSearch(this.recipientSearch());
+    return this.recipients().filter(
+      user =>
+        !this.isCurrentUser(user.login) &&
+        (!this.selectedOnly() || this.allowedLogins().includes(user.login)) &&
+        this.normalizeSearch(`${user.firstName ?? ''} ${user.lastName ?? ''} ${user.login}`).includes(term),
+    );
+  });
+
   readonly form = inject(FormBuilder).nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200), Validators.pattern(/\S/)]],
     description: ['', Validators.maxLength(2000)],
@@ -58,7 +82,9 @@ export default class Documents implements OnInit {
     ),
   );
   readonly canDelete = computed(
-    () => this.account.hasAnyAuthority('ROLE_ADMIN') || this.project()?.owner?.login === this.account.account()?.login,
+    () =>
+      this.project()?.status !== 'CLOSED' &&
+      (this.account.hasAnyAuthority('ROLE_ADMIN') || this.project()?.owner?.login === this.account.account()?.login),
   );
   projectId = 0;
   private readonly account = inject(AccountService);
@@ -66,6 +92,29 @@ export default class Documents implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly service = inject(DocumentsService);
   private readonly workspace = inject(WorkspaceService);
+
+  recipientName(login: string): string {
+    return this.recipientNames().get(login) ?? login;
+  }
+
+  isCurrentUser(login: string): boolean {
+    return login === this.account.account()?.login;
+  }
+
+  loadRecipients(): void {
+    this.recipientsLoading.set(true);
+    this.recipientsError.set('');
+    this.service.recipients(this.projectId).subscribe({
+      next: users => {
+        this.recipients.set(users);
+        this.recipientsLoading.set(false);
+      },
+      error: () => {
+        this.recipientsLoading.set(false);
+        this.recipientsError.set('Impossible de charger les utilisateurs.');
+      },
+    });
+  }
 
   ngOnInit(): void {
     this.route.paramMap
@@ -102,7 +151,63 @@ export default class Documents implements OnInit {
     });
   }
 
+  canChangeVisibility(document: ProjectDocument): boolean {
+    return this.canManageVisibility() && this.project()?.status !== 'CLOSED' && document.author === this.account.account()?.login;
+  }
+
+  toggleReader(login: string): void {
+    this.allowedLogins.update(logins => (logins.includes(login) ? logins.filter(value => value !== login) : [...logins, login]));
+  }
+
+  canEditResource(document: ProjectDocument): boolean {
+    return this.isCurrentUser(document.author) && this.project()?.status !== 'CLOSED';
+  }
+
+  editResource(document: ProjectDocument): void {
+    if (!this.canEditResource(document)) return;
+    this.editingResource.set(document);
+    this.editingVisibility.set(null);
+    this.form.reset({
+      title: document.title,
+      description: document.description ?? '',
+      category: document.category,
+      url: document.url ?? '',
+      taskId: document.taskId?.toString() ?? '',
+    });
+    this.kind.set(document.url ? 'link' : 'file');
+    this.file.set(null);
+    this.restricted.set(document.restricted);
+    this.error.set('');
+    this.showForm.set(true);
+    this.resourceDialog()?.nativeElement.showModal();
+  }
+
+  editVisibility(document: ProjectDocument): void {
+    this.editingResource.set(null);
+    this.recipientSearch.set('');
+    this.selectedOnly.set(false);
+    this.loadRecipients();
+    this.error.set('');
+    this.service.visibility(this.projectId, document.id).subscribe({
+      next: visibility => {
+        this.editingVisibility.set(document);
+        this.restricted.set(visibility.restricted);
+        this.allowedLogins.set(visibility.allowedLogins.filter(login => !this.isCurrentUser(login)));
+        this.showForm.set(true);
+        this.resourceDialog()?.nativeElement.showModal();
+      },
+      error: (error: HttpErrorResponse) => this.handleError(error),
+    });
+  }
+
   openForm(): void {
+    this.editingResource.set(null);
+    this.recipientSearch.set('');
+    this.selectedOnly.set(false);
+    if (this.canManageVisibility()) this.loadRecipients();
+    this.editingVisibility.set(null);
+    this.restricted.set(false);
+    this.allowedLogins.set([]);
     this.form.reset({ category: 'OTHER', taskId: this.taskFilter()?.toString() ?? '' });
     this.kind.set('file');
     this.file.set(null);
@@ -138,6 +243,27 @@ export default class Documents implements OnInit {
 
   save(): void {
     if (this.saving()) return;
+    const editing = this.editingVisibility();
+    if (editing) {
+      this.saving.set(true);
+      this.service
+        .updateVisibility(this.projectId, editing.id, {
+          restricted: this.restricted(),
+          allowedLogins: this.restricted() ? this.allowedLogins() : [],
+        })
+        .subscribe({
+          next: () => {
+            this.saving.set(false);
+            this.closeForm();
+            this.reload();
+          },
+          error: (error: HttpErrorResponse) => {
+            this.saving.set(false);
+            this.handleError(error);
+          },
+        });
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -146,11 +272,11 @@ export default class Documents implements OnInit {
     const body = new FormData();
     if (this.kind() === 'file') {
       const file = this.file();
-      if (!file) {
+      if (!file && !this.editingResource()?.filename) {
         this.error.set('Sélectionnez un fichier.');
         return;
       }
-      body.append('file', file);
+      if (file) body.append('file', file);
     } else {
       try {
         const url = new URL(value.url.trim());
@@ -161,13 +287,19 @@ export default class Documents implements OnInit {
         return;
       }
     }
+    if (!this.editingResource()) {
+      body.append('restricted', String(this.restricted()));
+      if (this.restricted()) this.allowedLogins().forEach(login => body.append('allowedLogins', login));
+    }
     body.append('title', value.title.trim());
     body.append('description', value.description.trim());
     body.append('category', value.category);
     if (value.taskId) body.append('taskId', value.taskId);
     this.saving.set(true);
     this.error.set('');
-    this.service.create(this.projectId, body).subscribe({
+    const resource = this.editingResource();
+    const request = resource ? this.service.update(this.projectId, resource.id, body) : this.service.create(this.projectId, body);
+    request.subscribe({
       next: () => {
         this.saving.set(false);
         this.closeForm();
@@ -219,6 +351,14 @@ export default class Documents implements OnInit {
 
   categoryLabel(value: string): string {
     return this.categories.find(category => category.value === value)?.label ?? value;
+  }
+
+  private normalizeSearch(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase()
+      .trim();
   }
 
   private reload(): void {

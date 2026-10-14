@@ -12,6 +12,10 @@ public final class ImageAttachmentValidator {
     private ImageAttachmentValidator() {}
 
     public static void validate(List<ImageAttachment> images) {
+        validate(images, false);
+    }
+
+    public static void validate(List<ImageAttachment> images, boolean allowPdf) {
         if (images == null) return;
         if (images.size() > 5) fail();
         long total = 0;
@@ -27,6 +31,11 @@ public final class ImageAttachmentValidator {
                 byte[] bytes = Base64.getDecoder().decode(image.data());
                 total += bytes.length;
                 if (bytes.length == 0 || bytes.length > 2097152 || total > 8388608) fail();
+                if (allowPdf && "application/pdf".equals(image.type())) {
+                    String header = new String(bytes, 0, Math.min(bytes.length, 8), java.nio.charset.StandardCharsets.US_ASCII);
+                    if (!header.startsWith("%PDF-") || !image.name().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) fail();
+                    continue;
+                }
                 try (var stream = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
                     var readers = ImageIO.getImageReaders(stream);
                     if (!readers.hasNext()) fail();
@@ -48,7 +57,7 @@ public final class ImageAttachmentValidator {
 
     private static void fail() {
         throw new BadRequestAlertException(
-            "Maximum 5 images PNG/JPEG, 2 Mo par image et 8 Mo au total (8192 pixels maximum).",
+            "Pièces jointes invalides : maximum 5 fichiers, 2 Mo par fichier et 8 Mo au total. Images PNG/JPEG (8192 pixels maximum), PDF dans les tâches et les commentaires.",
             "imageAttachment",
             "invalidimages"
         );

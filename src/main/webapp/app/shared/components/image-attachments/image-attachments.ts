@@ -16,6 +16,7 @@ export interface ImageAttachment {
 export class ImageAttachmentsComponent {
   @Input() images: ImageAttachment[] = [];
   @Input() editable = false;
+  @Input() allowPdf = false;
   @Input() disabled = false;
   @Output() imagesChange = new EventEmitter<ImageAttachment[]>();
   @Output() readingChange = new EventEmitter<boolean>();
@@ -26,6 +27,20 @@ export class ImageAttachmentsComponent {
 
   url(image: ImageAttachment): string {
     return `data:${image.type === 'image/jpeg' ? 'image/jpeg' : 'image/png'};base64,${image.data}`;
+  }
+
+  downloadPdf(attachment: ImageAttachment): void {
+    try {
+      const bytes = Uint8Array.from(atob(attachment.data), character => character.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = attachment.name;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      this.error = 'Impossible de télécharger ce PDF.';
+    }
   }
 
   select(event: Event): void {
@@ -52,10 +67,17 @@ export class ImageAttachmentsComponent {
     const existingSize = this.images.reduce((sum, image) => sum + Math.ceil((image.data.length * 3) / 4), 0);
     if (
       this.images.length + files.length > 5 ||
-      files.some(file => !['image/png', 'image/jpeg'].includes(file.type) || !file.size || file.size > 2097152) ||
+      files.some(
+        file =>
+          !['image/png', 'image/jpeg', ...(this.allowPdf ? ['application/pdf'] : [])].includes(this.fileType(file)) ||
+          !file.size ||
+          file.size > 2097152,
+      ) ||
       existingSize + files.reduce((sum, file) => sum + file.size, 0) > 8388608
     ) {
-      this.error = 'Maximum 5 images PNG/JPEG, 2 Mo par image et 8 Mo au total.';
+      this.error = this.allowPdf
+        ? 'Maximum 5 fichiers PNG/JPEG/PDF, 2 Mo par fichier et 8 Mo au total.'
+        : 'Maximum 5 images PNG/JPEG, 2 Mo par image et 8 Mo au total.';
       this.cdr.markForCheck();
       return;
     }
@@ -70,7 +92,7 @@ export class ImageAttachmentsComponent {
               reader.onload = () =>
                 resolve({
                   data: (typeof reader.result === 'string' ? reader.result : '').split(',')[1],
-                  type: file.type,
+                  type: this.fileType(file),
                   name: file.name.slice(0, 255),
                 });
               reader.onerror = () => reject(new Error('Image illisible'));
@@ -80,11 +102,14 @@ export class ImageAttachmentsComponent {
       );
       this.imagesChange.emit([...this.images, ...additions]);
     } catch {
-      this.error = 'Les images n’ont pas pu être lues. Réessayez.';
+      this.error = 'Les pièces jointes n’ont pas pu être lues. Réessayez.';
     } finally {
       this.reading = false;
       this.readingChange.emit(false);
       this.cdr.markForCheck();
     }
+  }
+  private fileType(file: File): string {
+    return !file.type && this.allowPdf && file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : file.type;
   }
 }

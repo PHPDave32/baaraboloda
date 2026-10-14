@@ -1,12 +1,18 @@
-<div class="sprints-page">
-  <header class="sprints-header">
+<div class="sprints-page workspace-page">
+  @if (project?.status === 'CLOSED') {
+    <p role="status" class="mb-4 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+      Projet fermé · Consultation uniquement
+    </p>
+  }
+  <header class="sprints-header workspace-page-header">
     <div>
-      <span class="sprints-eyebrow">PLANIFICATION · {{ project?.name }}</span>
+      <span class="sprints-eyebrow">PLANIFICATION</span>
+      <div class="workspace-project-focus">{{ project?.name }}</div>
       <h1>Le rythme de votre équipe.</h1>
       <p>Organisez vos sprints, suivez leur calendrier et préparez la suite.</p>
     </div>
     <div class="page-header-actions">
-      <button (click)="openCreateForm()" class="btn-primary text-sm flex items-center gap-2">
+      <button [disabled]="project?.status === 'CLOSED'" (click)="openCreateForm()" class="btn-primary text-sm flex items-center gap-2">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -131,7 +137,12 @@
               </div>
               <div class="flex items-center gap-2">
                 @if (sprint.status === 'PLANNED') {
-                  <button (click)="openEditForm(sprint)" type="button" class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5">
+                  <button
+                    [disabled]="project?.status === 'CLOSED'"
+                    (click)="openEditForm(sprint)"
+                    type="button"
+                    class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
+                  >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
@@ -142,7 +153,12 @@
                     </svg>
                     Modifier
                   </button>
-                  <button (click)="activateSprint(sprint)" type="button" class="btn-primary text-sm px-3 py-1.5 flex items-center gap-1.5">
+                  <button
+                    [disabled]="project?.status === 'CLOSED'"
+                    (click)="activateSprint(sprint)"
+                    type="button"
+                    class="btn-primary text-sm px-3 py-1.5 flex items-center gap-1.5"
+                  >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
@@ -157,6 +173,7 @@
                 }
                 @if (sprint.status === 'ACTIVE') {
                   <button
+                    [disabled]="project?.status === 'CLOSED'"
                     (click)="completeSprint(sprint)"
                     type="button"
                     class="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
@@ -173,6 +190,7 @@
                   </button>
                 }
                 <button
+                  [disabled]="project?.status === 'CLOSED'"
                   (click)="deleteSprint(sprint.id)"
                   type="button"
                   class="p-2 rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
@@ -263,7 +281,7 @@
           </div>
           <p class="text-slate-700 font-medium mb-1">Aucun sprint créé pour l'instant</p>
           <p class="text-slate-400 text-sm mb-5">Créez votre premier sprint pour organiser le travail de l'équipe.</p>
-          <button (click)="openCreateForm()" class="btn-primary flex items-center gap-2">
+          <button [disabled]="project?.status === 'CLOSED'" (click)="openCreateForm()" class="btn-primary flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>

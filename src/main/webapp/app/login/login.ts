@@ -5,10 +5,11 @@ import { finalize } from 'rxjs';
 
 import { AccountService } from 'app/core/auth';
 import { LoginService } from 'app/login/login.service';
+import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'jhi-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordToggleDirective],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

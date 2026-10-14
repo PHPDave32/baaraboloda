@@ -5,13 +5,14 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { AccountService } from 'app/core/auth';
 import { TranslateDirective } from 'app/shared/language';
+import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.directive';
 
 import PasswordStrengthBar from './password-strength-bar/password-strength-bar';
 import { PasswordService } from './password.service';
 
 @Component({
   selector: 'jhi-password',
-  imports: [TranslateDirective, TranslatePipe, ReactiveFormsModule, PasswordStrengthBar],
+  imports: [TranslateDirective, TranslatePipe, ReactiveFormsModule, PasswordStrengthBar, PasswordToggleDirective],
   templateUrl: './password.html',
 })
 export default class Password {

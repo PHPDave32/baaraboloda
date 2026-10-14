@@ -4,9 +4,27 @@
     <div class="attachment-grid">
       @for (image of images; track $index) {
         <div class="attachment-tile">
-          <button type="button" class="attachment-open" (click)="expanded = image" [attr.aria-label]="'Agrandir ' + image.name">
-            <img [src]="url(image)" [alt]="image.name" loading="lazy" /><span>{{ image.name }}</span>
-          </button>
+          @if (image.type === 'application/pdf') {
+            <div class="attachment-pdf">
+              <span class="attachment-pdf-label">PDF</span>
+              <span class="attachment-pdf-name">{{ image.name }}</span>
+              <button
+                type="button"
+                class="resource-icon-action"
+                (click)="downloadPdf(image)"
+                title="Télécharger le PDF"
+                [attr.aria-label]="'Télécharger ' + image.name"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5" />
+                </svg>
+              </button>
+            </div>
+          } @else {
+            <button type="button" class="attachment-open" (click)="expanded = image" [attr.aria-label]="'Agrandir ' + image.name">
+              <img [src]="url(image)" [alt]="image.name" loading="lazy" /><span>{{ image.name }}</span>
+            </button>
+          }
           @if (editable) {
             <button
               type="button"
@@ -24,14 +42,16 @@
   }
   @if (editable) {
     <div class="attachment-tools">
-      <input #files type="file" accept="image/png,image/jpeg" multiple hidden (change)="select($event)" /><button
-        type="button"
-        class="btn-secondary"
-        [disabled]="disabled || reading || images.length >= 5"
-        (click)="files.click()"
-      >
-        {{ reading ? 'Lecture…' : 'Joindre des images' }}</button
-      ><span>{{ images.length }}/5 · PNG, JPEG · 2 Mo/image</span>
+      <input
+        #files
+        type="file"
+        [accept]="allowPdf ? 'image/png,image/jpeg,application/pdf,.pdf' : 'image/png,image/jpeg'"
+        multiple
+        hidden
+        (change)="select($event)"
+      /><button type="button" class="btn-secondary" [disabled]="disabled || reading || images.length >= 5" (click)="files.click()">
+        {{ reading ? 'Lecture…' : allowPdf ? 'Joindre des fichiers' : 'Joindre des images' }}</button
+      ><span>{{ images.length }}/5 · {{ allowPdf ? 'PNG, JPEG, PDF · 2 Mo/fichier' : 'PNG, JPEG · 2 Mo/image' }}</span>
     </div>
   }
   @if (error) {

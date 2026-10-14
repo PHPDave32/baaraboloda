@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+ <changeSet id="20261009140000-access-profiles" author="cra">
+  <createTable tableName="access_profile">
+   <column name="id" type="bigint" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+   <column name="name" type="varchar(100)"><constraints nullable="false" unique="true"/></column>
+   <column name="description" type="varchar(500)"/>
+   <column name="all_projects" type="boolean" defaultValueBoolean="false"><constraints nullable="false"/></column>
+  </createTable>
+  <createTable tableName="access_profile_permission">
+   <column name="profile_id" type="bigint"><constraints nullable="false"/></column>
+   <column name="permission" type="varchar(50)"><constraints nullable="false"/></column>
+  </createTable>
+  <addPrimaryKey tableName="access_profile_permission" columnNames="profile_id,permission" constraintName="pk_access_profile_permission"/>
+  <addForeignKeyConstraint baseTableName="access_profile_permission" baseColumnNames="profile_id" referencedTableName="access_profile" referencedColumnNames="id" constraintName="fk_profile_permission"/>
+  <addColumn tableName="jhi_user"><column name="access_profile_id" type="bigint"/></addColumn>
+  <addForeignKeyConstraint baseTableName="jhi_user" baseColumnNames="access_profile_id" referencedTableName="access_profile" referencedColumnNames="id" constraintName="fk_user_access_profile"/>
+  <insert tableName="jhi_authority"><column name="name" value="PERM_PROJECT_EDIT"/></insert>
+  <insert tableName="jhi_authority"><column name="name" value="PERM_TASK_MANAGE"/></insert>
+  <insert tableName="jhi_authority"><column name="name" value="PERM_COMMENT_MANAGE"/></insert>
+  <insert tableName="jhi_authority"><column name="name" value="PERM_DOCUMENT_MANAGE"/></insert>
+  <insert tableName="jhi_authority"><column name="name" value="PERM_USER_MANAGE"/></insert>
+  <insert tableName="jhi_authority"><column name="name" value="PERM_PROJECT_VIEW_ALL"/></insert>
+  <insert tableName="access_profile"><column name="id" valueNumeric="1"/><column name="name" value="Directeur des opérations"/><column name="description" value="Pilotage de tous les projets et gestion opérationnelle."/><column name="all_projects" valueBoolean="true"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_PROJECT_CREATE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_PROJECT_EDIT"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_PROJECT_DELETE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_MANAGE_MEMBERS"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_SPRINT_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_TASK_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_COMMENT_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_DOCUMENT_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="1"/><column name="permission" value="PERM_USER_MANAGE"/></insert>
+  <insert tableName="access_profile"><column name="id" valueNumeric="2"/><column name="name" value="Chef de projet"/><column name="description" value="Gestion des projets auxquels la personne participe."/><column name="all_projects" valueBoolean="false"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_PROJECT_CREATE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_PROJECT_EDIT"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_MANAGE_MEMBERS"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_SPRINT_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_TASK_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_COMMENT_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="2"/><column name="permission" value="PERM_DOCUMENT_MANAGE"/></insert>
+  <insert tableName="access_profile"><column name="id" valueNumeric="3"/><column name="name" value="Contributeur"/><column name="description" value="Participation aux tâches, commentaires et documents de ses projets."/><column name="all_projects" valueBoolean="false"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="3"/><column name="permission" value="PERM_TASK_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="3"/><column name="permission" value="PERM_COMMENT_MANAGE"/></insert>
+  <insert tableName="access_profile_permission"><column name="profile_id" valueNumeric="3"/><column name="permission" value="PERM_DOCUMENT_MANAGE"/></insert>
+  <insert tableName="access_profile"><column name="id" valueNumeric="4"/><column name="name" value="Observateur"/><column name="description" value="Consultation uniquement des projets auxquels la personne participe."/><column name="all_projects" valueBoolean="false"/></insert>
+ </changeSet>
+</databaseChangeLog>

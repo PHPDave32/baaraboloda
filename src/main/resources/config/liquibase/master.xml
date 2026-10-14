@@ -32,4 +32,12 @@
     <include file="config/liquibase/changelog/20261007130000_multiple_images.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261008121000_repair_notifications.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261008120000_notifications.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261009120000_super_admin.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261009140000_access_profiles.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261009160000_design_development_profiles.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261012160000_project_close.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261012165000_project_reopen.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261012171000_user_permission_overrides.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261012173000_user_disable_permission.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261013130000_resource_visibility.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

@@ -99,7 +99,17 @@ class AccountResourceIT {
         user.setImageUrl("http://placehold.it/50x50");
         user.setLangKey("en");
         user.setAuthorities(authorities);
-        userService.createUser(user);
+        User existingAccount = new User();
+        existingAccount.setLogin(user.getLogin());
+        existingAccount.setFirstName(user.getFirstName());
+        existingAccount.setLastName(user.getLastName());
+        existingAccount.setEmail(user.getEmail());
+        existingAccount.setImageUrl(user.getImageUrl());
+        existingAccount.setLangKey(user.getLangKey());
+        existingAccount.setActivated(true);
+        existingAccount.setPassword(passwordEncoder.encode("test-account-password"));
+        existingAccount.getAuthorities().add(authorityRepository.findById(AuthoritiesConstants.ADMIN).orElseThrow());
+        userRepository.saveAndFlush(existingAccount);
 
         restAccountMockMvc
             .perform(get("/api/account").accept(MediaType.APPLICATION_JSON))
@@ -113,7 +123,7 @@ class AccountResourceIT {
             .andExpect(jsonPath("$.langKey").value("en"))
             .andExpect(jsonPath("$.authorities").value(AuthoritiesConstants.ADMIN));
 
-        userService.deleteUser(TEST_USER_LOGIN);
+        userRepository.findOneByLogin(TEST_USER_LOGIN).ifPresent(userRepository::delete);
     }
 
     @Test

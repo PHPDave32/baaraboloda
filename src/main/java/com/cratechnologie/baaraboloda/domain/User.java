@@ -95,6 +95,46 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
     @BatchSize(size = 20)
     private Set<Authority> authorities = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "access_profile_id")
+    private AccessProfile accessProfile;
+
+    @ElementCollection
+    @CollectionTable(name = "jhi_user_permission_grant", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "permission", length = 50, nullable = false)
+    private Set<String> grantedPermissions = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "jhi_user_permission_revoke", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "permission", length = 50, nullable = false)
+    private Set<String> revokedPermissions = new HashSet<>();
+
+    public AccessProfile getAccessProfile() {
+        return accessProfile;
+    }
+
+    public void setAccessProfile(AccessProfile accessProfile) {
+        this.accessProfile = accessProfile;
+    }
+
+    public Set<String> getGrantedPermissions() {
+        if (grantedPermissions == null) grantedPermissions = new HashSet<>();
+        return grantedPermissions;
+    }
+
+    public void setGrantedPermissions(Set<String> permissions) {
+        grantedPermissions = permissions == null ? new HashSet<>() : permissions;
+    }
+
+    public Set<String> getRevokedPermissions() {
+        if (revokedPermissions == null) revokedPermissions = new HashSet<>();
+        return revokedPermissions;
+    }
+
+    public void setRevokedPermissions(Set<String> permissions) {
+        revokedPermissions = permissions == null ? new HashSet<>() : permissions;
+    }
+
     public Long getId() {
         return id;
     }

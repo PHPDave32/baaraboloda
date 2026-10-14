@@ -1,3 +1,4 @@
+import { UserPreviewComponent } from 'app/shared/components/user-preview/user-preview.component';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { PhotoPicker } from 'app/shared/components/photo-picker/photo-picker';
 import { AvatarComponent } from 'app/shared/components/avatar/avatar.component';
@@ -7,6 +8,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 
 import { AccountService } from 'app/core/auth/account.service';
+import { Account } from 'app/core/auth/account.model';
 import { UserManagementService } from 'app/entities/admin/user-management/service/user-management.service';
 import { IUserManagement } from 'app/entities/admin/user-management/user-management.model';
 import { ProjectService } from 'app/entities/project/service/project.service';
@@ -14,6 +16,10 @@ import { IProject } from 'app/entities/project/project.model';
 import { ModalComponent } from 'app/shared/components/modal/modal.component';
 import { PaginationComponent } from 'app/shared/components/pagination/pagination.component';
 import { SearchBarComponent } from 'app/shared/components/search-bar/search-bar.component';
+import { AccessProfileService } from 'app/entities/admin/access-profile/service/access-profile.service';
+import { IAccessProfile } from 'app/entities/admin/access-profile/access-profile.model';
+import AccessProfileComponent from 'app/entities/admin/access-profile/access-profile.component';
+import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'jhi-admin',
@@ -22,11 +28,14 @@ import { SearchBarComponent } from 'app/shared/components/search-bar/search-bar.
     NotificationCenterComponent,
     PhotoPicker,
     AvatarComponent,
+    UserPreviewComponent,
     CommonModule,
     ReactiveFormsModule,
     ModalComponent,
     PaginationComponent,
     SearchBarComponent,
+    PasswordToggleDirective,
+    AccessProfileComponent,
   ],
   templateUrl: './admin.html',
   styleUrls: ['./admin.css'],
@@ -35,7 +44,10 @@ export default class AdminComponent implements OnInit {
   photoUploading = false;
   users: IUserManagement[] = [];
   projects: IProject[] = [];
-  activeTab: 'users' | 'projects' = 'users';
+  profiles: IAccessProfile[] = [];
+  profilesLoading = false;
+  profilesError = '';
+  activeTab: 'users' | 'projects' | 'profiles' = 'users';
 
   readonly pageSize = 8;
   userPage = 1;
@@ -64,12 +76,104 @@ export default class AdminComponent implements OnInit {
   showPermissionPanel = false;
   permissionUser: IUserManagement | null = null;
   savingPermissions = false;
+  selectedUserPermissions = new Set<string>();
 
   readonly permissionCatalog: { key: string; label: string; description: string }[] = [
+    {
+      key: 'PERM_PROJECT_REOPEN',
+      label: 'Réouvrir les projets',
+      description: 'Réouvrir un projet fermé et rétablir les actions autorisées.',
+    },
+    { key: 'PERM_PROJECT_CLOSE', label: 'Fermer les projets', description: 'Fermer un projet et le rendre consultable uniquement.' },
     { key: 'PERM_PROJECT_CREATE', label: 'Créer des projets', description: 'Autorise la création de nouveaux projets.' },
+    {
+      key: 'PERM_PROJECT_EDIT',
+      label: 'Modifier les projets',
+      description: 'Autorise la modification des informations des projets accessibles.',
+    },
     { key: 'PERM_PROJECT_DELETE', label: 'Supprimer des projets', description: 'Autorise la suppression de projets existants.' },
     { key: 'PERM_SPRINT_MANAGE', label: 'Gérer les sprints', description: 'Autorise la création et la suppression de sprints.' },
-    { key: 'PERM_MANAGE_MEMBERS', label: 'Gérer les membres', description: 'Autorise l’ajout et le retrait de membres sur les projets.' },
+    { key: 'PERM_MANAGE_MEMBERS', label: 'Gérer les membres', description: "Autorise l'ajout et le retrait de membres sur les projets." },
+    {
+      key: 'PERM_TASK_MANAGE',
+      label: 'Gérer les tâches',
+      description: 'Autorise la création, modification, assignation et suppression des tâches.',
+    },
+    {
+      key: 'PERM_COMMENT_MANAGE',
+      label: 'Participer aux commentaires',
+      description: 'Autorise l’ajout, la modification et la suppression des commentaires.',
+    },
+    {
+      key: 'PERM_RESOURCE_VISIBILITY',
+      label: 'Gérer la visibilité de ses ressources',
+      description: 'Choisir qui peut consulter les documents, fichiers et liens que vous avez ajoutés.',
+    },
+    {
+      key: 'PERM_DOCUMENT_MANAGE',
+      label: 'Gérer les documents',
+      description: 'Autorise l’ajout et la suppression des documents et liens.',
+    },
+    {
+      key: 'PERM_USER_DISABLE',
+      label: 'Désactiver les comptes',
+      description: 'Désactiver ou réactiver les comptes utilisateurs ordinaires.',
+    },
+    { key: 'PERM_USER_MANAGE', label: 'Gérer les comptes utilisateurs', description: 'Autorise la gestion des comptes ordinaires.' },
+  ];
+
+  /**
+   * Profils prédéfinis : chaque profil porte un rôle et un jeu de permissions.
+   * Seul le super admin peut les appliquer lors de la création / modification d'un compte.
+   */
+  readonly profileCatalog: {
+    key: string;
+    label: string;
+    description: string;
+    icon: string;
+    role: string;
+    permissions: string[];
+  }[] = [
+    {
+      key: 'PROFILE_DIRECTOR',
+      label: 'Directeur des opérations',
+      description: 'Vision globale sur tous les projets. Peut tout créer, supprimer et gérer.',
+      icon: '👔',
+      role: 'ROLE_ADMIN',
+      permissions: ['PERM_PROJECT_CREATE', 'PERM_PROJECT_DELETE', 'PERM_SPRINT_MANAGE', 'PERM_MANAGE_MEMBERS'],
+    },
+    {
+      key: 'PROFILE_PM',
+      label: 'Chef de projet',
+      description: 'Crée et pilote des projets, gère les sprints et les équipes.',
+      icon: '🗂️',
+      role: 'ROLE_USER',
+      permissions: ['PERM_PROJECT_CREATE', 'PERM_SPRINT_MANAGE', 'PERM_MANAGE_MEMBERS'],
+    },
+    {
+      key: 'PROFILE_CONTRIBUTOR',
+      label: 'Contributeur',
+      description: 'Participe activement aux projets, gère les sprints mais ne crée pas de projets.',
+      icon: '🛠️',
+      role: 'ROLE_USER',
+      permissions: ['PERM_SPRINT_MANAGE'],
+    },
+    {
+      key: 'PROFILE_MEMBER',
+      label: 'Membre',
+      description: 'Crée et met à jour des tâches au sein des projets dont il est membre.',
+      icon: '👤',
+      role: 'ROLE_USER',
+      permissions: [],
+    },
+    {
+      key: 'PROFILE_OBSERVER',
+      label: 'Observateur',
+      description: 'Consultation uniquement. Aucune action de modification.',
+      icon: '👁️',
+      role: 'ROLE_USER',
+      permissions: [],
+    },
   ];
 
   private readonly accountService = inject(AccountService);
@@ -78,6 +182,7 @@ export default class AdminComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
+  private readonly accessProfileService = inject(AccessProfileService);
 
   constructor() {
     this.userForm = this.fb.group({
@@ -87,7 +192,8 @@ export default class AdminComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       login: ['', Validators.required],
       password: ['', [Validators.minLength(6)]],
-      authorities: [['ROLE_USER'], Validators.required],
+      role: ['ROLE_USER', Validators.required],
+      accessProfileId: [null as number | null],
     });
 
     this.projectForm = this.fb.group({
@@ -98,23 +204,81 @@ export default class AdminComponent implements OnInit {
     });
   }
 
-  get currentAccount() {
+  get currentAccount(): Account | null {
     return this.accountService.account();
   }
 
+  get isSuperAdmin(): boolean {
+    return this.accountService.hasAnyAuthority('ROLE_SUPER_ADMIN');
+  }
+
+  get canManageUsers(): boolean {
+    return this.accountService.hasAnyAuthority(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'PERM_USER_MANAGE']);
+  }
+
+  get canDisableUsers(): boolean {
+    return this.accountService.hasAnyAuthority(['ROLE_SUPER_ADMIN', 'PERM_USER_DISABLE']);
+  }
+
+  canEditUser(user: IUserManagement): boolean {
+    return this.canManageUsers && (this.isSuperAdmin || !this.isAdmin(user));
+  }
+
+  roleLabel(user: IUserManagement): string {
+    return user.authorities?.includes('ROLE_SUPER_ADMIN')
+      ? 'Super administrateur'
+      : (user.accessProfileName ?? (this.isAdmin(user) ? 'Administrateur' : 'Employé'));
+  }
+
   ngOnInit(): void {
-    if (!this.accountService.hasAnyAuthority('ROLE_ADMIN')) {
+    if (!this.accountService.hasAnyAuthority(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'PERM_USER_MANAGE', 'PERM_USER_DISABLE'])) {
       this.router.navigate(['/']);
       return;
     }
     this.loadUsers();
-    this.loadProjects();
+    if (this.canManageUsers) this.loadProjects();
+    if (this.canManageUsers) this.loadProfiles();
+  }
+
+  loadProfiles(): void {
+    this.profilesLoading = true;
+    this.profilesError = '';
+    this.accessProfileService.query().subscribe({
+      next: profiles => {
+        this.profiles = profiles;
+        this.profilesLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.profilesLoading = false;
+        this.profilesError = 'Impossible de charger les profils. Veuillez réessayer.';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  toggleUserActivation(user: IUserManagement): void {
+    if (!this.canDisableUsers || this.isAdmin(user)) return;
+    this.userError = '';
+    this.userManagementService.setActivation(user.login, !user.activated).subscribe({
+      next: saved => {
+        this.users = this.users.map(item => (item.login === saved.login ? saved : item));
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.userError = err?.error?.detail ?? err?.error?.title ?? "Impossible de modifier l'état de ce compte.";
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   loadUsers(): void {
     this.userManagementService.query({ size: 1000 }).subscribe({
       next: res => {
-        this.users = res.body ?? [];
+        const currentLogin = this.currentAccount?.login?.toLowerCase();
+        this.users = (res.body ?? []).filter(
+          user => !user.authorities?.includes('ROLE_SUPER_ADMIN') && (!currentLogin || user.login?.toLowerCase() !== currentLogin),
+        );
         this.clampUserPage();
         this.cdr.markForCheck();
       },
@@ -158,10 +322,6 @@ export default class AdminComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  private clampUserPage(): void {
-    this.userPage = Math.min(this.userPage, this.userPageCount);
-  }
-
   get filteredProjects(): IProject[] {
     const term = this.projectSearch.trim().toLowerCase();
     if (!term) {
@@ -189,20 +349,17 @@ export default class AdminComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  private clampProjectPage(): void {
-    this.projectPage = Math.min(this.projectPage, this.projectPageCount);
-  }
-
   openCreateUser(): void {
     this.editingUser = null;
     this.showUserForm = true;
     this.userError = '';
-    this.userForm.reset({ authorities: ['ROLE_USER'] });
+    this.userForm.reset({ role: 'ROLE_USER' });
     this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
     this.userForm.get('password')?.updateValueAndValidity();
   }
 
   openEditUser(user: IUserManagement): void {
+    if (!this.canEditUser(user)) return;
     this.editingUser = user;
     this.showUserForm = true;
     this.userError = '';
@@ -212,7 +369,8 @@ export default class AdminComponent implements OnInit {
       lastName: user.lastName,
       email: user.email,
       login: user.login,
-      authorities: user.authorities ?? ['ROLE_USER'],
+      role: user.authorities?.includes('ROLE_SUPER_ADMIN') ? 'ROLE_SUPER_ADMIN' : this.isAdmin(user) ? 'ROLE_ADMIN' : 'ROLE_USER',
+      accessProfileId: user.accessProfileId ?? null,
     });
     this.userForm.get('password')?.clearValidators();
     this.userForm.get('password')?.updateValueAndValidity();
@@ -221,46 +379,54 @@ export default class AdminComponent implements OnInit {
   submitUser(): void {
     if (this.userForm.invalid || this.loadingUser || this.photoUploading) return;
     this.userError = '';
-    this.loadingUser = true;
+    this.loadingUser = false;
+    const { role, accessProfileId, ...fields } = this.userForm.value;
+    const authorities =
+      this.isSuperAdmin && !accessProfileId
+        ? [...new Set(['ROLE_USER', role, ...(this.editingUser?.authorities ?? []).filter(authority => !authority.startsWith('ROLE_'))])]
+        : (this.editingUser?.authorities ?? ['ROLE_USER']);
 
     if (this.editingUser) {
-      const { password, ...rest } = this.userForm.value;
-      const updated: IUserManagement = { ...this.editingUser, ...rest };
+      this.loadingUser = true;
+      if (!this.canEditUser(this.editingUser)) {
+        this.loadingUser = false;
+        return;
+      }
+      const { password, ...rest } = fields;
+      const updated: IUserManagement = { ...this.editingUser, ...rest, authorities, accessProfileId: accessProfileId ?? null };
       this.userManagementService.update(updated).subscribe({
         next: () => {
           this.showUserForm = false;
           this.loadUsers();
           this.loadingUser = false;
         },
-        error: () => {
-          this.userError = 'La modification a échoué.';
+        error: err => {
+          this.userError = err?.error?.detail ?? err?.error?.title ?? 'La modification a échoué.';
           this.loadingUser = false;
         },
       });
       return;
     }
 
-    const formValue = this.userForm.value;
-    if (!confirm(`Voulez-vous créer le compte de ${formValue.firstName} ${formValue.lastName} (${formValue.email}) ?`)) {
-      this.loadingUser = false;
-      return;
-    }
-
-    this.userManagementService.create({ ...formValue, login: formValue.login, activated: true, langKey: 'fr' }).subscribe({
-      next: () => {
-        this.showUserForm = false;
-        this.userForm.reset({ authorities: ['ROLE_USER'] });
-        this.loadUsers();
-        this.loadingUser = false;
-      },
-      error: (err: any) => {
-        this.userError = err?.error?.message ?? 'La création du compte a échoué.';
-        this.loadingUser = false;
-      },
-    });
+    this.loadingUser = true;
+    this.userManagementService
+      .create({ ...fields, authorities, accessProfileId: accessProfileId ?? null, activated: true, langKey: 'fr' })
+      .subscribe({
+        next: () => {
+          this.showUserForm = false;
+          this.userForm.reset({ role: 'ROLE_USER' });
+          this.loadUsers();
+          this.loadingUser = false;
+        },
+        error: (err: any) => {
+          this.userError = err?.error?.message ?? 'La création du compte a échoué.';
+          this.loadingUser = false;
+        },
+      });
   }
 
   openDeleteUserModal(user: IUserManagement): void {
+    if (!this.canEditUser(user) || user.login === this.currentAccount?.login) return;
     this.userToDelete = user;
     this.showDeleteUserModal = true;
   }
@@ -271,7 +437,7 @@ export default class AdminComponent implements OnInit {
   }
 
   confirmDeleteUser(): void {
-    if (!this.userToDelete) return;
+    if (!this.userToDelete || !this.canEditUser(this.userToDelete) || this.userToDelete.login === this.currentAccount?.login) return;
     const login = this.userToDelete.login;
     this.showDeleteUserModal = false;
     this.userManagementService.delete(login).subscribe({
@@ -279,8 +445,8 @@ export default class AdminComponent implements OnInit {
         this.userToDelete = null;
         this.loadUsers();
       },
-      error: () => {
-        this.userError = 'Impossible de supprimer cet employé.';
+      error: err => {
+        this.userError = err?.error?.detail ?? err?.error?.title ?? 'Impossible de supprimer ce compte.';
         this.userToDelete = null;
         this.cdr.markForCheck();
       },
@@ -289,12 +455,15 @@ export default class AdminComponent implements OnInit {
 
   deleteUser(login: string): void {
     const user = this.users.find(u => u.login === login) ?? null;
-    this.userToDelete = user;
-    this.showDeleteUserModal = true;
+    if (user) this.openDeleteUserModal(user);
   }
 
   openPermissionPanel(user: IUserManagement): void {
+    if (!this.isSuperAdmin) return;
     this.permissionUser = user;
+    this.selectedUserPermissions = new Set(
+      (user.authorities ?? []).filter(authority => this.permissionCatalog.some(permission => permission.key === authority)),
+    );
     this.showPermissionPanel = true;
     this.userError = '';
   }
@@ -302,23 +471,36 @@ export default class AdminComponent implements OnInit {
   closePermissionPanel(): void {
     this.showPermissionPanel = false;
     this.permissionUser = null;
+    this.selectedUserPermissions.clear();
   }
 
-  hasPermission(user: IUserManagement, permission: string): boolean {
-    return user.authorities?.includes(permission) ?? false;
+  hasSelectedPermission(permission: string): boolean {
+    return this.selectedUserPermissions.has(permission);
   }
 
-  togglePermission(user: IUserManagement, permission: string, granted: boolean): void {
-    if (this.savingPermissions) {
-      return;
-    }
-    const current = new Set(user.authorities ?? []);
+  toggleSelectedPermission(permission: string, granted: boolean): void {
     if (granted) {
-      current.add(permission);
+      this.selectedUserPermissions.add(permission);
     } else {
-      current.delete(permission);
+      this.selectedUserPermissions.delete(permission);
     }
-    const updated: IUserManagement = { ...user, authorities: Array.from(current) };
+  }
+
+  saveUserPermissions(): void {
+    if (!this.isSuperAdmin || this.savingPermissions || !this.permissionUser) return;
+    const user = this.permissionUser;
+    const loadedProfile = this.profiles.find(profile => profile.id === user.accessProfileId);
+    const profilePermissions = new Set(
+      loadedProfile?.permissions ??
+        (user.authorities ?? [])
+          .filter(authority => this.permissionCatalog.some(permission => permission.key === authority))
+          .filter(permission => !(user.grantedPermissions ?? []).includes(permission)),
+    );
+    (user.revokedPermissions ?? []).forEach(permission => profilePermissions.add(permission));
+    const grantedPermissions = [...this.selectedUserPermissions].filter(permission => !profilePermissions.has(permission));
+    const revokedPermissions = [...profilePermissions].filter(permission => !this.selectedUserPermissions.has(permission));
+    const roleAuthorities = (user.authorities ?? []).filter(authority => authority.startsWith('ROLE_'));
+    const updated: IUserManagement = { ...user, authorities: roleAuthorities, grantedPermissions, revokedPermissions };
     this.savingPermissions = true;
     this.userManagementService.update(updated).subscribe({
       next: saved => {
@@ -328,6 +510,8 @@ export default class AdminComponent implements OnInit {
           this.permissionUser = merged;
         }
         this.savingPermissions = false;
+        this.showPermissionPanel = false;
+        this.permissionUser = null;
         this.cdr.markForCheck();
       },
       error: () => {
@@ -402,6 +586,14 @@ export default class AdminComponent implements OnInit {
   }
 
   isAdmin(user: IUserManagement): boolean {
-    return user.authorities?.includes('ROLE_ADMIN') ?? false;
+    return user.authorities?.some(role => role === 'ROLE_ADMIN' || role === 'ROLE_SUPER_ADMIN') ?? false;
+  }
+
+  private clampUserPage(): void {
+    this.userPage = Math.min(this.userPage, this.userPageCount);
+  }
+
+  private clampProjectPage(): void {
+    this.projectPage = Math.min(this.projectPage, this.projectPageCount);
   }
 }

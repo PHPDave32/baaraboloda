@@ -140,7 +140,8 @@ public class NotificationDeliveryService {
             boolean failed = false;
             row = jdbc.queryForMap("select * from app_notification where id=?", id);
             String login = (String) row.get("recipient");
-            String path = "/projects/" + row.get("project_id") + "/tasks/" + row.get("task_id");
+            String path =
+                "/projects/" + row.get("project_id") + ("TASK_DELETED".equals(row.get("kind")) ? "/board" : "/tasks/" + row.get("task_id"));
             boolean unread = row.get("read_at") == null;
             if (Boolean.TRUE.equals(row.get("email_pending"))) {
                 if (!unread || !emailEnabled || !emailPreference(login)) jdbc.update(

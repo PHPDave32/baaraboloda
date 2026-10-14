@@ -87,7 +87,9 @@ public class CommentResource {
                 .map(UserDTO::new)
                 .orElseThrow(() -> new BadRequestAlertException("Current user not found", ENTITY_NAME, "currentusernotfound"))
         );
-        projectSecurityService.checkCanModifyTask(commentDTO.getTask().getId());
+        projectSecurityService.requirePermission("PERM_COMMENT_MANAGE");
+        projectSecurityService.checkTaskAccess(commentDTO.getTask().getId());
+        projectSecurityService.checkTaskWritable(commentDTO.getTask().getId());
         commentDTO = commentService.save(commentDTO);
         return ResponseEntity.created(new URI("/api/comments/" + commentDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, commentDTO.getId().toString()))
@@ -212,6 +214,7 @@ public class CommentResource {
     @GetMapping("/{id}")
     public ResponseEntity<CommentDTO> getComment(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Comment : {}", id);
+        projectSecurityService.checkCommentAccess(id);
         Optional<CommentDTO> commentDTO = commentService.findOne(id);
         return ResponseUtil.wrapOrNotFound(commentDTO);
     }
