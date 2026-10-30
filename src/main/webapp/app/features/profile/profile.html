@@ -1,6 +1,4 @@
-<div
-  class="relative isolate min-h-[calc(100vh-2rem)] overflow-hidden rounded-[28px] border border-slate-300/40 bg-[linear-gradient(112deg,rgba(248,250,252,.94),rgba(239,246,255,.84)_52%,rgba(224,231,255,.72))] text-slate-900 shadow-[0_28px_80px_rgba(100,116,139,.18)] max-[600px]:rounded-[20px]"
->
+<div class="profile-page">
   <div class="relative z-[1] workspace-page">
     <header class="workspace-page-header">
       <div>
@@ -8,65 +6,72 @@
           class="inline-flex items-center gap-2 text-[.7rem] font-bold uppercase tracking-[.18em] text-[#328cb1] before:h-px before:w-7 before:bg-[#328cb1]"
           >Mon espace</span
         >
-        <h1 class="mt-2.5 text-[clamp(1.8rem,4vw,3.2rem)] font-bold leading-tight tracking-[-.04em] text-[#172033]">Profil</h1>
+        <h1 class="mt-2.5 text-[clamp(1.8rem,4vw,3.2rem)] font-bold leading-tight tracking-[-.04em] text-[#172033]">Mon profil</h1>
+        <p class="profile-subtitle">Votre identité, vos informations et la sécurité de votre compte.</p>
       </div>
       <jhi-notification-center />
     </header>
 
-    <div class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
-      <!-- Carte identité -->
-      <section
-        class="h-fit overflow-hidden rounded-[22px] border border-slate-200 bg-white/80 p-6 shadow-[0_20px_45px_rgba(100,116,139,.12)] backdrop-blur-[18px]"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#328cb1] text-xl font-semibold text-white"
-          >
+    <div class="profile-layout">
+      <section class="identity-card" aria-label="Votre profil">
+        <div class="identity-cover"><span>BAARA Boloda</span></div>
+        <div class="identity-body">
+          <div class="profile-portrait">
             @if (account()?.imageUrl) {
-              <img [jhiUserPhoto]="account()!.imageUrl!" [alt]="displayName()" class="h-full w-full object-cover" />
+              <img [jhiUserPhoto]="account()!.imageUrl!" [alt]="displayName()" />
             } @else {
               <span>{{ initials() }}</span>
             }
           </div>
-          <div class="min-w-0">
-            <p class="truncate text-lg font-semibold text-[#172033]">{{ displayName() }}</p>
-            <p class="truncate text-sm text-slate-500">{{ account()?.email }}</p>
-          </div>
-        </div>
-
-        <div class="mt-5">
-          <jhi-photo-picker [imageUrl]="account()?.imageUrl ?? null" (imageUrlChange)="savePhoto($event)" [disabled]="photoSaving()" />
+          <h2 class="identity-name">{{ displayName() }}</h2>
+          <p class="identity-email">{{ account()?.email }}</p>
+          <span class="identity-profile">{{ profileLabel() }}</span>
+          <details class="photo-editor">
+            <summary>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <path d="M8 5l2-2h4l2 2h4v15H4V5z" />
+                <circle cx="12" cy="12" r="4" />
+              </svg>
+              Modifier ma photo
+            </summary>
+            <div class="photo-editor-content">
+              <jhi-photo-picker [imageUrl]="account()?.imageUrl ?? null" (imageUrlChange)="savePhoto($event)" [disabled]="photoSaving()" />
+            </div>
+          </details>
           @if (photoMessage()) {
             <p role="status" class="text-xs text-slate-600">{{ photoMessage() }}</p>
           }
+          <dl class="identity-details">
+            <div>
+              <dt>Identifiant</dt>
+              <dd>{{ account()?.login }}</dd>
+            </div>
+            <div>
+              <dt>Profil attribué</dt>
+              <dd>{{ profileLabel() }}</dd>
+            </div>
+            <div>
+              <dt>Langue</dt>
+              <dd>{{ account()?.langKey === 'fr' ? 'Français' : account()?.langKey === 'en' ? 'Anglais' : account()?.langKey }}</dd>
+            </div>
+          </dl>
         </div>
-        <dl class="mt-6 space-y-3 text-sm">
-          <div class="flex items-center justify-between gap-3">
-            <dt class="text-slate-500">Identifiant</dt>
-            <dd class="font-medium text-[#172033]">{{ account()?.login }}</dd>
-          </div>
-          <div class="flex items-center justify-between gap-3">
-            <dt class="text-slate-500">Rôle</dt>
-            <dd>
-              <span
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                [class]="isAdmin() ? 'bg-[#328cb1]/12 text-[#2a7a9e]' : 'bg-slate-100 text-slate-600'"
-              >
-                {{ isSuperAdmin() ? 'Super administrateur' : isAdmin() ? 'Administrateur' : 'Employé' }}
-              </span>
-            </dd>
-          </div>
-          <div class="flex items-center justify-between gap-3">
-            <dt class="text-slate-500">Langue</dt>
-            <dd class="font-medium text-[#172033]">{{ account()?.langKey || 'fr' }}</dd>
-          </div>
-        </dl>
       </section>
 
       <!-- Changement de mot de passe -->
       <div class="space-y-6">
-        <section class="rounded-[22px] border border-slate-200 bg-white/90 p-6">
-          <h2 class="text-base font-semibold text-[#172033]">Informations personnelles</h2>
+        <section class="profile-panel">
+          <div class="panel-heading">
+            <span class="panel-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21v-2a8 8 0 0116 0v2" /></svg
+            ></span>
+            <div>
+              <h2>Informations personnelles</h2>
+              <p>Les informations qui permettent à votre équipe de vous reconnaître.</p>
+            </div>
+          </div>
           <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="mt-5 space-y-4">
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="text-xs font-semibold text-slate-600"
@@ -82,14 +87,36 @@
                   class="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5"
               /></label>
             </div>
-            <label class="block text-xs font-semibold text-slate-600"
-              >Identifiant de connexion<input
-                formControlName="login"
-                autocomplete="username"
-                class="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5"
-            /></label>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600"
+                  >Nom d’utilisateur (login)<input
+                    formControlName="login"
+                    autocomplete="username"
+                    class="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                /></label>
+                @if (profileForm.controls.login.touched && profileForm.controls.login.invalid) {
+                  <p role="alert" class="text-xs text-red-600">Saisissez un nom d’utilisateur sans espaces, de 50 caractères maximum.</p>
+                }
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600">
+                  Adresse e-mail
+                  <input
+                    type="email"
+                    formControlName="email"
+                    autocomplete="email"
+                    class="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                  />
+                </label>
+                @if (profileForm.controls.email.touched && profileForm.controls.email.invalid) {
+                  <p role="alert" class="text-xs text-red-600">Saisissez une adresse e-mail valide, de 254 caractères maximum.</p>
+                }
+              </div>
+            </div>
             <p class="text-xs text-slate-500">
-              Après un changement d’identifiant, reconnectez-vous avec le nouvel identifiant et votre mot de passe actuel.
+              Vous pouvez vous connecter avec votre nom d’utilisateur ou votre adresse e-mail. Après un changement de nom d’utilisateur,
+              reconnectez-vous avec vos nouveaux identifiants et votre mot de passe actuel.
             </p>
             @if (profileMessage()) {
               <p role="status" class="text-sm text-[#328cb1]">{{ profileMessage() }}</p>
@@ -101,11 +128,18 @@
             </div>
           </form>
         </section>
-        <section
-          class="overflow-hidden rounded-[22px] border border-slate-200 bg-white/80 p-6 shadow-[0_20px_45px_rgba(100,116,139,.12)] backdrop-blur-[18px] sm:p-8"
-        >
-          <h2 class="text-base font-semibold text-[#172033]">Changer le mot de passe</h2>
-          <p class="mt-0.5 text-xs text-slate-500">Choisissez un mot de passe fort que vous n'utilisez pas ailleurs.</p>
+        <section class="profile-panel">
+          <div class="panel-heading">
+            <span class="panel-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <rect x="5" y="10" width="14" height="11" rx="3" />
+                <path d="M8 10V7a4 4 0 018 0v3M12 14v3" /></svg
+            ></span>
+            <div>
+              <h2>Sécurité du compte</h2>
+              <p>Choisissez un mot de passe unique pour protéger votre espace.</p>
+            </div>
+          </div>
 
           @if (success()) {
             <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -176,11 +210,7 @@
             </div>
 
             <div class="flex justify-end pt-2">
-              <button
-                type="submit"
-                [disabled]="loading()"
-                class="inline-flex items-center gap-2 rounded-xl bg-[#328cb1] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(50,140,177,.22)] transition hover:bg-[#2a7a9e] disabled:cursor-not-allowed disabled:opacity-60"
-              >
+              <button type="submit" [disabled]="loading()" class="btn-primary">
                 @if (loading()) {
                   <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true"></span>
                   Mise à jour…

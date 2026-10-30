@@ -8,10 +8,12 @@
     <div>
       <span class="backlog-eyebrow">PLANIFICATION</span>
       <div class="workspace-project-focus">{{ project?.name }}</div>
-      <h1 class="text-3xl font-bold text-white mb-1">Backlog</h1>
+      <h1 class="text-3xl font-bold text-white mb-1">Liste des tâches</h1>
       <p class="text-gray-400">
-        Répartissez le travail, du backlog aux sprints. · {{ backlogTasks.length }} tâche{{ backlogTasks.length > 1 ? 's' : '' }} non
-        planifiée{{ backlogTasks.length > 1 ? 's' : '' }}
+        Répartissez le travail, de la liste des tâches aux périodes. · {{ backlogTasks.length }} tâche{{
+          backlogTasks.length > 1 ? 's' : ''
+        }}
+        non planifiée{{ backlogTasks.length > 1 ? 's' : '' }}
       </p>
     </div>
     <div class="page-header-actions flex items-center flex-wrap gap-3">
@@ -19,7 +21,7 @@
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        Nouveau sprint
+        Nouvelle période
       </button>
       <button [disabled]="project?.status === 'CLOSED'" (click)="openTaskForm(null)" class="btn-primary text-sm flex items-center gap-2">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,13 +102,13 @@
     variant="danger"
     [isOpen]="showSprintAccessModal"
     title="Accès non autorisé"
-    subtitle="La gestion des sprints n’est pas activée pour votre compte."
+    subtitle="La gestion des périodes n’est pas activée pour votre compte."
     [showFooter]="false"
     (close)="closeSprintAccessModal()"
   >
     <p class="text-sm leading-relaxed text-slate-600">
-      Vous n’avez pas la permission de créer ou gérer les sprints de ce projet. Contactez un administrateur pour obtenir l’accès « Gérer les
-      sprints ».
+      Vous n’avez pas la permission de créer ou gérer les périodes de ce projet. Contactez un administrateur pour obtenir l’accès « Gérer
+      les périodes ».
     </p>
     <div class="mt-6 flex justify-end">
       <button
@@ -119,7 +121,8 @@
     </div>
   </app-modal>
 
-  <app-modal
+  <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
     variant="danger"
     [isOpen]="taskToDelete !== null"
     title="Supprimer la tâche"
@@ -134,14 +137,16 @@
     (confirm)="confirmDeleteTask()"
   >
   </app-modal>
+-->
 
-  <app-modal
+  <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
     variant="danger"
     [isOpen]="sprintToDelete !== null"
-    title="Supprimer le sprint"
+    title="Supprimer la période"
     [subtitle]="
       sprintToDelete
-        ? 'Voulez-vous vraiment supprimer « ' + (sprintToDelete.name ?? 'ce sprint') + ' » ? Les tâches seront déplacées au backlog.'
+        ? 'Voulez-vous vraiment supprimer « ' + (sprintToDelete.name ?? 'cette période') + ' » ? Les tâches seront déplacées à la liste des tâches.'
         : ''
     "
     confirmText="Supprimer"
@@ -150,23 +155,37 @@
     (confirm)="confirmDeleteSprint()"
   >
   </app-modal>
+-->
 
-  <!-- Modal Sprint -->
   <app-modal
     appearance="editor"
     [isOpen]="showSprintForm"
-    [title]="editingSprint ? 'Modifier le sprint' : 'Créer un sprint'"
-    [subtitle]="editingSprint ? 'Mettez à jour les informations du sprint' : 'Ajoutez un nouveau sprint à votre projet'"
-    [confirmText]="editingSprint ? 'Enregistrer' : 'Créer le sprint'"
+    [title]="editingSprint ? 'Modifier la période' : 'Créer une période'"
+    [subtitle]="editingSprint ? 'Mettez à jour les informations de la période' : 'Ajoutez une nouvelle période à votre projet'"
+    [confirmText]="editingSprint ? 'Enregistrer' : 'Créer la période'"
     cancelText="Annuler"
-    [isLoading]="loading"
+    [isLoading]="savingSprint"
     (close)="closeSprintForm()"
     (confirm)="submitSprint()"
   >
+    @if (error) {
+      <p role="alert" class="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ error }}</p>
+    }
     <form [formGroup]="sprintForm" (ngSubmit)="submitSprint()" class="sprint-editor">
+      <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3" aria-label="Projet associé à la période">
+        <p class="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Projet concerné</p>
+        <p class="m-0 break-words text-lg font-bold text-[#246d8b]">{{ project?.name || 'Projet #' + projectId }}</p>
+      </div>
       <div>
-        <label for="backlog-sprint-name">Nom du sprint <span>*</span></label>
-        <input id="backlog-sprint-name" type="text" formControlName="name" class="input-field" placeholder="Ex. Sprint 3 — Espace client" />
+        <label for="backlog-sprint-name">Nom de la période <span>*</span></label>
+        <input
+          id="backlog-sprint-name"
+          [attr.aria-invalid]="sprintForm.controls.name.touched && sprintForm.controls.name.invalid"
+          type="text"
+          formControlName="name"
+          class="input-field"
+          placeholder="Ex. Période 3 — Espace client"
+        />
       </div>
       <div>
         <label for="backlog-sprint-goal">Objectif <small>Facultatif</small></label>
@@ -175,11 +194,11 @@
           formControlName="goal"
           class="input-field"
           rows="3"
-          placeholder="Quel résultat souhaitez-vous atteindre à la fin de ce sprint ?"
+          placeholder="Quel résultat souhaitez-vous atteindre à la fin de cette période ?"
         ></textarea>
       </div>
       <fieldset class="sprint-editor-period">
-        <legend>Période du sprint</legend>
+        <legend>Dates de la période</legend>
         <p>Définissez le début et la fin de cette période de travail.</p>
         <div class="sprint-editor-dates">
           <div>
@@ -196,15 +215,14 @@
     </form>
   </app-modal>
 
-  <!-- Modal Tâche -->
   <app-modal
     appearance="editor"
     [isOpen]="showTaskForm"
-    [title]="targetSprintId ? 'Ajouter une tâche au sprint' : 'Ajouter une tâche au backlog'"
+    [title]="targetSprintId ? 'Ajouter une tâche à la période' : 'Ajouter une tâche à la liste des tâches'"
     subtitle="Décrivez le travail à réaliser et définissez sa priorité."
     confirmText="Créer la tâche"
     cancelText="Annuler"
-    [isLoading]="loading || readingImages"
+    [isLoading]="savingTask || readingImages"
     (close)="closeTaskForm()"
     (confirm)="submitTask()"
   >
@@ -216,6 +234,7 @@
         <label for="new-task-title">Titre de la tâche <span>*</span></label>
         <input
           id="new-task-title"
+          [attr.aria-invalid]="taskForm.controls.title.touched && taskForm.controls.title.invalid"
           type="text"
           formControlName="title"
           class="input-field"
@@ -235,7 +254,7 @@
       <jhi-image-attachments
         [allowPdf]="true"
         [editable]="true"
-        [disabled]="loading"
+        [disabled]="savingTask"
         [(images)]="taskImages"
         (readingChange)="readingImages = $event"
       />
@@ -281,7 +300,11 @@
         </select>
       </div>
       <p class="task-create-note">
-        {{ targetSprintId ? 'Cette tâche sera ajoutée au sprint sélectionné.' : 'Cette tâche sera disponible dans le backlog du projet.' }}
+        {{
+          targetSprintId
+            ? 'Cette tâche sera ajoutée à la période sélectionnée.'
+            : 'Cette tâche sera disponible dans la liste des tâches du projet.'
+        }}
       </p>
     </form>
   </app-modal>
@@ -345,9 +368,6 @@
                   </div>
                   <span class="text-xs text-slate-500 whitespace-nowrap">
                     {{ doneCount(getSprintTasks(sprint.id)) }}/{{ getSprintTasks(sprint.id).length }}
-                    @if (totalPoints(getSprintTasks(sprint.id))) {
-                      · {{ totalPoints(getSprintTasks(sprint.id)) }} pts
-                    }
                   </span>
                 </div>
               }
@@ -366,7 +386,9 @@
                   </button>
                 }
                 @if (sprint.status === 'ACTIVE') {
-                  <a [routerLink]="['/projects', projectId, 'board']" class="btn-secondary text-xs px-3 py-1.5">Tableau</a>
+                  <a [routerLink]="['/projects', projectId | publicId: 'project', 'board']" class="btn-secondary text-xs px-3 py-1.5"
+                    >Tableau</a
+                  >
                   <button
                     [disabled]="project?.status === 'CLOSED'"
                     (click)="completeSprint(sprint)"
@@ -388,11 +410,12 @@
                   </button>
                 }
                 @if (canManageSprints) {
-                  <button
+                  <!-- Suppression désactivée dans le frontend.
+<button
                     [disabled]="project?.status === 'CLOSED'"
                     (click)="deleteSprint(sprint.id)"
                     class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    title="Supprimer le sprint"
+                    title="Supprimer la période"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -403,6 +426,7 @@
                       />
                     </svg>
                   </button>
+-->
                 }
               </div>
             </div>
@@ -426,10 +450,10 @@
                 @if (hasActiveFilters && getSprintTasks(sprint.id).length) {
                   <div class="px-5 py-6 text-center text-sm text-slate-400">Aucune tâche ne correspond aux filtres.</div>
                 } @else if (sprint.status === 'COMPLETED') {
-                  <div class="px-5 py-6 text-center text-sm text-slate-400">Ce sprint terminé ne contient aucune tâche.</div>
+                  <div class="px-5 py-6 text-center text-sm text-slate-400">Cette période terminée ne contient aucune tâche.</div>
                 } @else {
                   <div class="px-5 py-8 text-center">
-                    <p class="text-sm text-slate-400">Glissez une tâche ici depuis le backlog</p>
+                    <p class="text-sm text-slate-400">Glissez une tâche ici depuis la liste des tâches</p>
                     <button
                       [disabled]="project?.status === 'CLOSED'"
                       (click)="openTaskForm(sprint.id)"
@@ -456,7 +480,7 @@
     >
       <aside class="backlog-calendar unplanned-calendar">
         <span class="calendar-caption">À PLANIFIER</span><strong>{{ backlogTasks.length }}</strong
-        ><span>Tâches du backlog</span><span class="calendar-status">Sans sprint</span>
+        ><span>Tâches de la liste des tâches</span><span class="calendar-status">Sans période</span>
       </aside>
       <div class="backlog-section-main">
         <header class="flex items-center justify-between px-5 py-4">
@@ -464,7 +488,7 @@
             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
             </svg>
-            <h3 class="font-semibold text-slate-800">Backlog</h3>
+            <h3 class="font-semibold text-slate-800">Liste des tâches</h3>
             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ backlogTasks.length }}</span>
           </div>
           <button
@@ -498,7 +522,7 @@
                     />
                   </svg>
                 </div>
-                <p class="text-sm text-slate-500">Le backlog est vide.</p>
+                <p class="text-sm text-slate-500">Le liste des tâches est vide.</p>
                 <button
                   [disabled]="project?.status === 'CLOSED'"
                   (click)="openTaskForm(null)"
@@ -548,17 +572,27 @@
           }
         </div>
         <a
-          [routerLink]="['/projects', projectId, 'tasks', task.id]"
+          [routerLink]="['/projects', projectId | publicId: 'project', 'tasks', task.id | publicId: 'task']"
           class="block truncate text-sm font-medium text-slate-800 transition-colors hover:text-[#328cb1]"
         >
           {{ task.title }}
         </a>
+        @if (creationDate(task); as createdAt) {
+          <p class="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path stroke-linecap="round" d="M16 3v4M8 3v4M3 11h18" />
+            </svg>
+            <span
+              >Créée le <time [attr.datetime]="createdAt.toISOString()">{{ createdAt | date: 'dd/MM/yyyy à HH:mm' }}</time></span
+            >
+          </p>
+        } @else {
+          <p class="mt-1 text-xs text-slate-500">Date de création non renseignée</p>
+        }
       </div>
 
       <div class="flex flex-shrink-0 items-center gap-2">
-        @if (task.storyPoints) {
-          <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-600">{{ task.storyPoints }} pts</span>
-        }
         @if (task.reporter) {
           <div class="hidden items-center sm:flex" [title]="'Rapporteur : ' + (task.reporter.login ?? '')">
             <app-avatar [user]="task.reporter" size="xs" />
@@ -569,7 +603,7 @@
           @if (inSprint && canManage) {
             <button
               (click)="moveToBacklog(task)"
-              title="Renvoyer au backlog"
+              title="Renvoyer à la liste des tâches"
               class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-amber-50 hover:text-amber-600"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -582,7 +616,7 @@
               (change)="moveToSprint(task, +$any($event.target).value)"
               (click)="$event.stopPropagation()"
             >
-              <option value="">Vers un sprint</option>
+              <option value="">Vers une période</option>
               @for (sprint of availableSprints; track sprint.id) {
                 @if (sprint.status !== 'COMPLETED') {
                   <option [value]="sprint.id">{{ sprint.name }}</option>
@@ -591,7 +625,8 @@
             </select>
           }
           @if (canManageTask(task)) {
-            <button
+            <!-- Suppression désactivée dans le frontend.
+<button
               [disabled]="project?.status === 'CLOSED'"
               (click)="deleteTask(task.id)"
               class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
@@ -606,6 +641,7 @@
                 />
               </svg>
             </button>
+-->
           }
         </div>
       </div>

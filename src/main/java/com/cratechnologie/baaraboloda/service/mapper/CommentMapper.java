@@ -27,6 +27,7 @@ public interface CommentMapper extends EntityMapper<CommentDTO, Comment> {
     @Named("taskTitle")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "uuid", source = "uuid")
     @Mapping(target = "title", source = "title")
     TaskDTO toDtoTaskTitle(Task task);
 }

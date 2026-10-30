@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DOCUMENT } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { Router, TitleStrategy } from '@angular/router';
@@ -10,6 +10,7 @@ import { Subject, of } from 'rxjs';
 
 import { AppPageTitleStrategy } from 'app/app-page-title-strategy';
 import { AccountService } from 'app/core/auth';
+import { SessionService } from 'app/core/auth/session.service';
 
 import Main from './main';
 
@@ -31,8 +32,10 @@ describe('Main', () => {
           provide: AccountService,
           useValue: {
             identity: vi.fn(() => of(null)),
+            account: signal(null),
           },
         },
+        { provide: SessionService, useValue: { start: vi.fn() } },
         { provide: TitleStrategy, useClass: AppPageTitleStrategy },
       ],
     });

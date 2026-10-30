@@ -121,7 +121,7 @@
             </th>
             <th scope="col" jhiSortBy="sprint.name">
               <div class="d-flex">
-                <span jhiTranslate="baaraBolodaApp.task.sprint">Sprint</span>
+                <span jhiTranslate="baaraBolodaApp.task.sprint">Période</span>
                 <fa-icon class="p-1" icon="sort" />
               </div>
             </th>
@@ -132,7 +132,7 @@
           @for (task of tasks(); track trackId(task)) {
             <tr data-cy="entityTable">
               <td>
-                <a [routerLink]="['/task', task.id, 'view']">{{ task.id }}</a>
+                <a [routerLink]="['/task', task.id | publicId: 'task', 'view']">{{ task.id }}</a>
               </td>
               <td>{{ task.title }}</td>
               <td>{{ task.description }}</td>
@@ -159,33 +159,35 @@
               <td>
                 @if (task.project) {
                   <div>
-                    <a [routerLink]="['/project', task.project.id, 'view']">{{ task.project.name }}</a>
+                    <a [routerLink]="['/project', task.project.id | publicId: 'project', 'view']">{{ task.project.name }}</a>
                   </div>
                 }
               </td>
               <td>
                 @if (task.sprint) {
                   <div>
-                    <a [routerLink]="['/sprint', task.sprint.id, 'view']">{{ task.sprint.name }}</a>
+                    <a [routerLink]="['/sprint', task.sprint.id | publicId: 'sprint', 'view']">{{ task.sprint.name }}</a>
                   </div>
                 }
               </td>
               <td class="text-end">
                 <div class="btn-group">
-                  <a [routerLink]="['/task', task.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                  <a [routerLink]="['/task', task.id | publicId: 'task', 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
                     <fa-icon icon="eye" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
                   </a>
 
-                  <a [routerLink]="['/task', task.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                  <a [routerLink]="['/task', task.id | publicId: 'task', 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
                     <fa-icon icon="pencil-alt" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
                   </a>
 
-                  <button type="button" (click)="delete(task)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                  <!-- Suppression désactivée dans le frontend.
+<button type="button" (click)="delete(task)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
                     <fa-icon icon="times" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
                   </button>
+-->
                 </div>
               </td>
             </tr>

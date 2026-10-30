@@ -9,6 +9,11 @@ public final class PermissionCatalog {
     public record Permission(String key, String label, String description) {}
 
     public static final List<Permission> ALL = List.of(
+        new Permission(
+            "PERM_SPRINT_ALERT_RECEIVE",
+            "Recevoir les alertes de fin de période",
+            "Recevoir le bilan des tâches non terminées des projets dont vous êtes membre ou responsable."
+        ),
         new Permission("PERM_PROJECT_CREATE", "Créer des projets", "Créer un projet et en devenir responsable."),
         new Permission("PERM_PROJECT_EDIT", "Modifier les projets", "Modifier les informations des projets accessibles."),
         new Permission(
@@ -32,7 +37,11 @@ public final class PermissionCatalog {
             "Choisir qui peut consulter les documents, fichiers et liens que vous avez ajoutés."
         ),
         new Permission("PERM_DOCUMENT_MANAGE", "Gérer les documents", "Ajouter et supprimer les documents et liens."),
-        new Permission("PERM_USER_DISABLE", "Désactiver les comptes", "Désactiver ou réactiver les comptes utilisateurs ordinaires."),
+        new Permission(
+            "PERM_USER_DISABLE",
+            "Activer et désactiver les comptes",
+            "Voir les comptes désactivés et activer ou désactiver les comptes utilisateurs ordinaires."
+        ),
         new Permission(
             "PERM_USER_MANAGE",
             "Gérer les comptes utilisateurs",

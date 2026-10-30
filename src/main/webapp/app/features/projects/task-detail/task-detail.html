@@ -9,8 +9,13 @@
   } @else if (task) {
     <div class="task-navigation">
       <div class="task-navigation-links">
-        <a [routerLink]="['/projects', projectId, 'board']" class="hover:opacity-80" style="color: #328cb1">← Tableau du projet</a>
-        <a [routerLink]="['/projects', projectId, 'documents']" [queryParams]="{ taskId: taskId }" class="btn-secondary text-sm"
+        <a [routerLink]="['/projects', projectId | publicId: 'project', 'board']" class="hover:opacity-80" style="color: #328cb1"
+          >← Tableau du projet</a
+        >
+        <a
+          [routerLink]="['/projects', projectId | publicId: 'project', 'documents']"
+          [queryParams]="{ taskId: (taskId | publicId: 'task') }"
+          class="btn-secondary text-sm"
           >Documents de la tâche</a
         >
       </div>
@@ -122,7 +127,9 @@
                       <button type="button" (click)="editComment(item)" class="text-xs hover:opacity-80 transition" style="color: #328cb1">
                         Modifier
                       </button>
-                      <button type="button" (click)="deleteComment(item)" class="text-xs text-red-400 hover:text-red-300">Supprimer</button>
+                      <!-- Suppression désactivée dans le frontend.
+<button type="button" (click)="deleteComment(item)" class="text-xs text-red-400 hover:text-red-300">Supprimer</button>
+-->
                     </div>
                   }
                 </div>
@@ -143,16 +150,7 @@
                   [allowPdf]="true"
                   (readingChange)="readingCapture = $event"
                 >
-                  <textarea
-                    name="comment"
-                    [(ngModel)]="commentDraft"
-                    maxlength="5000"
-                    aria-label="Votre commentaire"
-                    class="input-field"
-                    placeholder="Votre commentaire… Collez vos captures ici."
-                    rows="3"
-                    [disabled]="sendingComment"
-                  ></textarea>
+                  <jhi-mention-input [members]="mentionMembers" [(value)]="commentDraft" [disabled]="sendingComment" />
                 </jhi-image-attachments>
                 @if (captureError) {
                   <p class="capture-error" role="alert">{{ captureError }}</p>
@@ -288,7 +286,8 @@
     </div>
   </app-modal>
 
-  <app-modal
+  <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
     variant="danger"
     [isOpen]="commentToDelete !== null"
     title="Supprimer le commentaire"
@@ -299,7 +298,7 @@
     (confirm)="confirmDeleteComment()"
   >
   </app-modal>
-</div>
+--></div>
 
 <app-modal [isOpen]="expandedCapture !== null" title="Capture jointe" [showFooter]="false" (close)="expandedCapture = null">
   @if (expandedCapture) {

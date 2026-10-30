@@ -28,6 +28,17 @@ public class Sprint implements Serializable {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "uuid", length = 36, nullable = false, unique = true, updatable = false)
+    private String uuid = java.util.UUID.randomUUID().toString();
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @NotNull
     @Size(max = 100)
     @Column(name = "name", length = 100, nullable = false)

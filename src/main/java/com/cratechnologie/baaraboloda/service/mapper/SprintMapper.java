@@ -13,6 +13,13 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface SprintMapper extends EntityMapper<SprintDTO, Sprint> {
+    @Mapping(target = "uuid", ignore = true)
+    Sprint toEntity(SprintDTO dto);
+
+    @Mapping(target = "uuid", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void partialUpdate(@MappingTarget Sprint entity, SprintDTO dto);
+
     @Mapping(target = "createdBy", source = "createdBy", qualifiedByName = "userLogin")
     @Mapping(target = "project", source = "project", qualifiedByName = "projectName")
     SprintDTO toDto(Sprint s);
@@ -27,6 +34,7 @@ public interface SprintMapper extends EntityMapper<SprintDTO, Sprint> {
     @Named("projectName")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "uuid", source = "uuid")
     @Mapping(target = "name", source = "name")
     ProjectDTO toDtoProjectName(Project project);
 }

@@ -2,7 +2,7 @@
   type="button"
   class="notification-bell"
   title="Notifications"
-  (click)="opened.set(true)"
+  (click)="open()"
   [attr.aria-label]="'Notifications : ' + notifications.unread() + ' non lues'"
 >
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -63,6 +63,42 @@
       </button>
     </div>
   </section>
+  <section class="notification-sound-status" aria-label="Réglage des e-mails">
+    <div class="sound-description">
+      <strong
+        >E-mails
+        <span [class.sound-active]="notifications.preferences().emailEnabled">{{
+          notifications.preferences().emailEnabled ? 'Activés' : 'Désactivés'
+        }}</span></strong
+      >
+      <small>{{
+        notifications.settingsLoading()
+          ? 'Vérification des réglages e-mail…'
+          : !notifications.settingsLoaded()
+            ? 'Impossible de vérifier les réglages e-mail. Réessayez.'
+            : notifications.emailAvailable()
+              ? 'Les événements qui vous concernent sont envoyés automatiquement.'
+              : 'L’envoi des e-mails est désactivé sur le serveur.'
+      }}</small>
+    </div>
+    <button
+      type="button"
+      role="switch"
+      class="notification-switch"
+      aria-label="Notifications par e-mail"
+      [class.is-on]="notifications.preferences().emailEnabled"
+      [attr.aria-checked]="notifications.preferences().emailEnabled"
+      [disabled]="
+        notifications.savingPreferences() ||
+        notifications.settingsLoading() ||
+        !notifications.settingsLoaded() ||
+        !notifications.emailAvailable()
+      "
+      (click)="notifications.savePreferences(notifications.preferences().soundEnabled, !notifications.preferences().emailEnabled)"
+    >
+      <span></span>
+    </button>
+  </section>
   <div class="notification-toolbar">
     <div class="notification-tabs" role="group" aria-label="Filtrer les notifications">
       <button type="button" [class.selected]="!onlyUnread()" [attr.aria-pressed]="!onlyUnread()" (click)="onlyUnread.set(false)">
@@ -83,27 +119,49 @@
         <span class="entry-content">
           <span class="entry-kind"
             >{{
-              item.kind === 'ASSIGNMENT'
-                ? 'Assignation'
-                : item.kind === 'MENTION'
-                  ? 'Mention'
-                  : item.kind === 'COMMENT'
-                    ? 'Commentaire'
-                    : item.kind === 'TASK_CREATED'
-                      ? 'Création'
-                      : item.kind === 'TASK_UPDATED'
-                        ? 'Modification'
-                        : item.kind === 'TASK_DELETED'
-                          ? 'Suppression'
-                          : 'Statut'
+              item.kind === 'SPRINT_INCOMPLETE'
+                ? 'Fin de période'
+                : item.kind === 'ASSIGNMENT'
+                  ? 'Assignation'
+                  : item.kind === 'MENTION'
+                    ? 'Mention'
+                    : item.kind === 'COMMENT'
+                      ? 'Commentaire'
+                      : item.kind === 'TASK_CREATED'
+                        ? 'Création'
+                        : item.kind === 'TASK_UPDATED'
+                          ? 'Modification'
+                          : item.kind === 'TASK_DELETED'
+                            ? 'Suppression'
+                            : 'Statut'
             }}
-            · Tâche #{{ item.taskId }}</span
+            {{ item.sprintReport ? '· ' + item.sprintReport.name : '· Tâche #' + item.taskId }}</span
           >
           <strong>{{ item.message }}</strong>
           <small>{{ item.createdAt | date: 'dd MMM à HH:mm' }}</small>
         </span>
         <span class="entry-arrow" aria-hidden="true">↗</span>
       </button>
+      @if (item.sprintReport; as report) {
+        <details class="sprint-report" (toggle)="$any($event.target).open && notifications.markRead(item.id)">
+          <summary>{{ report.projectName }} · Voir les tâches restantes par personne</summary>
+          <p>Bilan au moment de la clôture de {{ report.name }}.</p>
+          @for (person of report.assignees; track person.login) {
+            <div class="sprint-assignee">
+              <app-avatar [user]="{ firstName: person.name, imageUrl: person.imageUrl }" size="md" />
+              <strong>{{ person.name }} ({{ person.tasks.length }})</strong>
+            </div>
+            <ul>
+              @for (task of person.tasks; track task.uuid) {
+                <li>
+                  <a [routerLink]="['/projects', item.projectUuid, 'tasks', task.uuid]" (click)="opened.set(false)">{{ task.title }}</a>
+                  <span> · {{ task.status === 'IN_PROGRESS' ? 'En cours' : task.status === 'IN_REVIEW' ? 'En revue' : 'À faire' }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </details>
+      }
     } @empty {
       <div class="notification-empty">
         <strong>{{ onlyUnread() ? 'Tout est à jour.' : 'Le fil est encore calme.' }}</strong>
@@ -112,6 +170,9 @@
     }
   </div>
   @if (notifications.error()) {
-    <p class="notification-error" role="alert">{{ notifications.error() }}</p>
+    <p class="notification-error" role="alert">
+      {{ notifications.error() }}
+      <button type="button" class="notification-test" [disabled]="notifications.settingsLoading()" (click)="retry()">Réessayer</button>
+    </p>
   }
 </dialog>

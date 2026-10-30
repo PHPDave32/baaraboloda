@@ -10,6 +10,7 @@ import { IUser } from 'app/entities/user/user.model';
 
 export interface ITask {
   id: number;
+  uuid?: string;
   images?: ImageAttachment[] | null;
   title?: string | null;
   description?: string | null;
@@ -23,8 +24,8 @@ export interface ITask {
   updatedAt?: dayjs.Dayjs | null;
   assignee?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
   reporter?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
-  project?: Pick<IProject, 'id' | 'name'> | null;
-  sprint?: Pick<ISprint, 'id' | 'name'> | null;
+  project?: Pick<IProject, 'id' | 'uuid' | 'name'> | null;
+  sprint?: Pick<ISprint, 'id' | 'uuid' | 'name'> | null;
 }
 
 export type NewTask = Omit<ITask, 'id'> & { id: null };

@@ -19,6 +19,17 @@ public class TaskDTO implements Serializable {
 
     private Long id;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    private String uuid;
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @NotNull
     @Size(max = 200)
     private String title;

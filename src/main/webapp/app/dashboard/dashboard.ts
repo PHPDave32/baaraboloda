@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +22,7 @@ interface DashboardStats {
 
 @Component({
   selector: 'jhi-dashboard',
-  imports: [NotificationCenterComponent, RouterLink, FormsModule, DashboardDepthDirective],
+  imports: [PublicIdPipe, NotificationCenterComponent, RouterLink, FormsModule, DashboardDepthDirective],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

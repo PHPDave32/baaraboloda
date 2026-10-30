@@ -87,4 +87,16 @@ describe('PasswordResetFinish', () => {
     expect(comp.success()).toBe(false);
     expect(comp.error()).toBe(true);
   }));
+  it('does not fail to focus when the reset key is missing', () => {
+    vi.spyOn(comp, 'newPassword').mockReturnValue(undefined);
+    expect(() => comp.ngAfterViewInit()).not.toThrow();
+  });
+
+  it('does not submit without a reset key', inject([PasswordResetFinishService], (service: PasswordResetFinishService) => {
+    vi.spyOn(service, 'save');
+    comp.key.set('');
+    comp.passwordForm.patchValue({ newPassword: 'password', confirmPassword: 'password' });
+    comp.finishReset();
+    expect(service.save).not.toHaveBeenCalled();
+  }));
 });

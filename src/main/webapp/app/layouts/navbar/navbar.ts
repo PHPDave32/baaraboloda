@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { UserPhotoDirective } from 'app/shared/components/photo-picker/user-photo.directive';
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -5,16 +6,17 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { AccountService } from 'app/core/auth';
 import { LoginService } from 'app/login/login.service';
 import { ModalComponent } from 'app/shared/components/modal/modal.component';
+import { BrandingService } from 'app/core/branding/branding.service';
 import { filter } from 'rxjs';
 
 @Component({
   selector: 'jhi-navbar',
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
-  imports: [UserPhotoDirective, RouterLink, RouterLinkActive, ModalComponent],
+  imports: [PublicIdPipe, UserPhotoDirective, RouterLink, RouterLinkActive, ModalComponent],
 })
 export default class Navbar implements OnInit {
-  readonly activeProjectId = signal<number | null>(null);
+  readonly activeProjectId = signal<string | null>(null);
   readonly showSprintAccessModal = signal(false);
   readonly sidebarOpen = signal(false);
   readonly sidebarCollapsed = signal(false);
@@ -33,6 +35,7 @@ export default class Navbar implements OnInit {
 
   private readonly accountService = inject(AccountService);
   readonly account = this.accountService.account;
+  readonly branding = inject(BrandingService);
 
   private readonly loginService = inject(LoginService);
   private readonly router = inject(Router);
@@ -68,8 +71,8 @@ export default class Navbar implements OnInit {
 
   ngOnInit(): void {
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
-      const match = event.urlAfterRedirects.match(/\/projects\/(\d+)/);
-      this.activeProjectId.set(match ? Number(match[1]) : null);
+      const match = event.urlAfterRedirects.match(/\/projects\/([0-9a-f-]+)(?:\/|$)/i);
+      this.activeProjectId.set(match ? match[1] : null);
     });
     this.activeProjectId.set(this.getActiveProjectId(this.router.url));
   }
@@ -104,8 +107,8 @@ export default class Navbar implements OnInit {
     return value || account.login.charAt(0).toUpperCase();
   }
 
-  private getActiveProjectId(url: string): number | null {
-    const match = url.match(/\/projects\/(\d+)/);
-    return match ? Number(match[1]) : null;
+  private getActiveProjectId(url: string): string | null {
+    const match = url.match(/\/projects\/([0-9a-f-]+)(?:\/|$)/i);
+    return match ? match[1] : null;
   }
 }

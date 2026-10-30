@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { ProjectMembersComponent } from 'app/shared/components/project-members/project-members';
 import { ImageAttachment, ImageAttachmentsComponent } from 'app/shared/components/image-attachments/image-attachments';
@@ -7,6 +8,7 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { forkJoin, of } from 'rxjs';
+import dayjs from 'dayjs/esm';
 
 import { AccountService } from 'app/core/auth';
 import { IProject } from 'app/entities/project/project.model';
@@ -22,6 +24,7 @@ import { PlanningService } from '../planning.service';
 @Component({
   selector: 'jhi-project-backlog',
   imports: [
+    PublicIdPipe,
     NotificationCenterComponent,
     ProjectMembersComponent,
     ImageAttachmentsComponent,
@@ -38,6 +41,12 @@ import { PlanningService } from '../planning.service';
   styleUrl: './backlog.scss',
 })
 export default class Backlog implements OnInit {
+  creationDate(task: ITask): Date | null {
+    if (!task.createdAt) return null;
+    const date = dayjs(task.createdAt);
+    return date.isValid() ? date.toDate() : null;
+  }
+
   taskImages: ImageAttachment[] = [];
   readingImages = false;
   projectId = 0;
@@ -57,6 +66,8 @@ export default class Backlog implements OnInit {
   editingSprint: ISprint | null = null;
   targetSprintId: number | null = null;
   loading = false;
+  savingTask = false;
+  savingSprint = false;
   error = '';
 
   expandedSprints: Set<number> = new Set();
@@ -100,8 +111,8 @@ export default class Backlog implements OnInit {
 
     this.currentUser = this.accountService.account();
 
-    this.route.paramMap.subscribe(params => {
-      this.projectId = Number(params.get('id'));
+    this.route.data.subscribe(data => {
+      this.projectId = data['workspace'].projectId;
       if (this.projectId) {
         this.loadAll();
       }
@@ -119,10 +130,17 @@ export default class Backlog implements OnInit {
       this.cdr.detectChanges();
     });
 
-    this.planningService.getBacklog(this.projectId).subscribe(tasks => {
-      this.backlogTasks = tasks;
-      this.loading = false;
-      this.cdr.detectChanges();
+    this.planningService.getBacklog(this.projectId).subscribe({
+      next: tasks => {
+        this.backlogTasks = tasks;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loading = false;
+        this.error = 'Impossible de charger la liste des tâches. Veuillez réessayer.';
+        this.cdr.markForCheck();
+      },
     });
 
     this.planningService.getSprints(this.projectId).subscribe(sprints => {
@@ -254,6 +272,7 @@ export default class Backlog implements OnInit {
     this.taskImages = [];
     this.targetSprintId = sprintId;
     this.showTaskForm = true;
+    this.error = '';
     this.showSprintForm = false;
     this.taskForm.reset({ priority: 'MEDIUM', type: 'TASK', sprintId });
   }
@@ -265,6 +284,7 @@ export default class Backlog implements OnInit {
     }
     this.editingSprint = null;
     this.showSprintForm = true;
+    this.error = '';
     this.taskImages = [];
     this.showTaskForm = false;
     this.sprintForm.reset();
@@ -281,6 +301,7 @@ export default class Backlog implements OnInit {
     }
     this.editingSprint = sprint;
     this.showSprintForm = true;
+    this.error = '';
     this.taskImages = [];
     this.showTaskForm = false;
     this.sprintForm.reset({
@@ -314,12 +335,18 @@ export default class Backlog implements OnInit {
   }
 
   submitTask(): void {
-    if (this.taskForm.invalid || this.loading || this.readingImages) return;
-    if (this.isCompletedSprint(this.taskForm.value.sprintId)) {
-      this.error = 'Impossible d’ajouter une tâche à un sprint terminé.';
+    if (this.savingTask || this.readingImages) return;
+    this.taskForm.markAllAsTouched();
+    if (this.taskForm.invalid) {
+      this.error = 'Veuillez renseigner le titre de la tâche.';
+      this.cdr.markForCheck();
       return;
     }
-    this.loading = true;
+    if (this.isCompletedSprint(this.taskForm.value.sprintId)) {
+      this.error = 'Impossible d’ajouter une tâche à une période terminée.';
+      return;
+    }
+    this.savingTask = true;
     this.error = '';
     const login = this.accountService.account()?.login ?? '';
     this.planningService
@@ -338,13 +365,13 @@ export default class Backlog implements OnInit {
           this.taskImages = [];
           this.showTaskForm = false;
           this.taskForm.reset({ priority: 'MEDIUM', type: 'TASK', sprintId: null });
-          this.loading = false;
+          this.savingTask = false;
           this.cdr.markForCheck();
           this.loadAll();
         },
         error: (response: any) => {
           this.error = response.error?.detail || response.error?.message || 'Erreur lors de la création de la tâche. Réessayez.';
-          this.loading = false;
+          this.savingTask = false;
           this.cdr.markForCheck();
         },
       });
@@ -352,11 +379,17 @@ export default class Backlog implements OnInit {
 
   submitSprint(): void {
     if (!this.canManageSprints) {
-      this.error = 'Vous n’avez pas la permission de gérer les sprints.';
+      this.error = 'Vous n’avez pas la permission de gérer les périodes.';
       return;
     }
-    if (this.sprintForm.invalid || this.loading) return;
-    this.loading = true;
+    if (this.savingSprint) return;
+    this.sprintForm.markAllAsTouched();
+    if (this.sprintForm.invalid) {
+      this.error = 'Veuillez renseigner le nom de la période ainsi que ses dates de début et de fin.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.savingSprint = true;
     this.error = '';
 
     const payload = {
@@ -369,8 +402,9 @@ export default class Backlog implements OnInit {
     const sprint = this.editingSprint;
     if (sprint) {
       if (sprint.status !== 'PLANNED') {
-        this.loading = false;
-        this.error = 'Seul un sprint non démarré peut être modifié.';
+        this.savingSprint = false;
+        this.cdr.markForCheck();
+        this.error = 'Seule une période non démarrée peut être modifiée.';
         return;
       }
       this.planningService.updateSprint(sprint, payload).subscribe({
@@ -378,16 +412,18 @@ export default class Backlog implements OnInit {
           this.showSprintForm = false;
           this.editingSprint = null;
           this.sprintForm.reset();
-          this.loading = false;
+          this.savingSprint = false;
+          this.cdr.markForCheck();
           this.loadAll();
         },
         error: err => {
-          this.loading = false;
+          this.savingSprint = false;
+          this.cdr.markForCheck();
           if (err?.status === 403) {
             this.showSprintForm = false;
             this.showSprintAccessModal = true;
           } else {
-            this.error = 'Erreur lors de la modification du sprint';
+            this.error = 'Erreur lors de la modification de la période';
           }
         },
       });
@@ -398,16 +434,18 @@ export default class Backlog implements OnInit {
       next: () => {
         this.showSprintForm = false;
         this.sprintForm.reset();
-        this.loading = false;
+        this.savingSprint = false;
+        this.cdr.markForCheck();
         this.loadAll();
       },
       error: err => {
-        this.loading = false;
+        this.savingSprint = false;
+        this.cdr.markForCheck();
         if (err?.status === 403) {
           this.showSprintForm = false;
           this.showSprintAccessModal = true;
         } else {
-          this.error = 'Erreur lors de la création du sprint';
+          this.error = 'Erreur lors de la création de la période';
         }
       },
     });
@@ -519,7 +557,7 @@ export default class Backlog implements OnInit {
         this.loadAll();
       },
       error: () => {
-        this.toast.error('Impossible d’activer ce sprint : un sprint est déjà en cours pour ce projet.');
+        this.toast.error('Impossible d’activer cette période : une période est déjà en cours pour ce projet.');
       },
     });
   }
@@ -530,7 +568,7 @@ export default class Backlog implements OnInit {
         this.toast.success(`Le sprint « ${sprint.name} » a été terminé.`);
         this.loadAll();
       },
-      error: () => this.toast.error('Impossible de terminer le sprint.'),
+      error: () => this.toast.error('Impossible de terminer la période.'),
     });
   }
 
@@ -561,7 +599,7 @@ export default class Backlog implements OnInit {
         if (err?.status === 403) {
           this.showSprintAccessModal = true;
         } else {
-          this.error = 'La suppression du sprint a échoué.';
+          this.error = 'La suppression de la période a échoué.';
         }
         this.cdr.detectChanges();
       },

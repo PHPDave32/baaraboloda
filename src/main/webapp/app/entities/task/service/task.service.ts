@@ -74,7 +74,7 @@ export class TaskService extends TasksService {
       .pipe(map(res => this.convertResponseFromServer(res)));
   }
 
-  find(id: number): Observable<ITask> {
+  find(id: number | string): Observable<ITask> {
     return this.http.get<RestTask>(`${this.resourceUrl}/${encodeURIComponent(id)}`).pipe(map(res => this.convertResponseFromServer(res)));
   }
 

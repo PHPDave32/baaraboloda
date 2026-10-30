@@ -1,11 +1,12 @@
 import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { AvatarComponent } from '../avatar/avatar.component';
 import { DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NotificationService, AppNotification } from './notification.service';
 
 @Component({
   selector: 'jhi-notification-center',
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink, AvatarComponent],
   templateUrl: './notification-center.component.html',
   styleUrl: './notification-center.component.scss',
 })
@@ -27,6 +28,17 @@ export class NotificationCenterComponent {
     });
   }
 
+  open(): void {
+    this.opened.set(true);
+    void this.notifications.reloadSettings();
+    void this.notifications.refresh();
+  }
+
+  retry(): void {
+    void this.notifications.reloadSettings();
+    void this.notifications.refresh();
+  }
+
   dismissOutside(event: MouseEvent): void {
     const dialog = this.dialog()?.nativeElement;
     if (!dialog || event.target !== dialog) return;
@@ -40,7 +52,11 @@ export class NotificationCenterComponent {
     this.opened.set(false);
     this.notifications.notice.set(null);
     void this.router.navigate(
-      item.kind === 'TASK_DELETED' ? ['/projects', item.projectId, 'board'] : ['/projects', item.projectId, 'tasks', item.taskId],
+      item.kind === 'SPRINT_INCOMPLETE'
+        ? ['/projects', item.projectUuid ?? item.projectId, 'sprints']
+        : item.kind === 'TASK_DELETED'
+          ? ['/projects', item.projectUuid ?? item.projectId, 'board']
+          : ['/projects', item.projectUuid ?? item.projectId, 'tasks', item.taskUuid ?? item.taskId],
     );
   }
 }

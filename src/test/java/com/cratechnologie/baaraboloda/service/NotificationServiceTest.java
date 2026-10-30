@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import tools.jackson.databind.ObjectMapper;
 
 class NotificationServiceTest {
 
@@ -35,9 +36,20 @@ class NotificationServiceTest {
             );
             migration.update(new liquibase.Contexts(), new liquibase.LabelExpression());
         }
+        try (var connection = database.getConnection()) {
+            new liquibase.Liquibase(
+                "config/liquibase/changelog/20261021120000_notification_email.xml",
+                new liquibase.resource.ClassLoaderResourceAccessor(),
+                liquibase.database.DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
+                    new liquibase.database.jvm.JdbcConnection(connection)
+                )
+            ).update(new liquibase.Contexts(), new liquibase.LabelExpression());
+        }
+        jdbc.execute("create table project(id bigint primary key, uuid varchar(36))");
+        jdbc.execute("create table task(id bigint primary key, uuid varchar(36))");
         users = mock(UserRepository.class);
         tasks = mock(TaskRepository.class);
-        service = new NotificationService(jdbc, users, tasks);
+        service = new NotificationService(jdbc, users, tasks, new ObjectMapper());
         var bob = new User();
         bob.setId(2L);
         bob.setLogin("bob");
@@ -127,6 +139,15 @@ class NotificationServiceTest {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("bob", "ignored"));
         service.assignment(task, null);
         assertThat(service.list("bob")).isEmpty();
+    }
+
+    @Test
+    void mentionsEmailShapedLoginInsertedByMemberPicker() {
+        task.getAssignee().setLogin("bob@example.test");
+        when(users.findOneByLogin("bob@example.test")).thenReturn(Optional.of(task.getAssignee()));
+        service.comment(10L, "Merci @bob@example.test pour la vérification");
+        assertThat(service.list("bob@example.test")).hasSize(1);
+        assertThat(service.list("bob@example.test").getFirst().kind()).isEqualTo("MENTION");
     }
 
     @Test

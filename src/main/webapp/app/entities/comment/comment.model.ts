@@ -9,7 +9,7 @@ export interface IComment {
   createdAt?: dayjs.Dayjs | null;
   updatedAt?: dayjs.Dayjs | null;
   author?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
-  task?: Pick<ITask, 'id' | 'title'> | null;
+  task?: Pick<ITask, 'id' | 'uuid' | 'title'> | null;
 }
 
 export type NewComment = Omit<IComment, 'id'> & { id: null };

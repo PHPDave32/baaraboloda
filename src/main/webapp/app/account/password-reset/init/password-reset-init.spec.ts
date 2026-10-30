@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ElementRef } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { provideTranslateService } from '@ngx-translate/core';
@@ -15,7 +16,7 @@ describe('PasswordResetInit', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideTranslateService()],
+      providers: [provideTranslateService(), provideRouter([])],
     });
     fixture = TestBed.createComponent(PasswordResetInit);
     comp = fixture.componentInstance;
@@ -55,5 +56,20 @@ describe('PasswordResetInit', () => {
 
     expect(service.save).toHaveBeenCalledWith('user@domain.com');
     expect(comp.success()).toBe(false);
+  });
+  it('does not submit an invalid email', () => {
+    vi.spyOn(service, 'save');
+    comp.resetRequestForm.patchValue({ email: 'personne@serveur' });
+    comp.requestReset();
+    expect(service.save).not.toHaveBeenCalled();
+    expect(comp.resetRequestForm.controls.email.touched).toBe(true);
+  });
+
+  it('does not submit twice while pending', () => {
+    vi.spyOn(service, 'save');
+    comp.resetRequestForm.patchValue({ email: 'user@domain.com' });
+    comp.pending.set(true);
+    comp.requestReset();
+    expect(service.save).not.toHaveBeenCalled();
   });
 });

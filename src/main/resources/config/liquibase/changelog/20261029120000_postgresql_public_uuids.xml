@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="20261020120000-project" author="codex">
+        <addColumn tableName="project"><column name="uuid" type="varchar(36)"/></addColumn>
+        <sql dbms="postgresql">UPDATE project SET uuid = gen_random_uuid()::text WHERE uuid IS NULL;</sql>
+        <addNotNullConstraint tableName="project" columnName="uuid" columnDataType="varchar(36)"/>
+        <addUniqueConstraint tableName="project" columnNames="uuid" constraintName="ux_project_uuid"/>
+    </changeSet>
+    <changeSet id="20261020120000-task" author="codex">
+        <addColumn tableName="task"><column name="uuid" type="varchar(36)"/></addColumn>
+        <sql dbms="postgresql">UPDATE task SET uuid = gen_random_uuid()::text WHERE uuid IS NULL;</sql>
+        <addNotNullConstraint tableName="task" columnName="uuid" columnDataType="varchar(36)"/>
+        <addUniqueConstraint tableName="task" columnNames="uuid" constraintName="ux_task_uuid"/>
+    </changeSet>
+    <changeSet id="20261020120000-sprint" author="codex">
+        <addColumn tableName="sprint"><column name="uuid" type="varchar(36)"/></addColumn>
+        <sql dbms="postgresql">UPDATE sprint SET uuid = gen_random_uuid()::text WHERE uuid IS NULL;</sql>
+        <addNotNullConstraint tableName="sprint" columnName="uuid" columnDataType="varchar(36)"/>
+        <addUniqueConstraint tableName="sprint" columnNames="uuid" constraintName="ux_sprint_uuid"/>
+    </changeSet>
+</databaseChangeLog>

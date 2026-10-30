@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { DocumentActions } from './preview/document-actions';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { DatePipe } from '@angular/common';
@@ -15,7 +16,7 @@ import { DocumentsService, ProjectDocument, ResourceRecipient } from './document
 
 @Component({
   selector: 'jhi-project-documents',
-  imports: [DocumentActions, NotificationCenterComponent, DatePipe, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [PublicIdPipe, DocumentActions, NotificationCenterComponent, DatePipe, FormsModule, ReactiveFormsModule, RouterLink],
   templateUrl: './documents.html',
   styleUrl: './documents.scss',
 })
@@ -117,10 +118,10 @@ export default class Documents implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap
+    this.route.data
       .pipe(
-        switchMap(params => {
-          this.projectId = Number(params.get('id'));
+        switchMap(data => {
+          this.projectId = data['workspace'].projectId;
           this.loading.set(true);
           this.project.set(null);
           this.documents.set([]);
@@ -138,6 +139,7 @@ export default class Documents implements OnInit {
           this.project.set(result.project);
           this.documents.set(result.documents);
           this.tasks.set(result.tasks);
+          this.applyTaskQuery(this.route.snapshot.queryParamMap.get('taskId'));
           this.loading.set(false);
         },
         error: (error: HttpErrorResponse) => {
@@ -146,9 +148,13 @@ export default class Documents implements OnInit {
         },
       });
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
-      const taskId = Number(params.get('taskId'));
-      this.taskFilter.set(taskId > 0 ? taskId : null);
+      this.applyTaskQuery(params.get('taskId'));
     });
+  }
+
+  private applyTaskQuery(reference: string | null): void {
+    const task = this.tasks().find(item => item.uuid === reference || String(item.id) === reference);
+    this.taskFilter.set(task?.id ?? null);
   }
 
   canChangeVisibility(document: ProjectDocument): boolean {

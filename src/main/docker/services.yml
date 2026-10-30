@@ -5,3 +5,7 @@ services:
     extends:
       file: ./redis.yml
       service: redis
+  mailpit:
+    extends:
+      file: ./mailpit.yml
+      service: mailpit

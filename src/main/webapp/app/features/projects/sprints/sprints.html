@@ -8,26 +8,24 @@
     <div>
       <span class="sprints-eyebrow">PLANIFICATION</span>
       <div class="workspace-project-focus">{{ project?.name }}</div>
-      <h1>Le rythme de votre équipe.</h1>
-      <p>Organisez vos sprints, suivez leur calendrier et préparez la suite.</p>
     </div>
     <div class="page-header-actions">
       <button [disabled]="project?.status === 'CLOSED'" (click)="openCreateForm()" class="btn-primary text-sm flex items-center gap-2">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        Nouveau sprint
+        Nouvelle période
       </button>
       <jhi-notification-center />
     </div>
   </header>
   <div class="sprints-toolbar">
-    <input type="search" [(ngModel)]="search" placeholder="Rechercher un sprint ou un objectif…" aria-label="Rechercher un sprint" />
+    <input type="search" [(ngModel)]="search" placeholder="Rechercher une période ou un objectif…" aria-label="Rechercher une période" />
     <div class="sprints-team">
       <span>Équipe du projet</span><jhi-project-members [members]="project?.memberses ?? []" [filterable]="false" />
     </div>
   </div>
-  <nav class="sprints-filters" aria-label="Filtrer les sprints par statut">
+  <nav class="sprints-filters" aria-label="Filtrer les périodes par statut">
     @for (filter of statusFilters; track filter.value) {
       <button
         type="button"
@@ -42,18 +40,28 @@
   <app-modal
     appearance="editor"
     [isOpen]="showForm"
-    [title]="editingSprint ? 'Modifier le sprint' : 'Créer un sprint'"
-    [subtitle]="editingSprint ? 'Mettez à jour les informations du sprint' : 'Planifiez un nouveau sprint pour votre projet'"
-    [confirmText]="editingSprint ? 'Enregistrer' : 'Créer le sprint'"
+    [title]="editingSprint ? 'Modifier la période' : 'Créer une période'"
+    [subtitle]="editingSprint ? 'Mettez à jour les informations de la période' : 'Planifiez une nouvelle période pour votre projet'"
+    [confirmText]="editingSprint ? 'Enregistrer' : 'Créer la période'"
     cancelText="Annuler"
-    [isLoading]="loading"
+    [isLoading]="saving"
     (close)="closeForm()"
     (confirm)="onSubmit()"
   >
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="sprint-editor">
+      <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3" aria-label="Projet associé à la période">
+        <p class="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Projet concerné</p>
+        <p class="m-0 break-words text-lg font-bold text-[#246d8b]">{{ project?.name || 'Projet #' + projectId }}</p>
+      </div>
       <div>
-        <label for="sprints-sprint-name">Nom du sprint <span>*</span></label>
-        <input id="sprints-sprint-name" type="text" formControlName="name" class="input-field" placeholder="Ex. Sprint 3 — Espace client" />
+        <label for="sprints-sprint-name">Nom de la période <span>*</span></label>
+        <input
+          id="sprints-sprint-name"
+          type="text"
+          formControlName="name"
+          class="input-field"
+          placeholder="Ex. Période 3 — Espace client"
+        />
       </div>
       <div>
         <label for="sprints-sprint-goal">Objectif <small>Facultatif</small></label>
@@ -62,11 +70,11 @@
           formControlName="goal"
           class="input-field"
           rows="3"
-          placeholder="Quel résultat souhaitez-vous atteindre à la fin de ce sprint ?"
+          placeholder="Quel résultat souhaitez-vous atteindre à la fin de cette période ?"
         ></textarea>
       </div>
       <fieldset class="sprint-editor-period">
-        <legend>Période du sprint</legend>
+        <legend>Dates de la période</legend>
         <p>Définissez le début et la fin de cette période de travail.</p>
         <div class="sprint-editor-dates">
           <div>
@@ -86,13 +94,14 @@
     </form>
   </app-modal>
 
-  <app-modal
+  <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
     variant="danger"
     [isOpen]="sprintToDelete !== null"
-    title="Supprimer le sprint"
+    title="Supprimer la période"
     [subtitle]="
       sprintToDelete
-        ? 'Voulez-vous vraiment supprimer « ' + (sprintToDelete.name ?? 'ce sprint') + ' » ? Cette action est irréversible.'
+        ? 'Voulez-vous vraiment supprimer « ' + (sprintToDelete.name ?? 'cette période') + ' » ? Cette action est irréversible.'
         : ''
     "
     confirmText="Supprimer"
@@ -101,6 +110,7 @@
     (confirm)="confirmDeleteSprint()"
   >
   </app-modal>
+-->
 
   <div class="sprints-timeline">
     @if (loading) {
@@ -189,12 +199,13 @@
                     Terminer
                   </button>
                 }
-                <button
+                <!-- Suppression désactivée dans le frontend.
+<button
                   [disabled]="project?.status === 'CLOSED'"
                   (click)="deleteSprint(sprint.id)"
                   type="button"
                   class="p-2 rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                  title="Supprimer le sprint"
+                  title="Supprimer la période"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -205,6 +216,7 @@
                     />
                   </svg>
                 </button>
+-->
               </div>
             </div>
 
@@ -258,7 +270,8 @@
               </div>
             }
             <div class="sprint-bottom">
-              <a [routerLink]="['/projects', projectId, 'backlog']">Consulter les tâches <span aria-hidden="true">↗</span></a
+              <a [routerLink]="['/projects', projectId | publicId: 'project', 'backlog']"
+                >Consulter les tâches <span aria-hidden="true">↗</span></a
               ><span>{{ getDaysDifference(sprint.startDate, sprint.endDate) }} jours de travail planifiés</span>
             </div>
           </div>
@@ -267,7 +280,7 @@
 
       @if (sprints.length && !visibleSprints.length) {
         <div class="sprints-empty">
-          <h2>Aucun sprint ne correspond.</h2>
+          <h2>Aucune période ne correspond.</h2>
           <p>Essayez un autre nom ou affichez tous les statuts.</p>
           <button type="button" class="btn-secondary" (click)="search = ''; statusFilter = 'ALL'">Réinitialiser les filtres</button>
         </div>
@@ -279,13 +292,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <p class="text-slate-700 font-medium mb-1">Aucun sprint créé pour l'instant</p>
-          <p class="text-slate-400 text-sm mb-5">Créez votre premier sprint pour organiser le travail de l'équipe.</p>
+          <p class="text-slate-700 font-medium mb-1">Aucune période créé pour l'instant</p>
+          <p class="text-slate-400 text-sm mb-5">Créez votre premier période pour organiser le travail de l'équipe.</p>
           <button [disabled]="project?.status === 'CLOSED'" (click)="openCreateForm()" class="btn-primary flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Créer un sprint
+            Créer une période
           </button>
         </div>
       }

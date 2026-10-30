@@ -17,6 +17,7 @@ import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.d
   standalone: true,
   imports: [NotificationCenterComponent, ReactiveFormsModule, PhotoPicker, UserPhotoDirective, PasswordToggleDirective],
   templateUrl: './profile.html',
+  styleUrl: './profile.scss',
 })
 export default class ProfileComponent {
   readonly photoSaving = signal(false);
@@ -51,11 +52,20 @@ export default class ProfileComponent {
   readonly isSuperAdmin = computed(() => this.account()?.authorities.includes('ROLE_SUPER_ADMIN') ?? false);
   readonly isAdmin = computed(() => this.isSuperAdmin() || (this.account()?.authorities.includes('ROLE_ADMIN') ?? false));
 
+  readonly profileLabel = computed(() => {
+    const name = this.account()?.accessProfileName?.trim();
+    if (name) return name;
+    if (this.isSuperAdmin()) return 'Super administrateur';
+    if (this.isAdmin()) return 'Administrateur';
+    return 'Aucun profil attribué';
+  });
+
   readonly profileSaving = signal(false);
   readonly profileMessage = signal('');
   readonly profileForm = inject(FormBuilder).nonNullable.group({
     firstName: [this.account()?.firstName ?? '', [Validators.required, Validators.maxLength(50)]],
     lastName: [this.account()?.lastName ?? '', [Validators.required, Validators.maxLength(50)]],
+    email: [this.account()?.email ?? '', [Validators.required, Validators.email, Validators.maxLength(254)]],
     login: [
       this.account()?.login ?? '',
       [Validators.required, Validators.maxLength(50), Validators.pattern('^[a-zA-Z0-9!$&*+=?^_`{|}~.@-]+$')],
@@ -69,6 +79,7 @@ export default class ProfileComponent {
     if (!account || this.profileForm.invalid || this.profileSaving()) return;
     const fields = this.profileForm.getRawValue();
     fields.login = fields.login.toLowerCase();
+    fields.email = fields.email.trim().toLowerCase();
     this.profileSaving.set(true);
     this.profileMessage.set('');
     this.accountService.save({ ...account, ...fields }).subscribe({
@@ -86,8 +97,10 @@ export default class ProfileComponent {
         this.profileSaving.set(false);
         this.profileMessage.set(
           err?.error?.errorKey === 'userexists'
-            ? 'Cet identifiant est déjà utilisé.'
-            : 'Impossible de mettre à jour le profil. Vérifiez votre identifiant.',
+            ? 'Ce nom d’utilisateur est déjà utilisé.'
+            : err?.error?.errorKey === 'emailexists'
+              ? 'Cette adresse e-mail est déjà utilisée.'
+              : 'Impossible de mettre à jour le profil. Vérifiez votre nom d’utilisateur et votre adresse e-mail.',
         );
       },
     });

@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AccountService } from 'app/core/auth';
@@ -11,6 +11,14 @@ export interface AppNotification {
   message: string;
   taskId: number;
   projectId: number;
+  projectUuid?: string;
+  taskUuid?: string;
+  sprintReport?: {
+    uuid: string;
+    name: string;
+    projectName: string;
+    assignees: { login: string; name: string; imageUrl?: string; tasks: { uuid: string; title: string; status: string }[] }[];
+  };
   createdAt: string;
   read: boolean;
 }
@@ -30,6 +38,8 @@ export class NotificationService {
   readonly unread = signal(0);
   readonly preferences = signal<Preferences>({ soundEnabled: false, emailEnabled: false });
   readonly emailAvailable = signal(false);
+  readonly settingsLoaded = signal(false);
+  readonly settingsLoading = signal(false);
   readonly pushAvailable = signal(false);
   readonly pushUnavailableReason = signal('Vérification de la disponibilité des notifications du navigateur…');
   readonly pushEnabled = signal(false);
@@ -72,6 +82,10 @@ export class NotificationService {
       this.controller?.abort();
       if (this.timer) clearInterval(this.timer);
       if (this.toastTimer) clearTimeout(this.toastTimer);
+      this.error.set('');
+      this.emailAvailable.set(false);
+      this.settingsLoaded.set(false);
+      this.settingsLoading.set(false);
       this.items.set([]);
       this.unread.set(0);
       this.notice.set(null);
@@ -85,7 +99,7 @@ export class NotificationService {
         if (loggedOut) void this.disableBrowserPush();
         return;
       }
-      void this.settings(generation);
+      untracked(() => void this.reloadSettings(generation));
       void this.refresh(generation);
       this.controller = new AbortController();
       void this.connect(this.controller.signal, generation);
@@ -103,6 +117,7 @@ export class NotificationService {
       this.known = new Set(response.items.map(item => item.id));
       this.items.set(response.items);
       this.unread.set(response.unread);
+      if (this.error() === 'Impossible de charger les notifications.') this.error.set('');
       if (added.length) {
         this.notice.set(added[0]);
         if (this.toastTimer) clearTimeout(this.toastTimer);
@@ -138,7 +153,7 @@ export class NotificationService {
       await firstValueFrom(this.http.put(`${this.api}/preferences`, value));
       this.preferences.set(value);
     } catch {
-      this.error.set('Impossible d’enregistrer ce réglage. Vérifiez votre connexion et les autorisations audio.');
+      this.error.set('Impossible d’enregistrer ce réglage. Veuillez réessayer.');
     } finally {
       this.savingPreferences.set(false);
     }
@@ -194,6 +209,49 @@ export class NotificationService {
     }
   }
 
+  async reloadSettings(generation = this.session): Promise<void> {
+    if (this.settingsLoading()) return;
+    this.settingsLoading.set(true);
+    try {
+      const settings = await firstValueFrom(this.http.get<Settings>(`${this.api}/preferences`));
+      if (generation !== this.session) return;
+      this.preferences.set(settings.preferences);
+      this.emailAvailable.set(settings.emailAvailable);
+      this.settingsLoaded.set(true);
+      if (this.error() === 'Les préférences ne sont pas disponibles. Réessayez.') this.error.set('');
+      this.publicKey = settings.pushKey;
+      const pushUnavailableReason = !settings.pushKey
+        ? 'Les notifications du navigateur ne sont pas activées pour cette application.'
+        : !window.isSecureContext
+          ? 'Une connexion sécurisée (HTTPS) est nécessaire pour activer les notifications du navigateur.'
+          : !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)
+            ? 'Ce navigateur ne prend pas en charge les notifications en dehors de l’application.'
+            : '';
+      this.pushUnavailableReason.set(pushUnavailableReason);
+      this.pushAvailable.set(!pushUnavailableReason);
+      if (!('serviceWorker' in navigator)) return;
+      try {
+        const registration = await navigator.serviceWorker.getRegistration('/content/notification-sw.js');
+        const subscription = await registration?.pushManager.getSubscription();
+        if (generation !== this.session) return;
+        if (subscription && this.pushAvailable()) await firstValueFrom(this.http.post(`${this.api}/push`, subscription.toJSON()));
+        this.pushEnabled.set(Boolean(subscription));
+      } catch {
+        if (generation === this.session) this.pushUnavailableReason.set('Impossible de vérifier les notifications du navigateur.');
+      }
+    } catch {
+      if (generation === this.session) {
+        this.settingsLoaded.set(false);
+        this.error.set('Les préférences ne sont pas disponibles. Réessayez.');
+        if (!this.pushAvailable()) {
+          this.pushUnavailableReason.set('Impossible de vérifier la disponibilité des notifications du navigateur. Réessayez plus tard.');
+        }
+      }
+    } finally {
+      if (generation === this.session) this.settingsLoading.set(false);
+    }
+  }
+
   private async prepareAudio(): Promise<boolean> {
     try {
       if (!this.audio || this.audio.state === 'closed') {
@@ -207,38 +265,6 @@ export class NotificationService {
     } catch {
       this.soundReady.set(false);
       return false;
-    }
-  }
-
-  private async settings(generation: number): Promise<void> {
-    try {
-      const settings = await firstValueFrom(this.http.get<Settings>(`${this.api}/preferences`));
-      if (generation !== this.session) return;
-      this.preferences.set(settings.preferences);
-      this.emailAvailable.set(settings.emailAvailable);
-      this.publicKey = settings.pushKey;
-      const pushUnavailableReason = !settings.pushKey
-        ? 'Les notifications du navigateur ne sont pas activées pour cette application.'
-        : !window.isSecureContext
-          ? 'Une connexion sécurisée (HTTPS) est nécessaire pour activer les notifications du navigateur.'
-          : !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)
-            ? 'Ce navigateur ne prend pas en charge les notifications en dehors de l’application.'
-            : '';
-      this.pushUnavailableReason.set(pushUnavailableReason);
-      this.pushAvailable.set(!pushUnavailableReason);
-      if (!('serviceWorker' in navigator)) return;
-      const registration = await navigator.serviceWorker.getRegistration('/content/notification-sw.js');
-      const subscription = await registration?.pushManager.getSubscription();
-      if (generation !== this.session) return;
-      if (subscription && this.pushAvailable()) await firstValueFrom(this.http.post(`${this.api}/push`, subscription.toJSON()));
-      this.pushEnabled.set(Boolean(subscription));
-    } catch {
-      if (generation === this.session) {
-        this.error.set('Les préférences ne sont pas disponibles.');
-        if (!this.pushAvailable()) {
-          this.pushUnavailableReason.set('Impossible de vérifier la disponibilité des notifications du navigateur. Réessayez plus tard.');
-        }
-      }
     }
   }
 

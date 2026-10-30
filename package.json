@@ -32,6 +32,8 @@
     "cleanup": "rimraf target/",
     "docker:db:down": "docker compose -f src/main/docker/mysql.yml down -v",
     "docker:db:up": "docker compose -f src/main/docker/mysql.yml up --wait",
+    "docker:mailpit:down": "docker compose -f src/main/docker/mailpit.yml stop mailpit",
+    "docker:mailpit:up": "docker compose -f src/main/docker/mailpit.yml up -d",
     "docker:redis:down": "docker compose -f src/main/docker/redis.yml down -v",
     "docker:redis:up": "docker compose -f src/main/docker/redis.yml up --wait",
     "java:docker": "./mvnw -ntp verify -DskipTests -Pprod jib:dockerBuild",

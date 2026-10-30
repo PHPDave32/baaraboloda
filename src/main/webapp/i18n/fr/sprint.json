@@ -2,20 +2,20 @@
   "baaraBolodaApp": {
     "sprint": {
       "home": {
-        "title": "Sprints",
+        "title": "Périodes",
         "refreshListLabel": "Actualiser la liste",
-        "createLabel": "Créer un nouveau Sprint",
-        "createOrEditLabel": "Créer ou éditer un Sprint",
-        "notFound": "Aucun Sprint trouvé"
+        "createLabel": "Créer un nouveau Période",
+        "createOrEditLabel": "Créer ou éditer un Période",
+        "notFound": "Aucun Période trouvé"
       },
-      "created": "Un nouveau Sprint a été créé avec l'identifiant {{ param }}",
-      "updated": "Le Sprint avec l'identifiant {{ param }} a été mis à jour",
-      "deleted": "Le Sprint avec l'identifiant {{ param }} a été supprimé",
+      "created": "Un nouveau Période a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Période avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Période avec l'identifiant {{ param }} a été supprimé",
       "delete": {
-        "question": "Êtes-vous certain de vouloir supprimer le Sprint {{ id }} ?"
+        "question": "Êtes-vous certain de vouloir supprimer le Période {{ id }} ?"
       },
       "detail": {
-        "title": "Sprint"
+        "title": "Période"
       },
       "id": "ID",
       "name": "Name",

@@ -17,6 +17,7 @@ public interface LabelMapper extends EntityMapper<LabelDTO, Label> {
     @Named("projectName")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "uuid", source = "uuid")
     @Mapping(target = "name", source = "name")
     ProjectDTO toDtoProjectName(Project project);
 }

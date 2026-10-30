@@ -65,6 +65,8 @@ public class SecurityConfiguration {
                     .requestMatchers("/api/activate").permitAll()
                     .requestMatchers("/api/account/reset-password/init").permitAll()
                     .requestMatchers("/api/account/reset-password/finish").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/admin/users").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.SUPER_ADMIN, "PERM_USER_MANAGE", "PERM_USER_DISABLE")
+                    .requestMatchers(HttpMethod.PATCH, "/api/admin/users/*/activation").hasAnyAuthority(AuthoritiesConstants.SUPER_ADMIN, "PERM_USER_DISABLE")
                     .requestMatchers("/api/admin/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.SUPER_ADMIN, "PERM_USER_MANAGE")
                     .requestMatchers("/api/**").authenticated()
                     .requestMatchers("/v3/api-docs/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.SUPER_ADMIN)

@@ -2,6 +2,7 @@ package com.cratechnologie.baaraboloda.web.rest;
 
 import com.cratechnologie.baaraboloda.service.ProjectDocumentService;
 import com.cratechnologie.baaraboloda.service.dto.ProjectDocumentDTO;
+import com.cratechnologie.baaraboloda.web.rest.util.PublicId;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -24,13 +25,13 @@ public class ProjectDocumentResource {
     }
 
     @GetMapping
-    public List<ProjectDocumentDTO> list(@PathVariable Long projectId) {
+    public List<ProjectDocumentDTO> list(@PublicId(entity = "project", name = "projectId") Long projectId) {
         return service.list(projectId);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> create(
-        @PathVariable Long projectId,
+        @PublicId(entity = "project", name = "projectId") Long projectId,
         @RequestParam String title,
         @RequestParam(defaultValue = "") String description,
         @RequestParam String category,
@@ -56,7 +57,7 @@ public class ProjectDocumentResource {
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> update(
-        @PathVariable Long projectId,
+        @PublicId(entity = "project", name = "projectId") Long projectId,
         @PathVariable Long id,
         @RequestParam String title,
         @RequestParam(defaultValue = "") String description,
@@ -70,13 +71,15 @@ public class ProjectDocumentResource {
     }
 
     @GetMapping("/recipients")
-    public List<com.cratechnologie.baaraboloda.service.dto.ResourceRecipientDTO> recipients(@PathVariable Long projectId) {
+    public List<com.cratechnologie.baaraboloda.service.dto.ResourceRecipientDTO> recipients(
+        @PublicId(entity = "project", name = "projectId") Long projectId
+    ) {
         return service.recipients(projectId);
     }
 
     @GetMapping("/{id}/visibility")
     public com.cratechnologie.baaraboloda.service.dto.ResourceVisibilityDTO visibility(
-        @PathVariable Long projectId,
+        @PublicId(entity = "project", name = "projectId") Long projectId,
         @PathVariable Long id
     ) {
         return service.visibility(projectId, id);
@@ -84,7 +87,7 @@ public class ProjectDocumentResource {
 
     @PutMapping("/{id}/visibility")
     public ResponseEntity<Void> updateVisibility(
-        @PathVariable Long projectId,
+        @PublicId(entity = "project", name = "projectId") Long projectId,
         @PathVariable Long id,
         @jakarta.validation.Valid @RequestBody com.cratechnologie.baaraboloda.service.dto.ResourceVisibilityDTO input
     ) {
@@ -93,7 +96,7 @@ public class ProjectDocumentResource {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> download(@PathVariable Long projectId, @PathVariable Long id) {
+    public ResponseEntity<byte[]> download(@PublicId(entity = "project", name = "projectId") Long projectId, @PathVariable Long id) {
         var document = service.download(projectId, id);
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -107,7 +110,7 @@ public class ProjectDocumentResource {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long projectId, @PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PublicId(entity = "project", name = "projectId") Long projectId, @PathVariable Long id) {
         service.delete(projectId, id);
         return ResponseEntity.noContent().build();
     }

@@ -1,4 +1,6 @@
 export class Account {
+  accessProfileId?: number | null;
+  accessProfileName?: string | null;
   constructor(
     public activated: boolean,
     public authorities: string[],

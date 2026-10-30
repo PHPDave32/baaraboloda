@@ -29,7 +29,10 @@ public class SprintService {
 
     private final SprintMapper sprintMapper;
 
-    public SprintService(SprintRepository sprintRepository, SprintMapper sprintMapper) {
+    private final NotificationService notifications;
+
+    public SprintService(SprintRepository sprintRepository, SprintMapper sprintMapper, NotificationService notifications) {
+        this.notifications = notifications;
         this.sprintRepository = sprintRepository;
         this.sprintMapper = sprintMapper;
     }
@@ -43,7 +46,8 @@ public class SprintService {
     public SprintDTO save(SprintDTO sprintDTO) {
         LOG.debug("Request to save Sprint : {}", sprintDTO);
         Sprint sprint = sprintMapper.toEntity(sprintDTO);
-        sprint = sprintRepository.save(sprint);
+        sprint = sprintRepository.saveAndFlush(sprint);
+        if (sprint.getStatus() == SprintStatus.COMPLETED) notifications.sprintCompleted(sprint);
         return sprintMapper.toDto(sprint);
     }
 
@@ -56,21 +60,24 @@ public class SprintService {
     public SprintDTO update(SprintDTO sprintDTO) {
         LOG.debug("Request to update Sprint : {}", sprintDTO);
         Sprint sprint = sprintMapper.toEntity(sprintDTO);
+        sprint.setUuid(sprintRepository.findById(sprintDTO.getId()).orElseThrow().getUuid());
         if (sprint.getStatus() == SprintStatus.ACTIVE && sprint.getProject() != null) {
             assertNoOtherActiveSprint(sprint.getProject().getId(), sprint.getId());
         }
-        sprint = sprintRepository.save(sprint);
+        sprint = sprintRepository.saveAndFlush(sprint);
+        if (sprint.getStatus() == SprintStatus.COMPLETED) notifications.sprintCompleted(sprint);
         return sprintMapper.toDto(sprint);
     }
 
     public int completeExpiredSprints() {
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Africa/Bamako"));
         var expired = sprintRepository.findAllByStatusAndEndDateBefore(SprintStatus.ACTIVE, today);
         if (expired.isEmpty()) {
             return 0;
         }
         expired.forEach(sprint -> sprint.setStatus(SprintStatus.COMPLETED));
-        sprintRepository.saveAll(expired);
+        sprintRepository.saveAllAndFlush(expired);
+        expired.forEach(notifications::sprintCompleted);
         LOG.info("Auto-completed {} expired sprint(s)", expired.size());
         return expired.size();
     }
@@ -105,8 +112,11 @@ public class SprintService {
 
                 return existingSprint;
             })
-            .map(sprintRepository::save)
-            .map(sprintMapper::toDto);
+            .map(sprintRepository::saveAndFlush)
+            .map(sprint -> {
+                if (sprint.getStatus() == SprintStatus.COMPLETED) notifications.sprintCompleted(sprint);
+                return sprintMapper.toDto(sprint);
+            });
     }
 
     /**

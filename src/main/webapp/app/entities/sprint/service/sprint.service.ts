@@ -78,7 +78,7 @@ export class SprintService extends SprintsService {
       .pipe(map(res => this.convertResponseFromServer(res)));
   }
 
-  find(id: number): Observable<ISprint> {
+  find(id: number | string): Observable<ISprint> {
     return this.http.get<RestSprint>(`${this.resourceUrl}/${encodeURIComponent(id)}`).pipe(map(res => this.convertResponseFromServer(res)));
   }
 

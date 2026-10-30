@@ -1,3 +1,4 @@
+import { publicIdentifiersInterceptor } from 'app/core/identifiers/public-identifiers.interceptor';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, LOCALE_ID, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -53,7 +54,15 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, ...routerFeatures),
     // Set this to true to enable service worker (PWA)
     provideServiceWorker('ngsw-worker.js', { enabled: false }),
-    provideHttpClient(withInterceptors([authInterceptor, authExpiredInterceptor, errorHandlerInterceptor, notificationInterceptor])),
+    provideHttpClient(
+      withInterceptors([
+        publicIdentifiersInterceptor,
+        authInterceptor,
+        authExpiredInterceptor,
+        errorHandlerInterceptor,
+        notificationInterceptor,
+      ]),
+    ),
     Title,
     { provide: LOCALE_ID, useValue: 'fr' },
     { provide: NgbDateAdapter, useClass: NgbDateDayjsAdapter },

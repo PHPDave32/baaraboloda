@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { HttpHeaders } from '@angular/common/http';
 import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -22,6 +23,7 @@ import { LabelService } from '../service/label.service';
   selector: 'jhi-label',
   templateUrl: './label.html',
   imports: [
+    PublicIdPipe,
     RouterLink,
     FontAwesomeModule,
     AlertError,

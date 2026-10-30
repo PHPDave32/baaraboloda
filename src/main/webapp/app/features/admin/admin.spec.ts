@@ -15,6 +15,7 @@ describe('Administration roles', () => {
   let component: AdminComponent;
   let superAdmin: boolean;
   const update = vi.fn();
+  const setActivation = vi.fn();
   const create = vi.fn();
   const queryProfiles = vi.fn();
   let actorRole: string;
@@ -29,6 +30,7 @@ describe('Administration roles', () => {
   };
 
   beforeEach(() => {
+    setActivation.mockReset().mockImplementation((login, activated) => of({ ...employee, login, activated }));
     superAdmin = false;
     actorRole = 'ROLE_ADMIN';
     queryProfiles.mockReset().mockReturnValue(of([{ id: 1, name: 'Développeur', allProjects: false, permissions: [] }]));
@@ -41,7 +43,7 @@ describe('Administration roles', () => {
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ProjectService, useValue: { query: () => of({ body: [] }) } },
         { provide: AccessProfileService, useValue: { query: queryProfiles } },
-        { provide: UserManagementService, useValue: { update, create, query: () => of({ body: [] }) } },
+        { provide: UserManagementService, useValue: { update, create, setActivation, query: () => of({ body: [] }) } },
         {
           provide: AccountService,
           useValue: {
@@ -114,5 +116,47 @@ describe('Administration roles', () => {
 
   it('labels the super administrator distinctly', () => {
     expect(component.roleLabel({ ...employee, authorities: ['ROLE_SUPER_ADMIN'] })).toBe('Super administrateur');
+  });
+  it('filters disabled accounts and resets pagination', () => {
+    component.users = [employee, { ...employee, login: 'disabled', activated: false }];
+    component.userPage = 3;
+    component.setUserStatus('inactive');
+    expect(component.userPage).toBe(1);
+    expect(component.filteredUsers.map(user => user.login)).toEqual(['disabled']);
+    expect(component.inactiveUserCount).toBe(1);
+    component.userSearch = 'absent';
+    expect(component.filteredUsers).toEqual([]);
+  });
+
+  it('allows delegated activation without granting account management', () => {
+    actorRole = 'PERM_USER_DISABLE';
+    const disabled = { ...employee, activated: false };
+    component.users = [disabled];
+    component.toggleUserActivation(disabled);
+    expect(setActivation).toHaveBeenCalledWith(employee.login, true);
+    expect(component.users[0].activated).toBe(true);
+    expect(component.canManageUsers).toBe(false);
+    component.openPermissionPanel(employee);
+    expect(component.showPermissionPanel).toBe(false);
+  });
+
+  it('protects administrators from delegated activation but allows the super administrator', () => {
+    actorRole = 'PERM_USER_DISABLE';
+    const admin = { ...employee, activated: false, authorities: ['ROLE_ADMIN'] };
+    component.toggleUserActivation(admin);
+    expect(setActivation).not.toHaveBeenCalled();
+    superAdmin = true;
+    component.toggleUserActivation(admin);
+    expect(setActivation).toHaveBeenCalledWith(admin.login, true);
+  });
+
+  it('lets the super administrator delegate the activation permission', () => {
+    superAdmin = true;
+    component.openPermissionPanel(employee);
+    component.toggleSelectedPermission('PERM_USER_DISABLE', true);
+    expect(component.selectedUserPermissions.has('PERM_USER_DISABLE')).toBe(true);
+    expect(component.showPermissionPanel).toBe(true);
+    component.saveUserPermissions();
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ grantedPermissions: expect.arrayContaining(['PERM_USER_DISABLE']) }));
   });
 });

@@ -5,6 +5,7 @@ import { IUser } from 'app/entities/user/user.model';
 
 export interface IProject {
   id: number;
+  uuid?: string;
   name?: string | null;
   description?: string | null;
   projectKey?: string | null;

@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { HttpHeaders } from '@angular/common/http';
 import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -23,6 +24,7 @@ import { ISprint } from '../sprint.model';
   selector: 'jhi-sprint',
   templateUrl: './sprint.html',
   imports: [
+    PublicIdPipe,
     RouterLink,
     FontAwesomeModule,
     AlertError,

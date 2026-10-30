@@ -1,5 +1,22 @@
 <div class="admin-page">
-  <app-modal
+  <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
+    variant="danger"
+    [isOpen]="projectToDelete !== null"
+    title="Supprimer le projet"
+    subtitle="Supprimer ce projet ? Toutes ses tâches seront perdues. Cette action est irréversible."
+    confirmText="Supprimer"
+    [isLoading]="deletingProject"
+    (close)="projectToDelete = null"
+    (confirm)="confirmDeleteProject()"
+  >
+    @if (deleteProjectError) {
+      <p class="text-sm text-red-600" role="alert">{{ deleteProjectError }}</p>
+    }
+  </app-modal>
+-->
+  <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
     variant="danger"
     [isOpen]="showDeleteUserModal"
     title="Supprimer l'employé"
@@ -21,6 +38,7 @@
     (confirm)="confirmDeleteUser()"
   >
   </app-modal>
+-->
 
   <app-modal
     [isOpen]="showUserForm"
@@ -34,6 +52,7 @@
       <p class="mb-4 text-sm text-red-500">{{ userError }}</p>
     }
     <form [formGroup]="userForm" (ngSubmit)="submitUser()" class="space-y-4">
+      <p class="text-xs text-slate-500">Les champs marqués d’un * sont obligatoires. La photo et le profil sont facultatifs.</p>
       <jhi-photo-picker
         [imageUrl]="userForm.get('imageUrl')?.value"
         (imageUrlChange)="userForm.patchValue({ imageUrl: $event })"
@@ -42,60 +61,95 @@
       />
       <div class="grid grid-cols-2 items-start gap-4 max-[600px]:grid-cols-1">
         <div class="min-w-0">
-          <label for="user-firstName" class="mb-1.5 block text-xs font-medium text-[#172033]">Prénom</label>
+          <label for="user-firstName" class="mb-1.5 block text-xs font-medium text-[#172033]">Prénom *</label>
           <input
+            required
+            [attr.aria-invalid]="!!userFieldError('firstName')"
+            aria-describedby="user-firstName-error"
             id="user-firstName"
             formControlName="firstName"
             class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
             placeholder="Prénom"
           />
+          @if (userFieldError('firstName')) {
+            <p id="user-firstName-error" class="mt-1 text-xs text-red-600" role="alert">{{ userFieldError('firstName') }}</p>
+          }
         </div>
         <div class="min-w-0">
-          <label for="user-lastName" class="mb-1.5 block text-xs font-medium text-[#172033]">Nom</label>
+          <label for="user-lastName" class="mb-1.5 block text-xs font-medium text-[#172033]">Nom *</label>
           <input
+            required
+            [attr.aria-invalid]="!!userFieldError('lastName')"
+            aria-describedby="user-lastName-error"
             id="user-lastName"
             formControlName="lastName"
             class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
             placeholder="Nom"
           />
+          @if (userFieldError('lastName')) {
+            <p id="user-lastName-error" class="mt-1 text-xs text-red-600" role="alert">{{ userFieldError('lastName') }}</p>
+          }
         </div>
       </div>
       <div class="grid grid-cols-2 items-start gap-4 max-[600px]:grid-cols-1">
         <div class="min-w-0">
-          <label for="user-login" class="mb-1.5 block text-xs font-medium text-[#172033]">Identifiant</label>
+          <label for="user-login" class="mb-1.5 block text-xs font-medium text-[#172033]">Identifiant *</label>
           <input
+            required
+            [attr.aria-invalid]="!!userFieldError('login')"
+            aria-describedby="user-login-error"
             id="user-login"
             formControlName="login"
             class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
             placeholder="Login (identifiant)"
           />
+          @if (userFieldError('login')) {
+            <p id="user-login-error" class="mt-1 text-xs text-red-600" role="alert">{{ userFieldError('login') }}</p>
+          }
         </div>
         <div class="min-w-0">
-          <label for="user-email" class="mb-1.5 block text-xs font-medium text-[#172033]">Adresse e-mail</label>
+          <label for="user-email" class="mb-1.5 block text-xs font-medium text-[#172033]">Adresse e-mail *</label>
           <input
+            required
+            [attr.aria-invalid]="!!userFieldError('email')"
+            aria-describedby="user-email-error"
             id="user-email"
             type="email"
             formControlName="email"
             class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
             placeholder="Adresse e-mail"
           />
+          @if (userFieldError('email')) {
+            <p id="user-email-error" class="mt-1 text-xs text-red-600" role="alert">{{ userFieldError('email') }}</p>
+          }
         </div>
       </div>
       <div class="grid grid-cols-2 items-start gap-4 max-[600px]:grid-cols-1">
-        <div class="min-w-0">
-          <label for="user-password" class="mb-1.5 block text-xs font-medium text-[#172033]">Mot de passe temporaire</label>
-          <input
-            id="user-password"
-            type="password"
-            jhiPasswordToggle
-            formControlName="password"
-            class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
-            placeholder="Mot de passe temporaire"
-          />
-        </div>
+        @if (!editingUser) {
+          <div class="min-w-0">
+            <label for="user-password" class="mb-1.5 block text-xs font-medium text-[#172033]">Mot de passe temporaire *</label>
+            <input
+              id="user-password"
+              type="password"
+              required
+              minlength="6"
+              maxlength="100"
+              [attr.aria-invalid]="!!userFieldError('password')"
+              aria-describedby="user-password-error"
+              jhiPasswordToggle
+              formControlName="password"
+              class="h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2.5 text-xs text-[#172033] outline-none transition placeholder:text-slate-400 focus:border-[#328cb1] focus:ring-4 focus:ring-[#328cb1]/15"
+              placeholder="Mot de passe temporaire"
+            />
+            <p class="mt-1 text-xs text-slate-500">Entre 6 et 100 caractères.</p>
+            @if (userFieldError('password')) {
+              <p id="user-password-error" class="mt-1 text-xs text-red-600" role="alert">{{ userFieldError('password') }}</p>
+            }
+          </div>
+        }
         @if (canManageUsers) {
           <div class="min-w-0">
-            <label for="user-access-profile" class="mb-1.5 block text-xs font-medium text-[#172033]">Profil</label>
+            <label for="user-access-profile" class="mb-1.5 block text-xs font-medium text-[#172033]">Profil (facultatif)</label>
             <select
               id="user-access-profile"
               formControlName="accessProfileId"
@@ -116,7 +170,7 @@
       </div>
       <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 max-[600px]:justify-start">
         <button type="button" (click)="showUserForm = false" class="btn-secondary">Annuler</button>
-        <button type="submit" class="btn-primary" [disabled]="userForm.invalid || loadingUser || photoUploading">Enregistrer</button>
+        <button type="submit" class="btn-primary" [disabled]="loadingUser || photoUploading">Enregistrer</button>
       </div>
     </form>
   </app-modal>
@@ -125,13 +179,59 @@
     <header class="admin-hero workspace-page-header">
       <div>
         <span class="admin-eyebrow">ÉQUIPE &amp; ORGANISATION</span>
-        <h1>{{ isSuperAdmin ? 'Super administration' : 'Administration' }}</h1>
+        <h1>{{ isSuperAdmin ? ' Administration' : 'Administration' }}</h1>
         <p>Gérez les comptes de votre équipe et leur accès aux projets.</p>
       </div>
       <jhi-notification-center />
     </header>
 
     <section class="admin-panel">
+      @if (isSuperAdmin) {
+        <div
+          class="mb-6 flex items-center gap-5 rounded-2xl border border-slate-200 bg-white/75 p-4 shadow-[0_8px_22px_rgba(100,116,139,.06)]"
+        >
+          <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+            <img [src]="branding.logoSrc()" alt="Logo actuel" class="max-h-full max-w-full object-contain" />
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-[#172033]">Logo de l'application</p>
+            <p class="mt-0.5 text-xs text-slate-500">
+              JPEG ou PNG · 2 Mo maximum. Affiché dans la barre latérale pour tous les utilisateurs.
+            </p>
+            @if (logoError) {
+              <p class="mt-1 text-xs text-red-500" role="alert">{{ logoError }}</p>
+            }
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            @if (branding.logoUrl()) {
+              <button
+                type="button"
+                class="rounded-[10px] border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-red-300 hover:text-red-600"
+                [disabled]="logoUploading"
+                (click)="removeLogo()"
+              >
+                Supprimer
+              </button>
+            }
+            <label
+              class="cursor-pointer rounded-[10px] px-3 py-1.5 text-xs font-semibold transition"
+              [class.opacity-60]="logoUploading"
+              [class.pointer-events-none]="logoUploading"
+              style="background: #328cb1; color: #fff"
+            >
+              {{ logoUploading ? 'Envoi…' : 'Changer le logo' }}
+              <input
+                type="file"
+                class="sr-only"
+                accept="image/jpeg,image/png"
+                [disabled]="logoUploading"
+                (change)="onLogoFileSelected($event)"
+              />
+            </label>
+          </div>
+        </div>
+      }
+
       <div class="admin-tabs" aria-label="Sections de l’administration">
         <button
           type="button"
@@ -212,8 +312,37 @@
             <app-search-bar [value]="userSearch" placeholder="Rechercher un employé…" (valueChange)="onUserSearch($event)" />
           </div>
 
+          <div class="mb-5 flex flex-wrap gap-2" role="group" aria-label="Filtrer les comptes par état">
+            <button
+              type="button"
+              class="rounded-xl border px-3 py-2 text-xs font-semibold transition"
+              [class]="userStatus === 'all' ? 'border-[#328cb1] bg-[#eaf5fa] text-[#287e9e]' : 'border-slate-200 text-slate-500'"
+              [attr.aria-pressed]="userStatus === 'all'"
+              (click)="setUserStatus('all')"
+            >
+              Tous les comptes · {{ users.length }}
+            </button>
+            <button
+              type="button"
+              class="rounded-xl border px-3 py-2 text-xs font-semibold transition"
+              [class]="userStatus === 'active' ? 'border-[#328cb1] bg-[#eaf5fa] text-[#287e9e]' : 'border-slate-200 text-slate-500'"
+              [attr.aria-pressed]="userStatus === 'active'"
+              (click)="setUserStatus('active')"
+            >
+              Actifs · {{ users.length - inactiveUserCount }}
+            </button>
+            <button
+              type="button"
+              class="rounded-xl border px-3 py-2 text-xs font-semibold transition"
+              [class]="userStatus === 'inactive' ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500'"
+              [attr.aria-pressed]="userStatus === 'inactive'"
+              (click)="setUserStatus('inactive')"
+            >
+              Désactivés · {{ inactiveUserCount }}
+            </button>
+          </div>
           @if (users.length && !filteredUsers.length) {
-            <p class="mb-4 text-xs text-slate-500">Aucun employé ne correspond à « {{ userSearch }} ».</p>
+            <p class="mb-4 text-xs text-slate-500">Aucun compte ne correspond aux filtres sélectionnés.</p>
           }
 
           <div class="space-y-3">
@@ -250,11 +379,12 @@
                   </div>
                 </app-user-preview>
                 <div class="flex shrink-0 items-center gap-1.5 max-[600px]:w-full max-[600px]:justify-end">
-                  @if (canDisableUsers && !isAdmin(user)) {
+                  @if (canChangeUserActivation(user)) {
                     <button
                       type="button"
                       (click)="toggleUserActivation(user)"
-                      class="grid h-9 w-9 place-items-center rounded-[10px] transition"
+                      [disabled]="activationPending.has(user.login)"
+                      class="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] px-2.5 text-xs font-semibold transition disabled:opacity-50"
                       [class]="
                         user.activated
                           ? 'bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white'
@@ -263,6 +393,7 @@
                       [title]="user.activated ? 'Désactiver le compte' : 'Réactiver le compte'"
                       [attr.aria-label]="user.activated ? 'Désactiver le compte' : 'Réactiver le compte'"
                     >
+                      <span>{{ activationPending.has(user.login) ? 'En cours…' : user.activated ? 'Désactiver' : 'Réactiver' }}</span>
                       @if (user.activated) {
                         <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <circle cx="12" cy="12" r="9" />
@@ -276,7 +407,7 @@
                       }
                     </button>
                   }
-                  @if (isSuperAdmin && !isAdmin(user)) {
+                  @if (isSuperAdmin && !user.authorities?.includes('ROLE_SUPER_ADMIN')) {
                     <button
                       type="button"
                       (click)="openPermissionPanel(user)"
@@ -307,7 +438,8 @@
                         />
                       </svg>
                     </button>
-                    <button
+                    <!-- Suppression désactivée dans le frontend.
+<button
                       type="button"
                       (click)="openDeleteUserModal(user)"
                       [disabled]="!canEditUser(user) || user.login === currentAccount?.login"
@@ -323,6 +455,7 @@
                         />
                       </svg>
                     </button>
+-->
                   }
                 </div>
               </div>
@@ -479,7 +612,8 @@
               >
             </span>
             @if (isMember(selectedProject, user.id!)) {
-              <button
+              <!-- Suppression désactivée dans le frontend.
+<button
                 type="button"
                 [disabled]="selectedProject.status === 'CLOSED'"
                 (click)="removeMember(selectedProject.id!, user.id!)"
@@ -491,6 +625,7 @@
                 </svg>
                 Retirer
               </button>
+-->
             } @else {
               <button
                 type="button"

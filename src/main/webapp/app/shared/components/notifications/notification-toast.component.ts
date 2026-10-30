@@ -15,23 +15,32 @@ import { AppNotification, NotificationService } from './notification.service';
         <button type="button" class="toast-content" (click)="openTask(notice)">
           <span class="toast-eyebrow">VOTRE ÉQUIPE · À L’INSTANT</span>
           <strong>{{
-            notice.kind === 'ASSIGNMENT'
-              ? 'Une tâche vous attend'
-              : notice.kind === 'MENTION'
-                ? 'On vous a mentionné'
-                : notice.kind === 'COMMENT'
-                  ? 'Un nouveau commentaire'
-                  : notice.kind === 'TASK_CREATED'
-                    ? 'Nouvelle tâche'
-                    : notice.kind === 'TASK_UPDATED'
-                      ? 'Tâche modifiée'
-                      : notice.kind === 'TASK_DELETED'
-                        ? 'Tâche supprimée'
-                        : 'Votre projet avance'
+            notice.kind === 'SPRINT_INCOMPLETE'
+              ? 'Période terminée : tâches restantes'
+              : notice.kind === 'ASSIGNMENT'
+                ? 'Une tâche vous attend'
+                : notice.kind === 'MENTION'
+                  ? 'On vous a mentionné'
+                  : notice.kind === 'COMMENT'
+                    ? 'Un nouveau commentaire'
+                    : notice.kind === 'TASK_CREATED'
+                      ? 'Nouvelle tâche'
+                      : notice.kind === 'TASK_UPDATED'
+                        ? 'Tâche modifiée'
+                        : notice.kind === 'TASK_DELETED'
+                          ? 'Tâche supprimée'
+                          : 'Votre projet avance'
           }}</strong>
           <span class="notification-toast-message">{{ notice.message }}</span>
           <span class="toast-action"
-            >{{ notice.kind === 'TASK_DELETED' ? 'Voir le projet' : 'Voir la tâche' }} <span aria-hidden="true">↗</span></span
+            >{{
+              notice.kind === 'SPRINT_INCOMPLETE'
+                ? 'Voir les périodes'
+                : notice.kind === 'TASK_DELETED'
+                  ? 'Voir le projet'
+                  : 'Voir la tâche'
+            }}
+            <span aria-hidden="true">↗</span></span
           >
         </button>
         <button type="button" class="toast-close" aria-label="Fermer la notification" (click)="notifications.notice.set(null)">×</button>
@@ -49,7 +58,11 @@ export class NotificationToastComponent {
     void this.notifications.markRead(item.id);
     this.notifications.notice.set(null);
     void this.router.navigate(
-      item.kind === 'TASK_DELETED' ? ['/projects', item.projectId, 'board'] : ['/projects', item.projectId, 'tasks', item.taskId],
+      item.kind === 'SPRINT_INCOMPLETE'
+        ? ['/projects', item.projectUuid ?? item.projectId, 'sprints']
+        : item.kind === 'TASK_DELETED'
+          ? ['/projects', item.projectId, 'board']
+          : ['/projects', item.projectId, 'tasks', item.taskId],
     );
   }
 }

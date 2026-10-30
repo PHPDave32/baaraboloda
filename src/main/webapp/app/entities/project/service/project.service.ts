@@ -82,7 +82,7 @@ export class ProjectService extends ProjectsService {
       .pipe(map(res => this.convertResponseFromServer(res)));
   }
 
-  find(id: number): Observable<IProject> {
+  find(id: number | string): Observable<IProject> {
     return this.http
       .get<RestProject>(`${this.resourceUrl}/${encodeURIComponent(id)}`)
       .pipe(map(res => this.convertResponseFromServer(res)));

@@ -48,6 +48,14 @@
             />
           </div>
 
+          <label class="flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" formControlName="rememberMe" class="h-4 w-4" />
+            Rester connecté
+          </label>
+          <a routerLink="/account/reset/request" class="self-end text-sm font-semibold text-[#287e9e] hover:underline"
+            >Mot de passe oublié ?</a
+          >
+
           <button type="submit" class="login-submit" [disabled]="loginForm.invalid || loading()">
             @if (loading()) {
               <span class="flex items-center justify-center gap-2">

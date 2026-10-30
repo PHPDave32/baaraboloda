@@ -1,3 +1,4 @@
+import { SessionService } from 'app/core/auth/session.service';
 import { NotificationToastComponent } from 'app/shared/components/notifications/notification-toast.component';
 import { Component, DOCUMENT, OnInit, Renderer2, RendererFactory2, inject } from '@angular/core';
 import { Router, RouterOutlet, TitleStrategy } from '@angular/router';
@@ -18,6 +19,7 @@ export default class Main implements OnInit {
   private readonly renderer: Renderer2;
   private readonly htmlElement: HTMLElement;
 
+  private readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly titleStrategy = inject(TitleStrategy);
   private readonly accountService = inject(AccountService);
@@ -32,6 +34,7 @@ export default class Main implements OnInit {
   }
 
   ngOnInit(): void {
+    this.session.start();
     // try to log in automatically
     this.accountService.identity().subscribe();
 

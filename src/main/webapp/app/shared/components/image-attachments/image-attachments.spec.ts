@@ -6,6 +6,8 @@ import { ImageAttachmentsComponent } from './image-attachments';
 describe('Comment PDF attachments', () => {
   let component: ImageAttachmentsComponent;
   beforeEach(() => {
+    // FileReader (jsdom) s'appuie sur les vrais timers : ne pas hériter de fake timers d'un autre spec.
+    vi.useRealTimers();
     TestBed.configureTestingModule({ providers: [{ provide: ChangeDetectorRef, useValue: { markForCheck: vi.fn() } }] });
     component = TestBed.runInInjectionContext(() => new ImageAttachmentsComponent());
     component.editable = true;

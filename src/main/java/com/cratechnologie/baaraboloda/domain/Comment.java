@@ -34,7 +34,7 @@ public class Comment implements Serializable {
     private String content;
 
     @Size(max = 2097152)
-    @Lob
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LONGVARBINARY)
     @Column(name = "image")
     private byte[] image;
 
@@ -76,7 +76,8 @@ public class Comment implements Serializable {
     }
 
     @Convert(converter = com.cratechnologie.baaraboloda.domain.converter.ImageAttachmentsConverter.class)
-    @Column(name = "images", columnDefinition = "longtext")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LONGVARCHAR)
+    @Column(name = "images")
     private List<ImageAttachment> images;
 
     public List<ImageAttachment> getImages() {

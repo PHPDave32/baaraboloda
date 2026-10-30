@@ -1,6 +1,6 @@
 <div>
   <h2 id="page-heading" data-cy="SprintHeading">
-    <span jhiTranslate="baaraBolodaApp.sprint.home.title">Sprints</span>
+    <span jhiTranslate="baaraBolodaApp.sprint.home.title">Périodes</span>
 
     <div class="d-flex justify-content-end">
       <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
@@ -15,7 +15,7 @@
         [routerLink]="['/sprint/new']"
       >
         <fa-icon icon="plus" />
-        <span jhiTranslate="baaraBolodaApp.sprint.home.createLabel">Créer un nouveau Sprint</span>
+        <span jhiTranslate="baaraBolodaApp.sprint.home.createLabel">Créer un nouveau Période</span>
       </button>
     </div>
   </h2>
@@ -28,7 +28,7 @@
 
   @if (sprints().length === 0) {
     <div class="alert alert-warning" id="no-result">
-      <span jhiTranslate="baaraBolodaApp.sprint.home.notFound">Aucun Sprint trouvé</span>
+      <span jhiTranslate="baaraBolodaApp.sprint.home.notFound">Aucun Période trouvé</span>
     </div>
   } @else {
     <div class="table-responsive table-entities" id="entities">
@@ -102,7 +102,7 @@
           @for (sprint of sprints(); track trackId(sprint)) {
             <tr data-cy="entityTable">
               <td>
-                <a [routerLink]="['/sprint', sprint.id, 'view']">{{ sprint.id }}</a>
+                <a [routerLink]="['/sprint', sprint.id | publicId: 'sprint', 'view']">{{ sprint.id }}</a>
               </td>
               <td>{{ sprint.name }}</td>
               <td>{{ sprint.goal }}</td>
@@ -119,26 +119,36 @@
               <td>
                 @if (sprint.project) {
                   <div>
-                    <a [routerLink]="['/project', sprint.project.id, 'view']">{{ sprint.project.name }}</a>
+                    <a [routerLink]="['/project', sprint.project.id | publicId: 'project', 'view']">{{ sprint.project.name }}</a>
                   </div>
                 }
               </td>
               <td class="text-end">
                 <div class="btn-group">
-                  <a [routerLink]="['/sprint', sprint.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                  <a
+                    [routerLink]="['/sprint', sprint.id | publicId: 'sprint', 'view']"
+                    class="btn btn-info btn-sm"
+                    data-cy="entityDetailsButton"
+                  >
                     <fa-icon icon="eye" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
                   </a>
 
-                  <a [routerLink]="['/sprint', sprint.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                  <a
+                    [routerLink]="['/sprint', sprint.id | publicId: 'sprint', 'edit']"
+                    class="btn btn-primary btn-sm"
+                    data-cy="entityEditButton"
+                  >
                     <fa-icon icon="pencil-alt" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
                   </a>
 
-                  <button type="button" (click)="delete(sprint)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                  <!-- Suppression désactivée dans le frontend.
+<button type="button" (click)="delete(sprint)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
                     <fa-icon icon="times" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
                   </button>
+-->
                 </div>
               </td>
             </tr>

@@ -2,22 +2,24 @@ import { AfterViewInit, Component, ElementRef, OnInit, inject, signal, viewChild
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { TranslatePipe } from '@ngx-translate/core';
+import { finalize } from 'rxjs';
 
 import PasswordStrengthBar from 'app/account/password/password-strength-bar/password-strength-bar';
-import { TranslateDirective } from 'app/shared/language';
+
 import { PasswordToggleDirective } from 'app/shared/directives/password-toggle.directive';
 
 import { PasswordResetFinishService } from './password-reset-finish.service';
 
 @Component({
   selector: 'jhi-password-reset-finish',
-  imports: [TranslateDirective, TranslatePipe, RouterLink, ReactiveFormsModule, PasswordStrengthBar, PasswordToggleDirective],
+  imports: [RouterLink, ReactiveFormsModule, PasswordStrengthBar, PasswordToggleDirective],
   templateUrl: './password-reset-finish.html',
+  styleUrl: '../password-reset.scss',
 })
 export default class PasswordResetFinish implements OnInit, AfterViewInit {
-  readonly newPassword = viewChild.required<ElementRef>('newPassword');
+  readonly newPassword = viewChild<ElementRef>('newPassword');
 
+  readonly pending = signal(false);
   readonly initialized = signal(false);
   readonly doNotMatch = signal(false);
   readonly error = signal(false);
@@ -48,20 +50,26 @@ export default class PasswordResetFinish implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.newPassword().nativeElement.focus();
+    this.newPassword()?.nativeElement.focus();
   }
 
   finishReset(): void {
+    this.passwordForm.markAllAsTouched();
+    if (this.passwordForm.invalid || !this.key() || this.pending() || this.success()) return;
     this.doNotMatch.set(false);
     this.error.set(false);
 
     const { newPassword, confirmPassword } = this.passwordForm.getRawValue();
 
     if (newPassword === confirmPassword) {
-      this.passwordResetFinishService.save(this.key(), newPassword).subscribe({
-        next: () => this.success.set(true),
-        error: () => this.error.set(true),
-      });
+      this.pending.set(true);
+      this.passwordResetFinishService
+        .save(this.key(), newPassword)
+        .pipe(finalize(() => this.pending.set(false)))
+        .subscribe({
+          next: () => this.success.set(true),
+          error: () => this.error.set(true),
+        });
     } else {
       this.doNotMatch.set(true);
     }

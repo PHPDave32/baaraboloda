@@ -140,4 +140,18 @@ class UserAdministrationPolicyTest {
         when(authorities.existsById("ROLE_UNKNOWN")).thenReturn(false);
         assertThatThrownBy(() -> policy.checkCreate(dto("ROLE_UNKNOWN"))).isInstanceOf(BadRequestAlertException.class);
     }
+
+    @Test
+    void delegatedActivationAllowsOrdinaryAccountsButProtectsAdministrators() {
+        authenticate("PERM_USER_DISABLE");
+        assertThatCode(() -> policy.checkActivation(user("ROLE_USER"), true)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> policy.checkActivation(user("ROLE_ADMIN"), true)).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> policy.checkActivation(user("ROLE_SUPER_ADMIN"), true)).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void superAdministratorCanReactivateAnAdministrator() {
+        authenticate("ROLE_SUPER_ADMIN");
+        assertThatCode(() -> policy.checkActivation(user("ROLE_ADMIN"), true)).doesNotThrowAnyException();
+    }
 }

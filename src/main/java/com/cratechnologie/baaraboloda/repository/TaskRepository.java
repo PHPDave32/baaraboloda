@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificationExecutor<Task> {
+    java.util.Optional<Task> findOneByUuid(String uuid);
+
     List<Task> findAllByProject_IdOrderByPositionAsc(Long projectId);
 
     boolean existsByProject_Id(Long projectId);

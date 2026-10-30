@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -11,7 +12,16 @@ import { ISprint } from '../sprint.model';
 @Component({
   selector: 'jhi-sprint-detail',
   templateUrl: './sprint-detail.html',
-  imports: [FontAwesomeModule, Alert, AlertError, TranslateDirective, RouterLink, FormatMediumDatetimePipe, FormatMediumDatePipe],
+  imports: [
+    PublicIdPipe,
+    FontAwesomeModule,
+    Alert,
+    AlertError,
+    TranslateDirective,
+    RouterLink,
+    FormatMediumDatetimePipe,
+    FormatMediumDatePipe,
+  ],
 })
 export class SprintDetail {
   readonly sprint = input<ISprint | null>(null);

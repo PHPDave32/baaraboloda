@@ -19,6 +19,8 @@ import org.springframework.stereotype.Repository;
 public interface ProjectRepository
     extends ProjectRepositoryWithBagRelationships, JpaRepository<Project, Long>, JpaSpecificationExecutor<Project>
 {
+    java.util.Optional<Project> findOneByUuid(String uuid);
+
     @Query("select project from Project project where project.owner.login = ?#{authentication.name}")
     List<Project> findByOwnerIsCurrentUser();
 

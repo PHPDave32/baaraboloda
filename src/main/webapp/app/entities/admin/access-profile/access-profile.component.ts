@@ -11,6 +11,22 @@ import { PaginationComponent } from 'app/shared/components/pagination/pagination
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, ModalComponent, PaginationComponent],
   template: `<div>
+    <!-- Confirmation de suppression désactivée dans le frontend.
+<app-modal
+      variant="danger"
+      [isOpen]="profileToDelete !== null"
+      title="Supprimer le profil"
+      [subtitle]="profileToDelete ? 'Supprimer le profil « ' + profileToDelete.name + ' » ? Cette action est irréversible.' : ''"
+      confirmText="Supprimer"
+      [isLoading]="deletingProfile"
+      (close)="profileToDelete = null"
+      (confirm)="confirmDeleteProfile()"
+    >
+      @if (deleteError) {
+        <p class="text-sm text-red-600" role="alert">{{ deleteError }}</p>
+      }
+    </app-modal>
+-->
     <div class="mb-5 flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
       <div>
         <h2 class="text-base font-semibold text-[#172033]">Profils et permissions</h2>
@@ -93,7 +109,8 @@ import { PaginationComponent } from 'app/shared/components/pagination/pagination
                 />
               </svg>
             </button>
-            <button
+            <!-- Suppression désactivée dans le frontend.
+<button
               type="button"
               class="grid h-9 w-9 place-items-center rounded-[10px] bg-red-50 text-red-500 transition hover:bg-red-600 hover:text-white"
               (click)="remove(profile)"
@@ -108,6 +125,7 @@ import { PaginationComponent } from 'app/shared/components/pagination/pagination
                 />
               </svg>
             </button>
+-->
           </div>
         </article>
       }
@@ -122,6 +140,9 @@ export default class AccessProfileComponent implements OnInit {
   editing: IAccessProfile | null = null;
   error = '';
   showForm = false;
+  profileToDelete: IAccessProfile | null = null;
+  deletingProfile = false;
+  deleteError = '';
   profilePage = 1;
   readonly profilePageSize = 4;
   get profilePageCount(): number {
@@ -189,14 +210,26 @@ export default class AccessProfileComponent implements OnInit {
     });
   }
   remove(profile: IAccessProfile): void {
-    if (confirm(`Supprimer le profil « ${profile.name} » ?`))
-      this.service.delete(profile.id).subscribe({
-        next: () => {
-          this.profiles = this.profiles.filter(item => item.id !== profile.id);
-          this.profilePage = Math.min(this.profilePage, this.profilePageCount);
-          this.cdr.markForCheck();
-        },
-        error: e => (this.error = e.error?.detail ?? 'Ce profil est utilisé.'),
-      });
+    this.profileToDelete = profile;
+    this.deleteError = '';
+  }
+  confirmDeleteProfile(): void {
+    const profile = this.profileToDelete;
+    if (!profile || this.deletingProfile) return;
+    this.deletingProfile = true;
+    this.service.delete(profile.id).subscribe({
+      next: () => {
+        this.profiles = this.profiles.filter(item => item.id !== profile.id);
+        this.profilePage = Math.min(this.profilePage, this.profilePageCount);
+        this.profileToDelete = null;
+        this.deletingProfile = false;
+        this.cdr.markForCheck();
+      },
+      error: e => {
+        this.deleteError = e.error?.detail ?? 'Ce profil est utilisé.';
+        this.deletingProfile = false;
+        this.cdr.markForCheck();
+      },
+    });
   }
 }

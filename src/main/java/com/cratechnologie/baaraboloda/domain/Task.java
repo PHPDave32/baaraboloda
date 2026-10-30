@@ -32,6 +32,17 @@ public class Task implements Serializable {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "uuid", length = 36, nullable = false, unique = true, updatable = false)
+    private String uuid = java.util.UUID.randomUUID().toString();
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @NotNull
     @Size(max = 200)
     @Column(name = "title", length = 200, nullable = false)
@@ -90,7 +101,8 @@ public class Task implements Serializable {
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
     @Convert(converter = com.cratechnologie.baaraboloda.domain.converter.ImageAttachmentsConverter.class)
-    @Column(name = "images", columnDefinition = "longtext")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LONGVARCHAR)
+    @Column(name = "images")
     private List<ImageAttachment> images;
 
     public List<ImageAttachment> getImages() {

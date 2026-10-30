@@ -1,3 +1,4 @@
+import { workspaceResolve } from 'app/core/identifiers/workspace-resolve';
 import { Routes } from '@angular/router';
 
 import { ASC } from 'app/config';
@@ -24,26 +25,31 @@ const projectRoute: Routes = [
   },
   {
     path: ':id/documents',
+    resolve: { workspace: workspaceResolve },
     loadComponent: () => import('app/features/projects/documents/documents'),
     canActivate: [userRouteAccessService],
   },
   {
     path: ':id/board',
+    resolve: { workspace: workspaceResolve },
     loadComponent: () => import('app/features/projects/board/board'),
     canActivate: [userRouteAccessService],
   },
   {
     path: ':id/backlog',
+    resolve: { workspace: workspaceResolve },
     loadComponent: () => import('app/features/projects/backlog/backlog'),
     canActivate: [userRouteAccessService],
   },
   {
     path: ':id/sprints',
+    resolve: { workspace: workspaceResolve },
     loadComponent: () => import('app/features/projects/sprints/sprints'),
     canActivate: [userRouteAccessService],
   },
   {
     path: ':id/tasks/:taskId',
+    resolve: { workspace: workspaceResolve },
     loadComponent: () => import('app/features/projects/task-detail/task-detail'),
     canActivate: [userRouteAccessService],
   },

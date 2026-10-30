@@ -82,6 +82,7 @@ public class TaskService {
     public TaskDTO assign(Long taskId, Long userId) {
         LOG.debug("Request to assign Task {} to user {}", taskId, userId);
         Task task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
+        Long previousAssignee = task.getAssignee() == null ? null : task.getAssignee().getId();
         validateAssignee(userId, task.getProject().getId());
         if (userId != null) {
             task.setAssignee(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found: " + userId)));
@@ -90,6 +91,7 @@ public class TaskService {
         }
         task = taskRepository.save(task);
         notifications.taskUpdated(task);
+        notifications.assignment(task, previousAssignee);
         return taskMapper.toDto(task);
     }
 
@@ -113,8 +115,10 @@ public class TaskService {
         );
         Task task = taskMapper.toEntity(taskDTO);
         task.setSprint(targetSprint);
+        task.setCreatedAt(java.time.Instant.now());
         task = taskRepository.save(task);
         notifications.taskCreated(task);
+        notifications.assignment(task, null);
         return taskMapper.toDto(task);
     }
 
@@ -132,15 +136,21 @@ public class TaskService {
         ImageAttachmentValidator.validate(taskDTO.getImages(), true);
         LOG.debug("Request to update Task : {}", taskDTO);
         Task original = taskRepository.findById(taskDTO.getId()).orElseThrow();
+        Long previousAssignee = original.getAssignee() == null ? null : original.getAssignee().getId();
+        var previousStatus = original.getStatus();
         Sprint targetSprint = resolveTargetSprint(
             taskDTO.getSprint() == null ? null : taskDTO.getSprint().getId(),
             original.getSprint(),
             original.getProject().getId()
         );
         Task task = taskMapper.toEntity(taskDTO);
+        task.setUuid(original.getUuid());
         task.setSprint(targetSprint);
+        task.setCreatedAt(original.getCreatedAt());
         task = taskRepository.save(task);
         notifications.taskUpdated(task);
+        notifications.assignment(task, previousAssignee);
+        notifications.status(task, previousStatus);
         return taskMapper.toDto(task);
     }
 
@@ -192,6 +202,7 @@ public class TaskService {
 
         Task saved = taskRepository.save(copy);
         notifications.taskCreated(saved);
+        notifications.assignment(saved, null);
         return taskMapper.toDto(saved);
     }
 
@@ -215,6 +226,8 @@ public class TaskService {
         return taskRepository
             .findById(taskDTO.getId())
             .map(existingTask -> {
+                Long previousAssignee = existingTask.getAssignee() == null ? null : existingTask.getAssignee().getId();
+                var previousStatus = existingTask.getStatus();
                 validateAssignee(taskDTO.getAssignee() == null ? null : taskDTO.getAssignee().getId(), existingTask.getProject().getId());
                 Sprint targetSprint =
                     hasSprint && incomingSprintDTO.getId() != null
@@ -234,6 +247,8 @@ public class TaskService {
                 // Si sprint était absent du DTO (null), MapStruct l'ignore — comportement voulu
 
                 notifications.taskUpdated(existingTask);
+                notifications.assignment(existingTask, previousAssignee);
+                notifications.status(existingTask, previousStatus);
                 return existingTask;
             })
             .map(taskRepository::save)

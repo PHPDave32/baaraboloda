@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface SprintRepository extends JpaRepository<Sprint, Long>, JpaSpecificationExecutor<Sprint> {
+    java.util.Optional<Sprint> findOneByUuid(String uuid);
+
     @Query("select sprint from Sprint sprint where sprint.createdBy.login = ?#{authentication.name}")
     List<Sprint> findByCreatedByIsCurrentUser();
 

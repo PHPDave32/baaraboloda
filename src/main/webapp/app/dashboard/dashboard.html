@@ -95,7 +95,7 @@
             <div class="dashboard-empty" role="status"><span class="loading-ring"></span>Chargement de votre espace…</div>
           } @else {
             @for (project of visibleProjects; track project.id) {
-              <a [routerLink]="['/projects', project.id, 'board']" class="project-row"
+              <a [routerLink]="['/projects', project.id | publicId: 'project', 'board']" class="project-row"
                 ><span class="project-icon"><img src="/content/images/bookshelf-svgrepo-com.svg" alt="" aria-hidden="true" /></span>
                 <div class="project-info">
                   <h3>
@@ -169,13 +169,13 @@
               @for (project of projects.slice(1); track project.id) {
                 <option [ngValue]="project.id">{{ project.name }}</option>
               }</select
-            ><a [routerLink]="['/projects', actionProjectId ?? projects[0].id, 'backlog']" class="quick-action"
+            ><a [routerLink]="['/projects', actionProjectId ?? projects[0].id | publicId: 'project', 'backlog']" class="quick-action"
               ><span class="quick-icon"><img src="/content/images/add-file-svgrepo-com.svg" alt="" aria-hidden="true" /></span
-              ><span><strong>Créer une tâche</strong><small>Ouvrir le backlog du projet</small></span
+              ><span><strong>Créer une tâche</strong><small>Ouvrir la liste des tâches du projet</small></span
               ><span aria-hidden="true">↗</span></a
-            ><a [routerLink]="['/projects', actionProjectId ?? projects[0].id, 'sprints']" class="quick-action"
+            ><a [routerLink]="['/projects', actionProjectId ?? projects[0].id | publicId: 'project', 'sprints']" class="quick-action"
               ><span class="quick-icon quick-sprint">⚡</span
-              ><span><strong>Démarrer un sprint</strong><small>Ouvrir la planification</small></span
+              ><span><strong>Démarrer une période</strong><small>Ouvrir la planification</small></span
               ><span aria-hidden="true">↗</span></a
             >
           }

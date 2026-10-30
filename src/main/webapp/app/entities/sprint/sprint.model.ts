@@ -6,6 +6,7 @@ import { IUser } from 'app/entities/user/user.model';
 
 export interface ISprint {
   id: number;
+  uuid?: string;
   name?: string | null;
   goal?: string | null;
   status?: keyof typeof SprintStatus | null;
@@ -14,7 +15,7 @@ export interface ISprint {
   createdAt?: dayjs.Dayjs | null;
   updatedAt?: dayjs.Dayjs | null;
   createdBy?: Pick<IUser, 'id' | 'login' | 'imageUrl'> | null;
-  project?: Pick<IProject, 'id' | 'name'> | null;
+  project?: Pick<IProject, 'id' | 'uuid' | 'name'> | null;
 }
 
 export type NewSprint = Omit<ISprint, 'id'> & { id: null };

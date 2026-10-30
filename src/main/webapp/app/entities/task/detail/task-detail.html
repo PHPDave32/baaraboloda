@@ -73,15 +73,15 @@
           <dd>
             @if (task()!.project) {
               <div>
-                <a [routerLink]="['/project', task()!.project?.id, 'view']">{{ taskRef.project?.name }}</a>
+                <a [routerLink]="['/project', task()!.project?.id | publicId: 'project', 'view']">{{ taskRef.project?.name }}</a>
               </div>
             }
           </dd>
-          <dt><span jhiTranslate="baaraBolodaApp.task.sprint">Sprint</span></dt>
+          <dt><span jhiTranslate="baaraBolodaApp.task.sprint">Période</span></dt>
           <dd>
             @if (task()!.sprint) {
               <div>
-                <a [routerLink]="['/sprint', task()!.sprint?.id, 'view']">{{ taskRef.sprint?.name }}</a>
+                <a [routerLink]="['/sprint', task()!.sprint?.id | publicId: 'sprint', 'view']">{{ taskRef.sprint?.name }}</a>
               </div>
             }
           </dd>
@@ -91,7 +91,7 @@
           <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
         </button>
 
-        <button type="button" [routerLink]="['/task', taskRef.id, 'edit']" class="btn btn-primary">
+        <button type="button" [routerLink]="['/task', taskRef.id | publicId: 'task', 'edit']" class="btn btn-primary">
           <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
         </button>
       </div>

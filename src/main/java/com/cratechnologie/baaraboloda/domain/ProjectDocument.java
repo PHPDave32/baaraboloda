@@ -34,7 +34,7 @@ public class ProjectDocument {
     @Column(length = 255)
     private String filename;
 
-    @Lob
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LONGVARBINARY)
     private byte[] content;
 
     @Column(name = "file_size")

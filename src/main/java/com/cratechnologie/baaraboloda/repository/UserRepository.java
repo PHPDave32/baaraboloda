@@ -42,6 +42,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     )
     List<User> findActiveSuperAdminsForUpdate();
 
+    @org.springframework.data.jpa.repository.Query(
+        "select distinct u from User u join u.authorities a where a.name = 'ROLE_SUPER_ADMIN' and u.activated = true"
+    )
+    List<User> findActiveSuperAdmins();
+
     long countByAuthoritiesName(String name);
 
     boolean existsByAccessProfileId(Long id);

@@ -455,3 +455,33 @@
     transition: none;
   }
 }
+
+.sprint-report {
+  padding: 12px 24px;
+  border-bottom: 1px solid #dce8ee;
+}
+.sprint-report summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.sprint-report li {
+  margin: 8px 0;
+}
+.sprint-assignee {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.sprint-assignee img,
+.sprint-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.sprint-avatar {
+  display: grid;
+  place-items: center;
+  background: #e4eff4;
+}

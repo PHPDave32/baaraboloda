@@ -294,14 +294,6 @@
 .menu-glyph span:nth-child(3) {
   top: 14px;
 }
-.menu-expanded .menu-glyph span:nth-child(1) {
-  width: 10px;
-  transform: translate(-1px, 4px) rotate(-40deg);
-}
-.menu-expanded .menu-glyph span:nth-child(3) {
-  width: 10px;
-  transform: translate(-1px, -4px) rotate(40deg);
-}
 @media (prefers-reduced-motion: reduce) {
   .workspace-menu-toggle,
   .menu-glyph span,

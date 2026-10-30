@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="20261021120000-1" author="codex">
+        <addColumn tableName="notification_preferences">
+            <column name="assignment_email" type="boolean" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="comment_email" type="boolean" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="status_email" type="boolean" defaultValueBoolean="true"><constraints nullable="false"/></column>
+        </addColumn>
+        <addColumn tableName="app_notification">
+            <column name="email_sent_at" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

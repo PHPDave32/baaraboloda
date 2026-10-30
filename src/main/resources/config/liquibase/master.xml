@@ -3,6 +3,13 @@
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <property name="now" value="now()" dbms="postgresql"/>
+    <property name="floatType" value="real" dbms="postgresql"/>
+    <property name="clobType" value="text" dbms="postgresql"/>
+    <property name="blobType" value="bytea" dbms="postgresql"/>
+    <property name="uuidType" value="varchar(36)" dbms="postgresql"/>
+    <property name="datetimeType" value="timestamp(6)" dbms="postgresql"/>
+    <property name="timeType" value="time(6)" dbms="postgresql"/>
     <property name="now" value="now()" dbms="mysql"/>
     <property name="floatType" value="float" dbms="mysql"/>
     <property name="clobType" value="clob" dbms="mysql"/>
@@ -11,6 +18,8 @@
     <property name="datetimeType" value="datetime(6)" dbms="mysql"/>
     <property name="timeType" value="time(6)" dbms="mysql"/>
 
+    <property name="publicUuidChangelog" value="config/liquibase/changelog/20261029120000_postgresql_public_uuids.xml" dbms="postgresql"/>
+    <property name="publicUuidChangelog" value="config/liquibase/changelog/20261020120000_public_uuids.xml"/>
     <include file="config/liquibase/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260921150410_added_entity_Project.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260921150411_added_entity_Sprint.xml" relativeToChangelogFile="false"/>
@@ -40,4 +49,8 @@
     <include file="config/liquibase/changelog/20261012171000_user_permission_overrides.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261012173000_user_disable_permission.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261013130000_resource_visibility.xml" relativeToChangelogFile="false"/>
+    <include file="${publicUuidChangelog}" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261021120000_notification_email.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261026120000_sprint_alerts.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261029121000_postgresql_production.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="20261029121000-disable-sample-users" author="codex" dbms="postgresql" context="prod">
+        <update tableName="jhi_user">
+            <column name="activated" valueBoolean="false"/>
+            <where>created_by = 'system' AND ((id = 1 AND login = 'admin') OR (id = 2 AND login = 'user'))</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

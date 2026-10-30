@@ -1,3 +1,7 @@
+import { MentionInput } from 'app/shared/components/mention-input/mention-input';
+import { IUser } from 'app/entities/user/user.model';
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
+import { ToastService } from 'app/shared/toast/toast.service';
 import { TaskDocuments } from '../documents/preview/task-documents';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { ImageAttachment, ImageAttachmentsComponent } from 'app/shared/components/image-attachments/image-attachments';
@@ -13,10 +17,13 @@ import { PlanningService, TaskComment } from '../planning.service';
 import { BadgeComponent } from 'app/shared/components/badge/badge.component';
 import { AvatarComponent } from 'app/shared/components/avatar/avatar.component';
 import { ModalComponent } from 'app/shared/components/modal/modal.component';
+import { join } from 'path';
 
 @Component({
   selector: 'jhi-task-detail',
   imports: [
+    MentionInput,
+    PublicIdPipe,
     TaskDocuments,
     NotificationCenterComponent,
     ImageAttachmentsComponent,
@@ -40,6 +47,7 @@ export default class TaskDetail implements OnInit {
   saving = false;
   error = '';
   comments: TaskComment[] = [];
+  mentionMembers: IUser[] = [];
   canManage = false;
   canManageProject = false;
 
@@ -63,15 +71,16 @@ export default class TaskDetail implements OnInit {
     dueDate: [''],
   });
 
+  private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly planningService = inject(PlanningService);
   private readonly accountService = inject(AccountService);
   private readonly cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      this.projectId = Number(params.get('id'));
-      this.taskId = Number(params.get('taskId'));
+    this.route.data.subscribe(data => {
+      this.projectId = data['workspace'].projectId;
+      this.taskId = data['workspace'].taskId;
       this.load();
     });
   }
@@ -116,6 +125,7 @@ export default class TaskDetail implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+    this.error = '';
     this.saving = true;
     const value = this.form.getRawValue();
     this.planningService
@@ -130,11 +140,13 @@ export default class TaskDetail implements OnInit {
       .subscribe({
         next: task => {
           this.task = task;
+          this.toast.success('Tâche modifiée avec succès.');
           this.saving = false;
           this.cdr.markForCheck();
         },
         error: () => {
           this.error = 'La t\u00e2che n\u2019a pas pu \u00eatre enregistr\u00e9e.';
+          this.toast.error(this.error);
           this.saving = false;
           this.cdr.markForCheck();
         },
@@ -157,13 +169,15 @@ export default class TaskDetail implements OnInit {
     this.planningService.createComment(this.taskId, value, this.captures).subscribe({
       next: comment => {
         this.comments = [...this.comments, comment];
+        this.toast.success('Commentaire envoyé.');
         this.commentDraft = '';
         this.captures = [];
         this.sendingComment = false;
         this.cdr.markForCheck();
       },
       error: () => {
-        this.captureError = 'Le commentaire n’a pas pu être envoyé. Vérifiez la capture et réessayez.';
+        this.captureError = 'Le commentaire n’a pas pu être envoyé. Réessayez.';
+        this.toast.error(this.captureError);
         this.sendingComment = false;
         this.cdr.markForCheck();
       },
@@ -197,11 +211,13 @@ export default class TaskDetail implements OnInit {
     this.planningService.updateComment(comment, content).subscribe({
       next: updated => {
         this.comments = this.comments.map(item => (item.id === updated.id ? updated : item));
+        this.toast.success('Commentaire modifié.');
         this.savingComment = false;
         this.closeEditComment();
       },
       error: () => {
         this.error = 'Le commentaire n\u2019a pas pu \u00eatre modifi\u00e9.';
+        this.toast.error(this.error);
         this.savingComment = false;
         this.closeEditComment();
       },
@@ -224,11 +240,13 @@ export default class TaskDetail implements OnInit {
     this.planningService.deleteComment(comment.id).subscribe({
       next: () => {
         this.comments = this.comments.filter(item => item.id !== comment.id);
+        this.toast.success('Commentaire supprimé.');
         this.commentToDelete = null;
         this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Le commentaire n\u2019a pas pu \u00eatre supprim\u00e9.';
+        this.toast.error(this.error);
         this.commentToDelete = null;
         this.cdr.markForCheck();
       },
@@ -239,6 +257,7 @@ export default class TaskDetail implements OnInit {
    * admin, propriétaire du projet, ou membre du projet.
    */
   private loadMembership(): void {
+    this.mentionMembers = [];
     this.canManageProject = false;
     this.form.controls.status.disable();
     this.canManage = Boolean(this.accountService.account()?.login) && this.task?.reporter?.login === this.accountService.account()?.login;
@@ -251,6 +270,13 @@ export default class TaskDetail implements OnInit {
 
     this.planningService.getProject(projectId).subscribe({
       next: project => {
+        this.mentionMembers = [
+          ...new Map(
+            [...(project.memberses ?? []), ...(project.owner ? [project.owner] : [])]
+              .filter(member => member.login)
+              .map(member => [member.id, member]),
+          ).values(),
+        ];
         if (project.status === 'CLOSED') {
           this.canManage = false;
           this.canManageProject = false;

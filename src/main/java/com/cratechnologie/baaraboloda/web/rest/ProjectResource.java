@@ -13,6 +13,7 @@ import com.cratechnologie.baaraboloda.service.criteria.ProjectCriteria;
 import com.cratechnologie.baaraboloda.service.dto.ProjectDTO;
 import com.cratechnologie.baaraboloda.service.dto.UserDTO;
 import com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException;
+import com.cratechnologie.baaraboloda.web.rest.util.PublicId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -105,7 +106,7 @@ public class ProjectResource {
      */
     @PostMapping("/{id}/reopen")
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_REOPEN')")
-    public ResponseEntity<ProjectDTO> reopenProject(@PathVariable Long id) {
+    public ResponseEntity<ProjectDTO> reopenProject(@PublicId(entity = "project", name = "id") Long id) {
         security.checkProjectAccess(id);
         ProjectDTO project = projectService
             .findOne(id)
@@ -119,7 +120,7 @@ public class ProjectResource {
 
     @PostMapping("/{id}/close")
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_CLOSE')")
-    public ResponseEntity<ProjectDTO> closeProject(@PathVariable Long id) {
+    public ResponseEntity<ProjectDTO> closeProject(@PublicId(entity = "project", name = "id") Long id) {
         security.checkProjectAccess(id);
         security.checkProjectWritable(id);
         ProjectDTO project = projectService
@@ -149,14 +150,14 @@ public class ProjectResource {
         }
         projectDTO.setMemberses(members);
         projectDTO = projectService.save(projectDTO);
-        return ResponseEntity.created(new URI("/api/projects/" + projectDTO.getId()))
+        return ResponseEntity.created(new URI("/api/projects/" + projectDTO.getUuid()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, projectDTO.getId().toString()))
             .body(projectDTO);
     }
 
     @PostMapping("/{id}/members/{userId}")
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_MANAGE_MEMBERS')")
-    public ResponseEntity<ProjectDTO> addMember(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<ProjectDTO> addMember(@PublicId(entity = "project", name = "id") Long id, @PathVariable Long userId) {
         security.checkProjectAccess(id);
         security.checkProjectWritable(id);
         ProjectDTO project = projectService
@@ -172,7 +173,7 @@ public class ProjectResource {
 
     @DeleteMapping("/{id}/members/{userId}")
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_MANAGE_MEMBERS')")
-    public ResponseEntity<ProjectDTO> removeMember(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<ProjectDTO> removeMember(@PublicId(entity = "project", name = "id") Long id, @PathVariable Long userId) {
         security.checkProjectAccess(id);
         security.checkProjectWritable(id);
         ProjectDTO project = projectService
@@ -195,7 +196,7 @@ public class ProjectResource {
     @PutMapping("/{id}")
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_EDIT')")
     public ResponseEntity<ProjectDTO> updateProject(
-        @PathVariable(value = "id", required = false) final Long id,
+        @PublicId(entity = "project", name = "id") final Long id,
         @Valid @RequestBody ProjectDTO projectDTO
     ) throws URISyntaxException {
         if (projectDTO.getStatus() == com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED) {
@@ -240,7 +241,7 @@ public class ProjectResource {
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_EDIT')")
     public ResponseEntity<ProjectDTO> partialUpdateProject(
-        @PathVariable(value = "id", required = false) final Long id,
+        @PublicId(entity = "project", name = "id") final Long id,
         @NotNull @RequestBody ProjectDTO projectDTO
     ) throws URISyntaxException {
         if (projectDTO.getStatus() == com.cratechnologie.baaraboloda.domain.enumeration.ProjectStatus.CLOSED) {
@@ -310,7 +311,7 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the projectDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectDTO> getProject(@PathVariable("id") Long id) {
+    public ResponseEntity<ProjectDTO> getProject(@PublicId(entity = "project", name = "id") Long id) {
         LOG.debug("REST request to get Project : {}", id);
         security.checkProjectAccess(id);
         Optional<ProjectDTO> projectDTO = projectService.findOne(id);
@@ -325,7 +326,7 @@ public class ProjectResource {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("@projectSecurityService.hasPermission('PERM_PROJECT_DELETE')")
-    public ResponseEntity<Void> deleteProject(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteProject(@PublicId(entity = "project", name = "id") Long id) {
         LOG.debug("REST request to delete Project : {}", id);
         if (taskRepository.existsByProject_Id(id) || sprintRepository.existsByProject_Id(id)) {
             throw new BadRequestAlertException(
@@ -349,7 +350,7 @@ public class ProjectResource {
             if (idClaim instanceof Number number) {
                 Optional<User> owner = userRepository.findById(number.longValue());
                 if (owner.isPresent()) {
-                    return owner.get();
+                    return owner.orElseThrow();
                 }
             }
         }

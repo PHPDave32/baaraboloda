@@ -13,10 +13,16 @@ import org.mapstruct.*;
  */
 @Mapper(componentModel = "spring")
 public interface ProjectMapper extends EntityMapper<ProjectDTO, Project> {
+    @Mapping(target = "uuid", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "removeMembers", ignore = true)
+    void partialUpdate(@MappingTarget Project entity, ProjectDTO dto);
+
     @Mapping(target = "owner", source = "owner", qualifiedByName = "userLogin")
     @Mapping(target = "memberses", source = "memberses", qualifiedByName = "userLoginSet")
     ProjectDTO toDto(Project s);
 
+    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "removeMembers", ignore = true)
     @Mapping(target = "owner", ignore = true)
     @Mapping(target = "memberses", ignore = true)

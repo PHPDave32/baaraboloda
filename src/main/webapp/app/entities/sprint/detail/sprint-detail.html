@@ -2,7 +2,7 @@
   <div class="col-8">
     @if (sprint(); as sprintRef) {
       <div>
-        <h2 data-cy="sprintDetailsHeading"><span jhiTranslate="baaraBolodaApp.sprint.detail.title">Sprint</span></h2>
+        <h2 data-cy="sprintDetailsHeading"><span jhiTranslate="baaraBolodaApp.sprint.detail.title">Période</span></h2>
 
         <hr />
 
@@ -53,7 +53,7 @@
           <dd>
             @if (sprint()!.project) {
               <div>
-                <a [routerLink]="['/project', sprint()!.project?.id, 'view']">{{ sprintRef.project?.name }}</a>
+                <a [routerLink]="['/project', sprint()!.project?.id | publicId: 'project', 'view']">{{ sprintRef.project?.name }}</a>
               </div>
             }
           </dd>
@@ -63,7 +63,7 @@
           <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
         </button>
 
-        <button type="button" [routerLink]="['/sprint', sprintRef.id, 'edit']" class="btn btn-primary">
+        <button type="button" [routerLink]="['/sprint', sprintRef.id | publicId: 'sprint', 'edit']" class="btn btn-primary">
           <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
         </button>
       </div>

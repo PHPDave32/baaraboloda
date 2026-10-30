@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -10,7 +11,7 @@ import { ILabel } from '../label.model';
 @Component({
   selector: 'jhi-label-detail',
   templateUrl: './label-detail.html',
-  imports: [FontAwesomeModule, Alert, AlertError, TranslateDirective, RouterLink],
+  imports: [PublicIdPipe, FontAwesomeModule, Alert, AlertError, TranslateDirective, RouterLink],
 })
 export class LabelDetail {
   readonly label = input<ILabel | null>(null);

@@ -1,0 +1,7 @@
+# Enabled only with prod,postgresql. Local development retains MySQL.
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}

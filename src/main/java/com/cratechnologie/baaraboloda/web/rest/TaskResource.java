@@ -10,6 +10,7 @@ import com.cratechnologie.baaraboloda.service.criteria.TaskCriteria;
 import com.cratechnologie.baaraboloda.service.dto.TaskDTO;
 import com.cratechnologie.baaraboloda.service.dto.UserDTO;
 import com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException;
+import com.cratechnologie.baaraboloda.web.rest.util.PublicId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -111,7 +112,7 @@ public class TaskResource {
             taskDTO.setPosition(null);
         }
         taskDTO = taskService.save(taskDTO);
-        return ResponseEntity.created(new URI("/api/tasks/" + taskDTO.getId()))
+        return ResponseEntity.created(new URI("/api/tasks/" + taskDTO.getUuid()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, taskDTO.getId().toString()))
             .body(taskDTO);
     }
@@ -127,10 +128,8 @@ public class TaskResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<TaskDTO> updateTask(
-        @PathVariable(value = "id", required = false) final Long id,
-        @Valid @RequestBody TaskDTO taskDTO
-    ) throws URISyntaxException {
+    public ResponseEntity<TaskDTO> updateTask(@PublicId(entity = "task", name = "id") final Long id, @Valid @RequestBody TaskDTO taskDTO)
+        throws URISyntaxException {
         LOG.debug("REST request to update Task : {}, {}", id, taskDTO);
         if (taskDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
@@ -168,7 +167,7 @@ public class TaskResource {
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<TaskDTO> partialUpdateTask(
-        @PathVariable(value = "id", required = false) final Long id,
+        @PublicId(entity = "task", name = "id") final Long id,
         @NotNull @RequestBody TaskDTO taskDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partially update Task : {}, {}", id, taskDTO);
@@ -216,19 +215,19 @@ public class TaskResource {
     }
 
     @GetMapping("/projects/{projectId}/tasks")
-    public ResponseEntity<List<TaskDTO>> getTasksByProject(@PathVariable Long projectId) {
+    public ResponseEntity<List<TaskDTO>> getTasksByProject(@PublicId(entity = "project", name = "projectId") Long projectId) {
         projectSecurityService.checkProjectAccess(projectId);
         return ResponseEntity.ok(taskService.findByProjectId(projectId));
     }
 
     @GetMapping("/projects/{projectId}/backlog")
-    public ResponseEntity<List<TaskDTO>> getBacklog(@PathVariable Long projectId) {
+    public ResponseEntity<List<TaskDTO>> getBacklog(@PublicId(entity = "project", name = "projectId") Long projectId) {
         projectSecurityService.checkProjectAccess(projectId);
         return ResponseEntity.ok(taskService.findBacklogByProjectId(projectId));
     }
 
     @GetMapping("/sprints/{sprintId}/tasks")
-    public ResponseEntity<List<TaskDTO>> getTasksBySprint(@PathVariable Long sprintId) {
+    public ResponseEntity<List<TaskDTO>> getTasksBySprint(@PublicId(entity = "sprint", name = "sprintId") Long sprintId) {
         projectSecurityService.checkSprintAccess(sprintId);
         return ResponseEntity.ok(taskService.findBySprintId(sprintId));
     }
@@ -239,7 +238,10 @@ public class TaskResource {
      * ou {"sprintId": null} pour déplacer vers le backlog.
      */
     @PatchMapping("/{id}/sprint")
-    public ResponseEntity<TaskDTO> moveTaskToSprint(@PathVariable Long id, @RequestBody java.util.Map<String, Long> body) {
+    public ResponseEntity<TaskDTO> moveTaskToSprint(
+        @PublicId(entity = "task", name = "id") Long id,
+        @RequestBody java.util.Map<String, Long> body
+    ) {
         LOG.debug("REST request to move Task {} to sprint {}", id, body.get("sprintId"));
         if (!taskRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
@@ -252,7 +254,10 @@ public class TaskResource {
     }
 
     @PostMapping("/{id}/copy-to-sprint")
-    public ResponseEntity<TaskDTO> copyTaskToSprint(@PathVariable Long id, @RequestBody java.util.Map<String, Long> body) {
+    public ResponseEntity<TaskDTO> copyTaskToSprint(
+        @PublicId(entity = "task", name = "id") Long id,
+        @RequestBody java.util.Map<String, Long> body
+    ) {
         LOG.debug("REST request to copy Task {} to sprint {}", id, body.get("sprintId"));
         if (!taskRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
@@ -268,7 +273,10 @@ public class TaskResource {
     }
 
     @PatchMapping("/{id}/assignee")
-    public ResponseEntity<TaskDTO> assignTask(@PathVariable Long id, @RequestBody java.util.Map<String, Long> body) {
+    public ResponseEntity<TaskDTO> assignTask(
+        @PublicId(entity = "task", name = "id") Long id,
+        @RequestBody java.util.Map<String, Long> body
+    ) {
         LOG.debug("REST request to assign Task {} to user {}", id, body.get("userId"));
         if (!taskRepository.existsById(id)) {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
@@ -297,7 +305,7 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the taskDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<TaskDTO> getTask(@PathVariable("id") Long id) {
+    public ResponseEntity<TaskDTO> getTask(@PublicId(entity = "task", name = "id") Long id) {
         LOG.debug("REST request to get Task : {}", id);
         projectSecurityService.checkTaskAccess(id);
         Optional<TaskDTO> taskDTO = taskService.findOne(id);
@@ -311,7 +319,7 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteTask(@PublicId(entity = "task", name = "id") Long id) {
         LOG.debug("REST request to delete Task : {}", id);
         projectSecurityService.checkCanModifyTask(id);
         taskService.delete(id);

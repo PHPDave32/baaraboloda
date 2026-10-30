@@ -8,6 +8,7 @@ import com.cratechnologie.baaraboloda.service.SprintService;
 import com.cratechnologie.baaraboloda.service.criteria.SprintCriteria;
 import com.cratechnologie.baaraboloda.service.dto.SprintDTO;
 import com.cratechnologie.baaraboloda.web.rest.errors.BadRequestAlertException;
+import com.cratechnologie.baaraboloda.web.rest.util.PublicId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -90,7 +91,7 @@ public class SprintResource {
             "PERM_SPRINT_MANAGE"
         );
         sprintDTO = sprintService.save(sprintDTO);
-        return ResponseEntity.created(new URI("/api/sprints/" + sprintDTO.getId()))
+        return ResponseEntity.created(new URI("/api/sprints/" + sprintDTO.getUuid()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, sprintDTO.getId().toString()))
             .body(sprintDTO);
     }
@@ -107,7 +108,7 @@ public class SprintResource {
      */
     @PutMapping("/{id}")
     public ResponseEntity<SprintDTO> updateSprint(
-        @PathVariable(value = "id", required = false) final Long id,
+        @PublicId(entity = "sprint", name = "id") final Long id,
         @Valid @RequestBody SprintDTO sprintDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Sprint : {}, {}", id, sprintDTO);
@@ -144,7 +145,7 @@ public class SprintResource {
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<SprintDTO> partialUpdateSprint(
-        @PathVariable(value = "id", required = false) final Long id,
+        @PublicId(entity = "sprint", name = "id") final Long id,
         @NotNull @RequestBody SprintDTO sprintDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partially update Sprint : {}, {}", id, sprintDTO);
@@ -208,7 +209,7 @@ public class SprintResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the sprintDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<SprintDTO> getSprint(@PathVariable("id") Long id) {
+    public ResponseEntity<SprintDTO> getSprint(@PublicId(entity = "sprint", name = "id") Long id) {
         LOG.debug("REST request to get Sprint : {}", id);
         projectSecurityService.checkSprintAccess(id);
         Optional<SprintDTO> sprintDTO = sprintService.findOne(id);
@@ -231,7 +232,7 @@ public class SprintResource {
             AuthoritiesConstants.PERM_SPRINT_MANAGE +
             "\")"
     )
-    public ResponseEntity<Void> deleteSprint(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteSprint(@PublicId(entity = "sprint", name = "id") Long id) {
         LOG.debug("REST request to delete Sprint : {}", id);
         projectSecurityService.checkCanModifySprint(id);
         sprintService.delete(id);

@@ -1,216 +1,149 @@
-import { MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
-import { faEye, faPencilAlt, faPlus, faSort, faSortDown, faSortUp, faSync, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap/modal';
-import { provideTranslateService } from '@ngx-translate/core';
-import { Subject, of } from 'rxjs';
-
-import { sampleWithRequiredData } from '../project.test-samples';
+import { AccountService } from 'app/core/auth';
+import { IProject } from '../project.model';
 import { ProjectService } from '../service/project.service';
 
 import { Project } from './project';
 
-vi.useFakeTimers();
+const project = (id: number, name: string, projectKey = ''): IProject => ({ id, name, projectKey }) as IProject;
 
-describe('Project Management Component', () => {
-  let httpMock: HttpTestingController;
-  let comp: Project;
+describe('Project list component', () => {
   let fixture: ComponentFixture<Project>;
-  let service: ProjectService;
-  let routerNavigateSpy: MockInstance;
+  let comp: Project;
+  const projectService = {
+    query: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    close: vi.fn(),
+    reopen: vi.fn(),
+  };
+  const hasAnyAuthority = vi.fn();
 
   beforeEach(() => {
+    Object.values(projectService).forEach(fn => fn.mockReset());
+    projectService.query.mockReturnValue(of(new HttpResponse({ body: [] })));
+    hasAnyAuthority.mockReset().mockReturnValue(false);
+
     TestBed.configureTestingModule({
       providers: [
-        provideTranslateService(),
-        provideHttpClientTesting(),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            data: of({
-              defaultSort: 'id,asc',
-            }),
-            queryParamMap: of(
-              convertToParamMap({
-                page: '1',
-                size: '1',
-                sort: 'id,desc',
-                'filter[someId.in]': 'dc4279ea-cfb9-11ec-9d64-0242ac120002',
-              }),
-            ),
-            snapshot: {
-              queryParams: {},
-              queryParamMap: convertToParamMap({
-                page: '1',
-                size: '1',
-                sort: 'id,desc',
-                'filter[someId.in]': 'dc4279ea-cfb9-11ec-9d64-0242ac120002',
-              }),
-            },
-          },
-        },
+        { provide: ProjectService, useValue: projectService },
+        { provide: AccountService, useValue: { hasAnyAuthority } },
       ],
-    });
-
+    }).overrideComponent(Project, { set: { template: '' } });
     fixture = TestBed.createComponent(Project);
     comp = fixture.componentInstance;
-    service = TestBed.inject(ProjectService);
-    routerNavigateSpy = vi.spyOn(comp.router, 'navigate');
-
-    const library = TestBed.inject(FaIconLibrary);
-    library.addIcons(faEye, faPencilAlt, faPlus, faSort, faSortDown, faSortUp, faSync, faTimes);
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    TestBed.resetTestingModule();
-    httpMock.verify();
+  it('loads all projects on init', () => {
+    projectService.query.mockReturnValue(of(new HttpResponse({ body: [project(1, 'Alpha')] })));
+
+    comp.ngOnInit();
+
+    expect(projectService.query).toHaveBeenCalledWith({ size: 1000 });
+    expect(comp.projects()).toEqual([project(1, 'Alpha')]);
+    expect(comp.loading()).toBe(false);
   });
 
-  it('should call load all on init', async () => {
-    // WHEN
-    TestBed.tick();
-    const req = httpMock.expectOne({ method: 'GET' });
-    req.flush([{ id: 10300 }], { headers: { link: '<http://localhost/api/foo?page=1&size=20>; rel="next"' } });
-    await vi.runAllTimersAsync();
+  it('shows an error when projects cannot be loaded', () => {
+    projectService.query.mockReturnValue(throwError(() => new Error('down')));
 
-    // THEN
-    expect(comp.isLoading()).toEqual(false);
-    expect(comp.projects()[0]).toEqual(expect.objectContaining({ id: 10300 }));
-  });
-
-  it('should cancel previous requests when loading a new page', async () => {
-    // WHEN
-    TestBed.tick();
-    const req = httpMock.expectOne({ method: 'GET' });
-    await vi.runAllTimersAsync();
-
-    comp.page.set(3);
     comp.load();
-    await vi.runAllTimersAsync();
-    const req2 = httpMock.expectOne({ method: 'GET' });
-    req2.flush([{ id: 10300 }], { headers: { link: '<http://localhost/api/foo?page=1&size=20>; rel="next"' } });
-    await vi.runAllTimersAsync();
 
-    // THEN
-    expect(req.cancelled).toBeTruthy();
-    expect(comp.isLoading()).toEqual(false);
-    expect(comp.projects()[0]).toEqual(expect.objectContaining({ id: 10300 }));
+    expect(comp.error()).toContain('pas pu être chargés');
+    expect(comp.loading()).toBe(false);
   });
 
-  it('should not fail on resource error state', async () => {
-    // GIVEN - first load triggers an HTTP error
-    TestBed.tick();
-    const errorReq = httpMock.expectOne({ method: 'GET' });
-    errorReq.flush('error', { status: 500, statusText: 'Server Error' });
-    await vi.runAllTimersAsync();
+  it('filters by name or key and resets to the first page', () => {
+    comp.projects.set([project(1, 'Alpha', 'ALP'), project(2, 'Beta', 'BET')]);
+    comp.page.set(2);
 
-    // THEN - loading state was reset and list is empty
-    expect(comp.isLoading()).toBe(false);
-    expect(comp.projects()).toEqual([]);
+    comp.onSearch('bet');
 
-    // WHEN - second load should still work
-    comp.load();
-    TestBed.tick();
-    const successReq = httpMock.expectOne({ method: 'GET' });
-    successReq.flush([{ id: 10300 }], { headers: { link: '<http://localhost/api/foo?page=1&size=20>; rel="next"' } });
-    await vi.runAllTimersAsync();
-
-    // THEN - subscription is still alive and second load succeeds
-    expect(comp.projects()[0]).toEqual(expect.objectContaining({ id: 10300 }));
+    expect(comp.filteredProjects().map(p => p.id)).toEqual([2]);
+    expect(comp.page()).toBe(1);
   });
 
-  describe('trackId', () => {
-    it('should forward to projectService', () => {
-      const entity = { id: 10300 };
-      vi.spyOn(service, 'getProjectIdentifier');
-      const id = comp.trackId(entity);
-      expect(service.getProjectIdentifier).toHaveBeenCalledWith(entity);
-      expect(id).toBe(entity.id);
-    });
+  it('paginates by nine and clamps the requested page', () => {
+    comp.projects.set(Array.from({ length: 10 }, (_, i) => project(i + 1, `P${i + 1}`)));
+
+    expect(comp.pageCount()).toBe(2);
+    comp.goToPage(5);
+    expect(comp.page()).toBe(2);
+    expect(comp.pagedProjects().map(p => p.id)).toEqual([10]);
   });
 
-  it('should calculate the sort attribute for a non-id attribute', () => {
-    // WHEN
-    comp.navigateToWithComponentValues({ predicate: 'non-existing-column', order: 'asc' });
+  it('creates a project with a generated key and reloads the list', () => {
+    projectService.create.mockReturnValue(of({}));
+    comp.openCreate();
+    comp.form.patchValue({ name: 'Équipe Mobile' });
 
-    // THEN
-    expect(routerNavigateSpy).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        queryParams: expect.objectContaining({
-          sort: ['non-existing-column,asc'],
-        }),
-      }),
+    comp.save();
+
+    expect(projectService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Équipe Mobile', projectKey: 'EQUIPE', status: 'ACTIVE' }),
     );
+    expect(comp.showForm()).toBe(false);
+    expect(projectService.query).toHaveBeenCalled();
   });
 
-  it('should load a page', () => {
-    // WHEN
-    comp.navigateToPage(1);
+  it('does not submit an invalid form', () => {
+    comp.openCreate();
 
-    // THEN
-    expect(routerNavigateSpy).toHaveBeenCalled();
+    comp.save();
+
+    expect(projectService.create).not.toHaveBeenCalled();
   });
 
-  it('should calculate the sort attribute for an id', () => {
-    // WHEN
-    TestBed.tick();
-    httpMock.expectOne({ method: 'GET' });
+  it('explains a forbidden creation instead of a generic error', () => {
+    projectService.create.mockReturnValue(throwError(() => ({ status: 403 })));
+    comp.openCreate();
+    comp.form.patchValue({ name: 'Interdit' });
 
-    // THEN
-    expect(service.projectsParams()).toMatchObject({ sort: ['id,desc'] });
+    comp.save();
+
+    expect(comp.accessDenied()).toBe(true);
+    expect(comp.accessDeniedMessage()).toContain('créer un projet');
   });
 
-  it('should calculate the filter attribute', () => {
-    // WHEN
-    TestBed.tick();
-    httpMock.expectOne({ method: 'GET' });
+  it('updates the project being edited', () => {
+    projectService.update.mockReturnValue(of({}));
+    comp.openEdit(project(7, 'Ancien', 'ANC'));
+    comp.form.patchValue({ name: 'Nouveau' });
 
-    // THEN
-    expect(service.projectsParams()).toMatchObject({ 'someId.in': ['dc4279ea-cfb9-11ec-9d64-0242ac120002'] });
+    comp.save();
+
+    expect(projectService.update).toHaveBeenCalledWith(expect.objectContaining({ id: 7, name: 'Nouveau', projectKey: 'ANC' }));
   });
 
-  describe('delete', () => {
-    let ngbModal: NgbModal;
-    let deleteModalMock: any;
+  it('deletes the selected project after confirmation', () => {
+    projectService.delete.mockReturnValue(of(undefined));
+    comp.openDeleteModal(project(3, 'À supprimer'));
 
-    beforeEach(() => {
-      deleteModalMock = { componentInstance: {}, closed: new Subject() };
-      // NgbModal is not a singleton using TestBed.inject.
-      // ngbModal = TestBed.inject(NgbModal);
-      ngbModal = (comp as unknown as { modalService: NgbModal }).modalService;
-      vi.spyOn(ngbModal, 'open').mockReturnValue(deleteModalMock);
-    });
+    comp.confirmDelete();
 
-    it('on confirm should call load', () => {
-      // GIVEN
-      vi.spyOn(comp, 'load');
+    expect(projectService.delete).toHaveBeenCalledWith(3);
+    expect(comp.projectToDelete()).toBeNull();
+  });
 
-      // WHEN
-      comp.delete(sampleWithRequiredData);
-      deleteModalMock.closed.next('deleted');
+  it('explains why a project with children cannot be deleted', () => {
+    projectService.delete.mockReturnValue(throwError(() => ({ status: 400, error: { message: 'error.projecthaschildren' } })));
+    comp.openDeleteModal(project(3, 'Plein'));
 
-      // THEN
-      expect(ngbModal.open).toHaveBeenCalled();
-      expect(comp.load).toHaveBeenCalled();
-    });
+    comp.confirmDelete();
 
-    it('on dismiss should call load', () => {
-      // GIVEN
-      vi.spyOn(comp, 'load');
+    expect(comp.accessDeniedTitle()).toBe('Suppression impossible');
+    expect(comp.accessDeniedMessage()).toContain('tâches ou des périodes');
+  });
 
-      // WHEN
-      comp.delete(sampleWithRequiredData);
-      deleteModalMock.closed.next();
+  it('derives actions from the user permissions', () => {
+    hasAnyAuthority.mockImplementation((authorities: string[]) => authorities.includes('PERM_PROJECT_CLOSE'));
 
-      // THEN
-      expect(ngbModal.open).toHaveBeenCalled();
-      expect(comp.load).not.toHaveBeenCalled();
-    });
+    expect(comp.canCloseProject).toBe(true);
+    expect(comp.canDeleteProject).toBe(false);
   });
 });

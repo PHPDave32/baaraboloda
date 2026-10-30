@@ -11,7 +11,7 @@ describe('Board assignment dropdown', () => {
   it('moves the open menu outside the clipped board and closes it cleanly', async () => {
     TestBed.configureTestingModule({
       providers: [
-        { provide: ActivatedRoute, useValue: { paramMap: EMPTY } },
+        { provide: ActivatedRoute, useValue: { paramMap: EMPTY, data: EMPTY } },
         { provide: WorkspaceService, useValue: {} },
         { provide: AccountService, useValue: { account: () => ({ login: 'admin' }), hasAnyAuthority: () => true } },
       ],

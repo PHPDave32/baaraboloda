@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -11,7 +12,7 @@ import { IProject } from '../project.model';
 @Component({
   selector: 'jhi-project-detail',
   templateUrl: './project-detail.html',
-  imports: [FontAwesomeModule, Alert, AlertError, TranslateDirective, RouterLink, FormatMediumDatetimePipe],
+  imports: [PublicIdPipe, FontAwesomeModule, Alert, AlertError, TranslateDirective, RouterLink, FormatMediumDatetimePipe],
 })
 export class ProjectDetail {
   readonly project = input<IProject | null>(null);

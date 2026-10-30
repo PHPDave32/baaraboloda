@@ -35,7 +35,7 @@
           <dd>
             @if (comment()!.task) {
               <div>
-                <a [routerLink]="['/task', comment()!.task?.id, 'view']">{{ commentRef.task?.title }}</a>
+                <a [routerLink]="['/task', comment()!.task?.id | publicId: 'task', 'view']">{{ commentRef.task?.title }}</a>
               </div>
             }
           </dd>

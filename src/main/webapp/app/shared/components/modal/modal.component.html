@@ -1,5 +1,5 @@
 @if (isOpen) {
-  <div class="modal-overlay" (click)="onBackdropClick()">
+  <div class="modal-overlay" animate.enter="modal-enter" animate.leave="modal-leave" (click)="onBackdropClick()">
     <div
       class="modal-panel"
       [class.modal-panel-editor]="appearance === 'editor'"

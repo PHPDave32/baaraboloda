@@ -59,8 +59,8 @@ public class BaaraBolodaApp {
         }
     }
 
-    /**
-     * Main method, used to run the application.
+    /**v
+     * Main method, used to run the application.ml
      *
      * @param args the command line arguments.
      */

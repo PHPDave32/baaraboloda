@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { ProjectMembersComponent } from 'app/shared/components/project-members/project-members';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
@@ -16,6 +17,7 @@ import { ToastService } from 'app/shared/toast/toast.service';
   selector: 'jhi-project-sprints',
   standalone: true,
   imports: [
+    PublicIdPipe,
     NotificationCenterComponent,
     FormsModule,
     ProjectMembersComponent,
@@ -43,6 +45,7 @@ export default class Sprints implements OnInit {
   form!: FormGroup;
   showForm = false;
   loading = false;
+  saving = false;
   error = '';
   editingSprint: ISprint | null = null;
   sprintToDelete: ISprint | null = null;
@@ -61,8 +64,8 @@ export default class Sprints implements OnInit {
       endDate: ['', Validators.required],
     });
 
-    this.route.paramMap.subscribe(params => {
-      this.projectId = Number(params.get('id') || params.get('projectId') || 0);
+    this.route.data.subscribe(data => {
+      this.projectId = data['workspace'].projectId;
       if (this.projectId) {
         this.loadProject();
         this.loadSprints();
@@ -95,7 +98,13 @@ export default class Sprints implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid || this.loading) return;
+    if (this.saving) return;
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.error = 'Veuillez renseigner le nom de la période ainsi que ses dates de début et de fin.';
+      this.cdr.markForCheck();
+      return;
+    }
 
     const { name, goal, startDate, endDate } = this.form.value;
     const today = new Date();
@@ -131,42 +140,42 @@ export default class Sprints implements OnInit {
     const sprint = this.editingSprint;
     if (sprint) {
       if (sprint.status !== 'PLANNED') {
-        this.error = 'Seul un sprint non démarré peut être modifié.';
+        this.error = 'Seule une période non démarrée peut être modifiée.';
         return;
       }
-      this.loading = true;
+      this.saving = true;
       this.error = '';
       this.planningService.updateSprint(sprint, { name, goal, startDate: startDate as any, endDate: endDate as any }).subscribe({
         next: () => {
           this.form.reset();
           this.showForm = false;
           this.editingSprint = null;
-          this.loading = false;
+          this.saving = false;
           this.toast.success(`Le sprint « ${name} » a été modifié.`);
           this.loadSprints();
         },
         error: () => {
-          this.loading = false;
-          this.toast.error('La modification du sprint a échoué.');
+          this.saving = false;
+          this.toast.error('La modification de la période a échoué.');
           this.cdr.markForCheck();
         },
       });
       return;
     }
 
-    this.loading = true;
+    this.saving = true;
     this.error = '';
     this.planningService.createSprint(this.projectId, { name, goal, startDate: startDate as any, endDate: endDate as any }).subscribe({
       next: () => {
         this.form.reset();
         this.showForm = false;
-        this.loading = false;
+        this.saving = false;
         this.toast.success(`Le sprint « ${name} » a été créé.`);
         this.loadSprints();
       },
       error: () => {
-        this.loading = false;
-        this.toast.error('La création du sprint a échoué.');
+        this.saving = false;
+        this.toast.error('La création de la période a échoué.');
         this.cdr.markForCheck();
       },
     });
@@ -229,12 +238,12 @@ export default class Sprints implements OnInit {
     this.planningService.deleteSprint(sprint.id).subscribe({
       next: () => {
         this.sprintToDelete = null;
-        this.toast.success('Sprint supprimé.');
+        this.toast.success('Période supprimé.');
         this.loadSprints();
       },
       error: () => {
         this.sprintToDelete = null;
-        this.toast.error('La suppression du sprint a échoué.');
+        this.toast.error('La suppression de la période a échoué.');
         this.cdr.markForCheck();
       },
     });
@@ -252,7 +261,7 @@ export default class Sprints implements OnInit {
         this.loadSprints();
       },
       error: () => {
-        this.toast.error('Impossible d’activer ce sprint : un sprint est déjà en cours pour ce projet.');
+        this.toast.error('Impossible d’activer cette période : une période est déjà en cours pour ce projet.');
       },
     });
   }
@@ -263,7 +272,7 @@ export default class Sprints implements OnInit {
         this.toast.success(`Le sprint « ${sprint.name} » a été terminé.`);
         this.loadSprints();
       },
-      error: () => this.toast.error('Impossible de terminer le sprint.'),
+      error: () => this.toast.error('Impossible de terminer la période.'),
     });
   }
 

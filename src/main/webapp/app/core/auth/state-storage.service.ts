@@ -33,7 +33,14 @@ export class StateStorageService {
 
   getAuthenticationToken(): string | null {
     const authenticationToken = localStorage.getItem(this.authenticationKey) ?? sessionStorage.getItem(this.authenticationKey);
-    return authenticationToken ? (JSON.parse(authenticationToken) as string | null) : authenticationToken;
+    try {
+      const token: unknown = authenticationToken ? JSON.parse(authenticationToken) : null;
+      if (typeof token === 'string') return token;
+    } catch {
+      // Corrupt storage must not prevent the login page from opening.
+    }
+    if (authenticationToken) this.clearAuthenticationToken();
+    return null;
   }
 
   clearAuthenticationToken(): void {

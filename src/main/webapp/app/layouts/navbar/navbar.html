@@ -3,7 +3,6 @@
     type="button"
     class="workspace-menu-toggle"
     [class.is-collapsed]="sidebarCollapsed()"
-    [class.menu-expanded]="isMobile() ? sidebarOpen() : !sidebarCollapsed()"
     (click)="toggleSidebar()"
     aria-controls="workspace-sidebar"
     [attr.aria-expanded]="isMobile() ? sidebarOpen() : !sidebarCollapsed()"
@@ -23,7 +22,7 @@
     [class.is-open]="sidebarOpen()"
   >
     <div class="workspace-brand">
-      <img src="/content/images/figma-logo-cra.png" alt="Logo" class="workspace-brand-logo" />
+      <img [src]="branding.logoSrc()" alt="Logo" class="workspace-brand-logo" />
     </div>
 
     <nav class="workspace-nav">
@@ -87,7 +86,11 @@
           <p class="workspace-nav-section-title">Projet</p>
         </div>
 
-        <a [routerLink]="['/projects', activeProjectId(), 'board']" routerLinkActive="is-active" class="workspace-nav-link">
+        <a
+          [routerLink]="['/projects', activeProjectId() | publicId: 'project', 'board']"
+          routerLinkActive="is-active"
+          class="workspace-nav-link"
+        >
           <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -99,14 +102,22 @@
           Tableau
         </a>
 
-        <a [routerLink]="['/projects', activeProjectId(), 'backlog']" routerLinkActive="is-active" class="workspace-nav-link">
+        <a
+          [routerLink]="['/projects', activeProjectId() | publicId: 'project', 'backlog']"
+          routerLinkActive="is-active"
+          class="workspace-nav-link"
+        >
           <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
           </svg>
-          Backlog
+          Liste des tâches
         </a>
 
-        <a [routerLink]="['/projects', activeProjectId(), 'documents']" routerLinkActive="is-active" class="workspace-nav-link">
+        <a
+          [routerLink]="['/projects', activeProjectId() | publicId: 'project', 'documents']"
+          routerLinkActive="is-active"
+          class="workspace-nav-link"
+        >
           <svg class="workspace-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -124,7 +135,7 @@
             <path stroke-linecap="round" stroke-width="1.8" d="M8 3v4M16 3v4M3 10h18" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 15h3l2-2 3 3" />
           </svg>
-          Sprints
+          Périodes
         </button>
       }
     </nav>
@@ -162,13 +173,13 @@
     variant="danger"
     [isOpen]="showSprintAccessModal()"
     title="Accès non autorisé"
-    subtitle="La gestion des sprints n’est pas activée pour votre compte."
+    subtitle="La gestion des périodes n’est pas activée pour votre compte."
     [showFooter]="false"
     (close)="closeSprintAccessModal()"
   >
     <p class="text-sm leading-relaxed text-slate-600">
-      Vous n’avez pas la permission d’accéder aux sprints de ce projet. Contactez un administrateur pour obtenir l’accès « Gérer les sprints
-      ».
+      Vous n’avez pas la permission d’accéder aux périodes de ce projet. Contactez un administrateur pour obtenir l’accès « Gérer les
+      périodes ».
     </p>
     <div class="mt-6 flex justify-end">
       <button

@@ -27,7 +27,7 @@
           <dd>
             @if (label()!.project) {
               <div>
-                <a [routerLink]="['/project', label()!.project?.id, 'view']">{{ labelRef.project?.name }}</a>
+                <a [routerLink]="['/project', label()!.project?.id | publicId: 'project', 'view']">{{ labelRef.project?.name }}</a>
               </div>
             }
           </dd>

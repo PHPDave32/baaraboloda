@@ -68,6 +68,7 @@ public class ProjectService {
     public ProjectDTO update(ProjectDTO projectDTO) {
         LOG.debug("Request to update Project : {}", projectDTO);
         Project project = projectMapper.toEntity(projectDTO);
+        project.setUuid(projectRepository.findById(projectDTO.getId()).orElseThrow().getUuid());
         applyUserReferences(project, projectDTO);
         project.setUpdatedAt(Instant.now());
         project = projectRepository.save(project);

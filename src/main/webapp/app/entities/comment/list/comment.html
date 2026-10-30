@@ -89,7 +89,7 @@
               <td>
                 @if (comment.task) {
                   <div>
-                    <a [routerLink]="['/task', comment.task.id, 'view']">{{ comment.task.title }}</a>
+                    <a [routerLink]="['/task', comment.task.id | publicId: 'task', 'view']">{{ comment.task.title }}</a>
                   </div>
                 }
               </td>
@@ -105,10 +105,12 @@
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
                   </a>
 
-                  <button type="button" (click)="delete(comment)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                  <!-- Suppression désactivée dans le frontend.
+<button type="button" (click)="delete(comment)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
                     <fa-icon icon="times" />
                     <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
                   </button>
+-->
                 </div>
               </td>
             </tr>

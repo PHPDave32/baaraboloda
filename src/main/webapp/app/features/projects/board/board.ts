@@ -1,3 +1,4 @@
+import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { NgbDropdown, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 import { CardDepthDirective } from 'app/shared/directives/card-depth.directive';
@@ -17,7 +18,16 @@ type BoardStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 
 @Component({
   selector: 'jhi-project-board',
-  imports: [NgbDropdownModule, NotificationCenterComponent, CardDepthDirective, RouterLink, BadgeComponent, AvatarComponent, FormsModule],
+  imports: [
+    PublicIdPipe,
+    NgbDropdownModule,
+    NotificationCenterComponent,
+    CardDepthDirective,
+    RouterLink,
+    BadgeComponent,
+    AvatarComponent,
+    FormsModule,
+  ],
   templateUrl: './board.html',
   styleUrl: './board.scss',
 })
@@ -243,8 +253,8 @@ export default class Board implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      this.projectId = Number(params.get('id'));
+    this.route.data.subscribe(data => {
+      this.projectId = data['workspace'].projectId;
       if (this.projectId) {
         this.loadProject();
         this.loadSprints();
