@@ -1,4 +1,11 @@
 @if (account()) {
+  <!-- Mobile (≤ 900px) : barre fixe qui accueille le bouton menu, pour qu'il ne recouvre jamais le contenu. -->
+  <header class="workspace-topbar">
+    <a routerLink="/dashboard" class="workspace-topbar-brand" aria-label="Tableau de bord">
+      <img [src]="branding.logoSrc()" alt="" class="workspace-topbar-logo" />
+    </a>
+    <jhi-notification-center class="workspace-topbar-notifications" />
+  </header>
   <button
     type="button"
     class="workspace-menu-toggle"

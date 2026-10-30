@@ -2,6 +2,7 @@ import { PublicIdPipe } from 'app/core/identifiers/public-id.pipe';
 import { UserPhotoDirective } from 'app/shared/components/photo-picker/user-photo.directive';
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NotificationCenterComponent } from 'app/shared/components/notifications/notification-center.component';
 
 import { AccountService } from 'app/core/auth';
 import { LoginService } from 'app/login/login.service';
@@ -13,7 +14,7 @@ import { filter } from 'rxjs';
   selector: 'jhi-navbar',
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
-  imports: [PublicIdPipe, UserPhotoDirective, RouterLink, RouterLinkActive, ModalComponent],
+  imports: [PublicIdPipe, UserPhotoDirective, RouterLink, RouterLinkActive, ModalComponent, NotificationCenterComponent],
 })
 export default class Navbar implements OnInit {
   readonly activeProjectId = signal<string | null>(null);

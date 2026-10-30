@@ -365,9 +365,15 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
   }
 }
 
+:root {
+  --workspace-topbar-height: 4rem;
+}
+
 .app-shell {
   display: flex;
   height: 100vh;
+  // Hauteur réellement visible sur mobile (barre d'adresse comprise).
+  height: 100dvh;
   color: #172033;
   background:
     radial-gradient(circle at 86% 0%, rgba(224, 242, 254, 0.82), transparent 32rem),
@@ -1078,8 +1084,15 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
   transition: margin-left 0.2s ease;
 }
 @media (max-width: 900px) {
+  // Les notifications sont dans la barre supérieure mobile : pas de doublon dans les en-têtes de page.
+  .app-shell .workspace-main jhi-notification-center,
+  .app-shell .workspace-main :has(> jhi-notification-center:only-child) {
+    display: none;
+  }
+  // Le contenu commence sous la barre supérieure mobile (navbar : .workspace-topbar).
   .app-shell.has-sidebar .workspace-main {
-    padding-top: 0;
+    padding-top: var(--workspace-topbar-height);
+    scroll-padding-top: var(--workspace-topbar-height);
   }
 }
 
@@ -1136,17 +1149,27 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
     gap: 16px;
     margin-bottom: 24px;
   }
+  // Les actions passent sous le titre et se répartissent sur toute la largeur au lieu de déborder.
+  .app-shell .workspace-page-header > :is(.page-header-actions, .task-navigation-actions) {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+  .app-shell .workspace-page-header > .page-header-actions > :is(button, a):not(.notification-bell) {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+  }
 }
 
 /* Keep the menu beside the heading rather than reserving an empty top row. */
 .app-shell .workspace-main .dashboard-page {
   padding: 0;
 }
-.app-shell.has-sidebar:has(.workspace-sidebar.is-collapsed) .workspace-page-header {
-  padding-left: 52px;
-}
-@media (max-width: 900px) {
-  .app-shell.has-sidebar .workspace-page-header {
+// Bureau, menu replié : le bouton flotte en haut à gauche, l'en-tête lui laisse la place.
+@media (min-width: 901px) {
+  .app-shell.has-sidebar:has(.workspace-sidebar.is-collapsed) .workspace-page-header {
     padding-left: 52px;
   }
 }
@@ -1309,5 +1332,32 @@ angular-cli removes postcss-rtl processed inline css, processed rules must be ad
       color: #657d90;
       font-size: 12px;
     }
+  }
+}
+
+// Route autonome /admin/access-profiles (le même composant est intégré à l'onglet Administration).
+.app-shell .workspace-main > jhi-access-profile {
+  display: block;
+  padding: 32px;
+}
+@media (max-width: 600px) {
+  .app-shell .workspace-main > jhi-access-profile {
+    padding: 20px 16px;
+  }
+}
+
+// Écrans tactiles : agrandit la zone de clic des petits contrôles (≥ 44 px) sans changer la mise en page.
+@media (pointer: coarse) {
+  .app-shell .touch-target {
+    position: relative;
+  }
+  .app-shell .touch-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
   }
 }
