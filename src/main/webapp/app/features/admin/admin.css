@@ -291,3 +291,74 @@
   justify-content: space-between;
   gap: 20px;
 }
+
+/* Carte « Logo de l'application » : aperçu | texte | actions, puis empilée sur mobile. */
+.admin-branding {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+.admin-branding-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-branding-actions > :is(button, label) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .admin-branding {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+  }
+  .admin-branding-preview {
+    width: 56px;
+    height: 56px;
+  }
+  .admin-branding-actions {
+    grid-column: 1 / -1;
+  }
+  .admin-branding-actions > :is(button, label) {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  /* Onglets et filtres : une seule ligne qui défile, plutôt que des retours à la ligne. */
+  .admin-tabs,
+  .admin-panel .admin-filter-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-tabs::-webkit-scrollbar,
+  .admin-filter-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-tab,
+  .admin-filter-chips > button {
+    flex-shrink: 0;
+    min-height: 40px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  /* Cartes employé : actions séparées, à portée de pouce, cibles de 40 px. */
+  .admin-user-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid #eef3f7;
+  }
+  .admin-user-actions > button {
+    height: 40px;
+    min-width: 40px;
+  }
+}

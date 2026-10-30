@@ -331,3 +331,30 @@
     transform: none;
   }
 }
+
+/* Mobile : filtres de statut sur une seule ligne défilante, comme un contrôle segmenté. */
+@media (max-width: 600px) {
+  .sprints-filters {
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    button {
+      flex-shrink: 0;
+      min-height: 40px;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+  }
+  .sprints-toolbar input {
+    width: 100%;
+  }
+  .sprints-team {
+    width: 100%;
+    min-width: 0;
+  }
+}

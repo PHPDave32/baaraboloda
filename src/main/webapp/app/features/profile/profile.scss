@@ -240,3 +240,10 @@
     gap: 20px;
   }
 }
+
+/* Deux champs côte à côte seulement si la colonne du formulaire a la place (et non selon la largeur d'écran). */
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+}

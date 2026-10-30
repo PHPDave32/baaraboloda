@@ -645,3 +645,31 @@
     transform: none;
   }
 }
+
+/* Écrans tactiles : le glisser-déposer HTML5 n'y fonctionne pas, la poignée ne sert à rien ;
+   les actions de ligne passent à 40 px. */
+@media (pointer: coarse), (max-width: 600px) {
+  .backlog-drag-handle {
+    display: none;
+  }
+  .backlog-task-actions {
+    opacity: 1;
+  }
+  .backlog-task-actions > button {
+    width: 40px;
+    height: 40px;
+  }
+  .backlog-task-actions > select {
+    min-height: 40px;
+  }
+}
+@media (max-width: 600px) {
+  .backlog-workspace .backlog-task {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 12px;
+  }
+  .backlog-task-list {
+    padding: 6px 10px 10px;
+  }
+}

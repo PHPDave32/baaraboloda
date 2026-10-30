@@ -3,16 +3,39 @@
   margin: auto;
   padding: 32px;
 }
-.task-navigation {
+.app-shell .task-navigation.workspace-page-header {
+  min-height: 0;
   margin-bottom: 24px;
+  padding-bottom: 20px;
 }
-.task-navigation-links {
-  display: flex;
-  justify-content: space-between;
+.task-back-link {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12px;
+  gap: 6px;
+  min-height: 44px;
+  margin-left: -6px;
+  padding: 0 10px 0 6px;
+  border-radius: 10px;
+  color: #328cb1;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  &:hover {
+    background: #eaf4f9;
+  }
+  &:focus-visible {
+    outline: 2px solid #328cb1;
+    outline-offset: 2px;
+  }
+}
+.task-navigation-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .task-layout {
   display: grid;
@@ -211,8 +234,19 @@
   .task-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+  // Une colonne : statut et priorité juste après le résumé, avant documents et commentaires.
+  .task-main {
+    display: contents;
+  }
+  .task-summary {
+    order: 1;
+  }
   .task-properties {
+    order: 2;
     max-width: none;
+  }
+  .task-main > :not(.task-summary) {
+    order: 3;
   }
 }
 @media (max-width: 600px) {

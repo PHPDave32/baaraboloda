@@ -29,8 +29,8 @@
       }
     </div>
 
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2">
+    <div class="page-header-actions flex items-center gap-3">
+      <div class="board-sprint-picker flex items-center gap-2">
         <label for="board-sprint" class="text-xs text-gray-400">Période</label>
         <select
           id="board-sprint"
@@ -54,8 +54,8 @@
   </div>
 
   <!-- Barre de filtres -->
-  <div class="mb-4 flex flex-wrap items-center gap-2">
-    <div class="relative w-64 flex-shrink-0">
+  <div class="board-filters mb-4 flex flex-wrap items-center gap-2">
+    <div class="board-filter-search relative w-64 flex-shrink-0">
       <svg
         class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
         fill="none"
@@ -109,7 +109,7 @@
     <select
       [ngModel]="filterAssignee()"
       (ngModelChange)="onAssigneeFilterChange($event)"
-      class="input-field w-44 flex-shrink-0 py-1.5 text-sm"
+      class="board-filter-select input-field flex-shrink-0 py-1.5 text-sm"
     >
       <option value="ALL">Tous les assignés</option>
       <option value="UNASSIGNED">Non assigné</option>
@@ -118,7 +118,11 @@
       }
     </select>
 
-    <select [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)" class="input-field w-36 flex-shrink-0 py-1.5 text-sm">
+    <select
+      [ngModel]="filterPriority()"
+      (ngModelChange)="filterPriority.set($event)"
+      class="board-filter-select input-field flex-shrink-0 py-1.5 text-sm"
+    >
       <option value="ALL">Toutes priorités</option>
       <option value="LOW">Faible</option>
       <option value="MEDIUM">Moyenne</option>
@@ -126,7 +130,11 @@
       <option value="CRITICAL">Critique</option>
     </select>
 
-    <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)" class="input-field w-32 flex-shrink-0 py-1.5 text-sm">
+    <select
+      [ngModel]="filterType()"
+      (ngModelChange)="filterType.set($event)"
+      class="board-filter-select input-field flex-shrink-0 py-1.5 text-sm"
+    >
       <option value="ALL">Tous les types</option>
       <option value="TASK">Tâche</option>
       <option value="BUG">Bug</option>
@@ -223,7 +231,7 @@
                           <button
                             type="button"
                             (click)="toggleMoveMenu(task, $event)"
-                            class="flex h-6 w-6 items-center justify-center rounded transition hover:bg-black/10"
+                            class="touch-target flex h-6 w-6 items-center justify-center rounded transition hover:bg-black/10"
                             [class.hover:bg-white/20]="task.type === 'BUG'"
                             title="Déplacer vers une itération"
                           >
@@ -348,7 +356,7 @@
                         ngbDropdownAnchor
                         [class.board-assign-toggle]="true"
                         (click)="toggleAssignMenu(task, $event, assignmentDropdown)"
-                        class="flex items-center gap-1.5 min-w-0 rounded-full px-1 py-0.5 transition hover:bg-black/5"
+                        class="touch-target flex items-center gap-1.5 min-w-0 rounded-full px-1 py-0.5 transition hover:bg-black/5"
                         [class.hover:bg-white]="task.type === 'BUG'"
                         title="Assigner cette tâche"
                       >

@@ -7,19 +7,22 @@
       </svg>
     </div>
   } @else if (task) {
-    <div class="task-navigation">
-      <div class="task-navigation-links">
-        <a [routerLink]="['/projects', projectId | publicId: 'project', 'board']" class="hover:opacity-80" style="color: #328cb1"
-          >← Tableau du projet</a
-        >
+    <div class="task-navigation workspace-page-header">
+      <a [routerLink]="['/projects', projectId | publicId: 'project', 'board']" class="task-back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Tableau du projet
+      </a>
+      <div class="task-navigation-actions">
         <a
           [routerLink]="['/projects', projectId | publicId: 'project', 'documents']"
           [queryParams]="{ taskId: (taskId | publicId: 'task') }"
           class="btn-secondary text-sm"
           >Documents de la tâche</a
         >
+        <jhi-notification-center />
       </div>
-      <jhi-notification-center />
     </div>
 
     @if (!canManage) {

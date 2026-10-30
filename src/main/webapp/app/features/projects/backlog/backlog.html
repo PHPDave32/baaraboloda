@@ -335,7 +335,7 @@
           <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <button
               type="button"
-              class="flex items-center gap-2.5 min-w-0 text-left"
+              class="touch-target flex items-center gap-2.5 min-w-0 text-left"
               (click)="toggleSprint(sprint.id)"
               [attr.aria-expanded]="isExpanded(sprint.id)"
             >
@@ -483,7 +483,7 @@
         ><span>Tâches de la liste des tâches</span><span class="calendar-status">Sans période</span>
       </aside>
       <div class="backlog-section-main">
-        <header class="flex items-center justify-between px-5 py-4">
+        <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <div class="flex items-center gap-2.5">
             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
@@ -494,7 +494,7 @@
           <button
             [disabled]="project?.status === 'CLOSED'"
             (click)="openTaskForm(null)"
-            class="flex items-center gap-1.5 rounded-lg bg-[#d9eef6] px-3 py-1.5 text-xs font-medium text-[#328cb1] transition-colors hover:bg-[#c4e4f0]"
+            class="touch-target flex items-center gap-1.5 rounded-lg bg-[#d9eef6] px-3 py-1.5 text-xs font-medium text-[#328cb1] transition-colors hover:bg-[#c4e4f0]"
           >
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -554,7 +554,7 @@
       }
 
       <svg
-        class="w-4 h-4 flex-shrink-0 cursor-grab text-slate-300 opacity-0 transition-opacity group-hover:opacity-100"
+        class="backlog-drag-handle w-4 h-4 flex-shrink-0 cursor-grab text-slate-300 opacity-0 transition-opacity group-hover:opacity-100"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -599,7 +599,7 @@
           </div>
         }
 
-        <div class="flex items-center gap-0.5 opacity-80 transition-opacity group-hover:opacity-100">
+        <div class="backlog-task-actions flex items-center gap-0.5 opacity-80 transition-opacity group-hover:opacity-100">
           @if (inSprint && canManage) {
             <button
               (click)="moveToBacklog(task)"

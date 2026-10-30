@@ -73,7 +73,7 @@
             </div>
           </div>
           <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="mt-5 space-y-4">
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="profile-form-grid">
               <label class="text-xs font-semibold text-slate-600"
                 >Prénom<input
                   formControlName="firstName"
@@ -87,7 +87,7 @@
                   class="mt-2 block w-full rounded-xl border border-slate-300 px-3 py-2.5"
               /></label>
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="profile-form-grid">
               <div>
                 <label class="block text-xs font-semibold text-slate-600"
                   >Nom d’utilisateur (login)<input
