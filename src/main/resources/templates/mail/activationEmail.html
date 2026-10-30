@@ -4,8 +4,9 @@
     <title th:text="#{email.activation.title}">JHipster activation</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link rel="icon" th:href="@{|${baseUrl}/favicon.ico|}" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
   </head>
-  <body>
+  <body style="font-family: Poppins, Arial, sans-serif; color: #203747">
     <p th:text="#{email.activation.greeting(${user.login})}">Dear</p>
     <p th:text="#{email.activation.text1}">Your JHipster account has been created, please click on the URL below to activate it:</p>
     <p>

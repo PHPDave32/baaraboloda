@@ -254,7 +254,8 @@ public class NotificationDeliveryService {
         helper.setTo(email);
         helper.setSubject("Baara Boloda · " + title);
         String html = """
-        <!doctype html><html lang="fr"><body style="margin:0;background:#f1f6f9;font-family:Arial,sans-serif;color:#203747">
+        <!doctype html><html lang="fr"><head><meta charset="UTF-8" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" /></head>
+        <body style="margin:0;background:#f1f6f9;font-family:Poppins,Arial,sans-serif;color:#203747">
         <div style="max-width:560px;margin:32px auto;padding:32px;background:#fff;border:1px solid #dce8ee;border-radius:16px">
         <p style="color:#237d99;font-weight:bold">CRA TECHNOLOGIE · BAARA BOLODA</p>
         <h1 style="font-size:24px">%s</h1><p style="color:#526b7b">Projet : %s</p>
@@ -276,7 +277,7 @@ public class NotificationDeliveryService {
         String url = baseUrl.replaceAll("/$", "") + path;
         StringBuilder text = new StringBuilder(report.projectName() + " · " + report.name() + "\n" + row.get("message") + "\n");
         StringBuilder html = new StringBuilder(
-            "<html lang=\"fr\"><body><h1>Période terminée</h1><h2>" +
+            "<html lang=\"fr\"><head><meta charset=\"UTF-8\" /><link href=\"https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap\" rel=\"stylesheet\" /></head><body style=\"font-family:Poppins,Arial,sans-serif;color:#203747\"><h1>Période terminée</h1><h2>" +
                 escape(report.projectName()) +
                 " · " +
                 escape(report.name()) +
