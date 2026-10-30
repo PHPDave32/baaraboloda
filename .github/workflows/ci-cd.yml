@@ -1,0 +1,159 @@
+# CI/CD Baara Boloda
+#
+# - Pull request : tests backend + frontend.
+# - Push sur main : tests, puis image amd64 publiée sur GHCR avec deux tags :
+#     sha-<commit>  (immuable, pour tracer / revenir en arrière)
+#     production    (déplacé uniquement si tous les tests passent)
+#
+# Le serveur n'est jamais contacté par GitHub : il interroge GHCR toutes les
+# 2 minutes (deploy/server/baaraboloda-deploy) et déploie le tag "production".
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  # Les PR obsolètes sont annulées ; un push sur main va toujours jusqu'au bout.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/phpdave32/baaraboloda
+
+jobs:
+  backend:
+    name: Backend (tests unitaires)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Tests unitaires (surefire, *IT exclus)
+        run: >-
+          ./mvnw -ntp -B test
+          -Dskip.installnodenpm -Dskip.npm
+          -Dlogging.level.ROOT=OFF -Dlogging.level.tech.jhipster=OFF
+          -Dlogging.level.com.cratechnologie.baaraboloda=OFF
+          -Dlogging.level.org.springframework=OFF
+      - name: Rapports de tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-unit-reports
+          path: target/surefire-reports
+          retention-days: 7
+
+  frontend:
+    name: Frontend (tests unitaires)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # Appel direct : `npm test` lance d'abord le lint (pretest), suivi à part ci-dessous.
+      - run: npx ng test
+
+  # ---------------------------------------------------------------------------
+  # Rapports NON bloquants : dette existante (lint, tests d'intégration antérieurs
+  # au modèle de permissions). Visibles dans l'onglet Actions, sans bloquer le
+  # déploiement. À rendre bloquants une fois corrigés : retirer continue-on-error
+  # et ajouter le job dans `needs` du job image.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint (rapport)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+
+  integration:
+    name: Backend (tests d'intégration, rapport)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Tests d'intégration (failsafe + Testcontainers)
+        run: >-
+          ./mvnw -ntp -B verify
+          -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false
+          -Dskip.installnodenpm -Dskip.npm
+          -Dlogging.level.ROOT=OFF -Dlogging.level.tech.jhipster=OFF
+          -Dlogging.level.com.cratechnologie.baaraboloda=OFF
+          -Dlogging.level.org.springframework=OFF
+      - name: Rapports de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-integration-reports
+          path: target/failsafe-reports
+          retention-days: 7
+
+  image:
+    name: Image Docker → GHCR
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=raw,value=production
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Résumé
+        run: |
+          {
+            echo "### Image publiée"
+            echo "\`${IMAGE}:sha-${GITHUB_SHA::7}\` → tag \`production\`"
+            echo
+            echo "Le serveur la déploiera automatiquement dans les 2 minutes."
+          } >> "$GITHUB_STEP_SUMMARY"

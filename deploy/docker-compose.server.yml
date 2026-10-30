@@ -1,0 +1,107 @@
+# Production sur le serveur partagé (Docker snap) : fichier unique, passé à
+# Docker sur l'entrée standard par ./bb. Le snap ne voit pas /var/www : ce
+# fichier ne doit référencer aucun chemin de l'hôte (ni build, ni bind mount).
+# Les variables viennent de .env.isolated, chargé par ./bb.
+name: baaraboloda-production
+services:
+  app:
+    image: ${APP_IMAGE:-baaraboloda:production}
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 45s
+    ports:
+      - '127.0.0.1:${APP_PORT:-18080}:8080'
+    environment:
+      SPRING_PROFILES_ACTIVE: prod,postgresql
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-baaraboloda}
+      DATABASE_USER: ${DATABASE_USER:?Renseigner DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Renseigner DATABASE_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-baaraboloda}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET: ${JWT_SECRET:?Renseigner JWT_SECRET}
+      JHIPSTER_CACHE_REDIS_SERVER: redis://redis:6379
+      JHIPSTER_CACHE_REDIS_CLUSTER: 'false'
+      JAVA_TOOL_OPTIONS: '-Xms256m -Xmx768m'
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      JHIPSTER_MAIL_BASE_URL: https://baaraboloda.crademo.com
+      NOTIFICATIONS_BASE_URL: https://baaraboloda.crademo.com
+      NOTIFICATIONS_EMAIL_ENABLED: ${NOTIFICATIONS_EMAIL_ENABLED:-false}
+      SPRING_MAIL_HOST: ${SMTP_HOST:-localhost}
+      SPRING_MAIL_PORT: ${SMTP_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SMTP_USER:-}
+      SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SMTP_STARTTLS:-true}
+      JHIPSTER_MAIL_FROM: ${MAIL_FROM:-notifications@baaraboloda.crademo.com}
+      SECURITY_BOOTSTRAP_SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:?Renseigner SUPER_ADMIN_EMAIL}
+      SECURITY_BOOTSTRAP_SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:?Renseigner SUPER_ADMIN_PASSWORD}
+    volumes:
+      - app_data:/app/.data
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop: [ALL]
+    # Pas de no-new-privileges : avec Docker en snap (Ubuntu), AppArmor bloque alors tout exec.
+    healthcheck:
+      test: ['CMD-SHELL', 'bash -c ''exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /management/health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; grep -q "\"status\":\"UP\"" <&3''']
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-baaraboloda}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Renseigner POSTGRES_ADMIN_PASSWORD}
+      APP_DB_USER: ${DATABASE_USER}
+      APP_DB_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Équivalent de postgres-init.sql, injecté sans fichier hôte. N'est exécuté que sur un volume neuf.
+    configs:
+      - source: app_user_sql
+        target: /docker-entrypoint-initdb.d/10-app-user.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+configs:
+  app_user_sql:
+    content: |
+      \set ON_ERROR_STOP on
+      \getenv app_user APP_DB_USER
+      \getenv app_password APP_DB_PASSWORD
+      \getenv app_database POSTGRES_DB
+      CREATE ROLE :"app_user" LOGIN PASSWORD :'app_password' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      GRANT CONNECT ON DATABASE :"app_database" TO :"app_user";
+      GRANT USAGE, CREATE ON SCHEMA public TO :"app_user";
+volumes:
+  app_data:
+  postgres_data:

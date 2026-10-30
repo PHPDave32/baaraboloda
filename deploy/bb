@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Pilote la production depuis /var/www/david/baaraboloda.
+# Docker est un snap confiné qui ne voit pas /var/www : c'est bash (via sudo)
+# qui lit les fichiers et les transmet à Docker sur l'entrée standard.
+#
+#   ./bb up | ps | logs [-f] [service] | restart [service] | stop | config
+#   ./bb load baaraboloda-production.tar.gz   # charger une nouvelle image
+#   ./bb update                               # recréer seulement l'app
+#   ./bb backup                               # dump PostgreSQL dans backups/
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR"
+
+compose() {
+  sudo bash -c '
+    set -a; . ./.env.isolated; set +a
+    cd /
+    exec docker compose -p baaraboloda-production -f - "$@"
+  ' compose "$@" < docker-compose.server.yml
+}
+
+cmd="${1:-ps}"; shift || true
+case "$cmd" in
+  up)      compose up -d --wait --wait-timeout 300 ;;
+  update)  compose up -d --no-deps --wait --wait-timeout 300 app ;;
+  stop)    compose stop ;;
+  load)    sudo docker load < "${1:?archive .tar.gz attendue}" ;;
+  backup)
+    mkdir -p backups; chmod 700 backups
+    f="backups/baaraboloda-$(date +%Y%m%d-%H%M%S).dump"
+    compose exec -T postgres pg_dump -U postgres -Fc baaraboloda > "$f"
+    echo "$f" ;;
+  config)  compose config --quiet && echo "Configuration valide" ;;
+  *)       compose "$cmd" "$@" ;;
+esac

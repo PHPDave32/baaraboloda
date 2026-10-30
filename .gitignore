@@ -116,7 +116,18 @@ Desktop.ini
 # Directories
 ######################
 /bin/
-/deploy/
+/deploy/*
+!/deploy/README.md
+!/deploy/VALIDATION.md
+!/deploy/docker-compose.isolated.yml
+!/deploy/docker-compose.postgresql.yml
+!/deploy/postgres-init.sql
+!/deploy/nginx-location.conf.example
+!/deploy/smoke-test.py
+!/deploy/bb
+!/deploy/docker-compose.server.yml
+!/deploy/hestia/
+!/deploy/server/
 
 ######################
 # Logs
@@ -157,3 +168,12 @@ coverage/
 # Local initial super administrator credentials
 .data/super-admin-bootstrap.properties
 .data/super-admin-access.txt
+
+# Deployment credentials and local runtime data
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.isolated.example
+.data/

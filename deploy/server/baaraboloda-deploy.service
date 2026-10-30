@@ -1,0 +1,12 @@
+[Unit]
+Description=Baara Boloda - déploiement automatique depuis GHCR
+After=network-online.target snap.docker.dockerd.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Docker est installé en snap : /snap/bin n'est pas dans le PATH par défaut de systemd.
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+ExecStart=/usr/local/sbin/baaraboloda-deploy
+TimeoutStartSec=20min
+Nice=10

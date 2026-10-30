@@ -1,0 +1,10 @@
+[Unit]
+Description=Baara Boloda - vérifie toutes les 2 minutes si une nouvelle image est publiée
+
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=2min
+RandomizedDelaySec=15s
+
+[Install]
+WantedBy=timers.target

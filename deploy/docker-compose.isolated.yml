@@ -1,0 +1,69 @@
+# Socle commun : à combiner avec un fichier de base de données après
+# confirmation du moteur de production. Ne démarre aucune base globale.
+name: baaraboloda-isolated
+services:
+  app:
+    image: ${APP_IMAGE:-baaraboloda:production}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 45s
+    ports:
+      - '127.0.0.1:${APP_PORT:-18080}:8080'
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${DATABASE_URL:?Renseigner DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USER:?Renseigner DATABASE_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD:?Renseigner DATABASE_PASSWORD}
+      JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET: ${JWT_SECRET:?Renseigner JWT_SECRET}
+      JHIPSTER_CACHE_REDIS_SERVER: redis://redis:6379
+      JHIPSTER_CACHE_REDIS_CLUSTER: 'false'
+      JAVA_TOOL_OPTIONS: '-Xms256m -Xmx768m'
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      JHIPSTER_MAIL_BASE_URL: https://baaraboloda.crademo.com
+      NOTIFICATIONS_BASE_URL: https://baaraboloda.crademo.com
+      NOTIFICATIONS_EMAIL_ENABLED: ${NOTIFICATIONS_EMAIL_ENABLED:-false}
+      SPRING_MAIL_HOST: ${SMTP_HOST:-localhost}
+      SPRING_MAIL_PORT: ${SMTP_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SMTP_USER:-}
+      SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SMTP_STARTTLS:-true}
+      JHIPSTER_MAIL_FROM: ${MAIL_FROM:-notifications@baaraboloda.crademo.com}
+      SECURITY_BOOTSTRAP_SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:?Renseigner SUPER_ADMIN_EMAIL}
+      SECURITY_BOOTSTRAP_SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:?Renseigner SUPER_ADMIN_PASSWORD}
+    volumes:
+      - app_data:/app/.data
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop: [ALL]
+    # Pas de no-new-privileges : avec Docker en snap (Ubuntu), AppArmor bloque alors tout exec.
+    healthcheck:
+      test: ['CMD-SHELL', 'bash -c ''exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /management/health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; grep -q "\"status\":\"UP\"" <&3''']
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    depends_on:
+      redis:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+volumes:
+  app_data:

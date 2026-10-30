@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Déploiement automatique (mode pull) de Baara Boloda.
+# Installé dans /usr/local/sbin (root:root 755), lancé par baaraboloda-deploy.timer.
+#
+# 1. docker pull du tag "production" publié par la CI sur GHCR
+# 2. rien à faire si c'est déjà l'image en service, ou une image déjà en échec
+# 3. sauvegarde PostgreSQL, puis recréation du seul conteneur "app"
+# 4. si l'app n'est pas healthy : retour automatique à l'image précédente
+#
+# Ne touche qu'au projet Compose baaraboloda-production. Aucun service global.
+set -euo pipefail
+
+APP_DIR=/var/www/david/baaraboloda
+PROJECT=baaraboloda-production
+REMOTE_IMAGE=ghcr.io/phpdave32/baaraboloda:production
+LOCAL_IMAGE=baaraboloda:production   # APP_IMAGE dans .env.isolated
+PREVIOUS_IMAGE=baaraboloda:previous
+STATE_DIR=/var/lib/baaraboloda-deploy
+BACKUP_DIR="$APP_DIR/backups"
+KEEP_BACKUPS=10
+
+log() { echo "[baaraboloda-deploy] $*"; }
+
+mkdir -p "$STATE_DIR"
+exec 9>"$STATE_DIR/lock"
+flock -n 9 || { log "déploiement déjà en cours"; exit 0; }
+
+# Docker snap ne voit pas /var/www : on lui passe la configuration sur stdin.
+# .env.isolated est lu comme des données KEY=VALUE, jamais exécuté comme du shell.
+compose() {
+  (
+    while IFS= read -r line || [ -n "$line" ]; do
+      [[ "$line" =~ ^[A-Z_][A-Z0-9_]*= ]] && export "$line"
+    done < "$APP_DIR/.env.isolated"
+    cd /
+    exec docker compose -p "$PROJECT" -f - "$@"
+  ) < "$APP_DIR/docker-compose.server.yml"
+}
+
+image_id() { docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true; }
+
+docker pull -q "$REMOTE_IMAGE" >/dev/null
+new_id=$(image_id "$REMOTE_IMAGE")
+running_id=$(docker inspect -f '{{.Image}}' "$PROJECT-app-1" 2>/dev/null || true)
+
+[ "$new_id" = "$running_id" ] && exit 0
+if [ "$new_id" = "$(cat "$STATE_DIR/failed" 2>/dev/null || true)" ]; then
+  exit 0   # déjà essayée et revenue en arrière : attendre un nouveau commit
+fi
+
+rev=$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$REMOTE_IMAGE")
+log "nouvelle version ${rev:0:7} (${new_id:7:12}), en service : ${running_id:7:12}"
+
+# Sauvegarde avant toute migration Liquibase.
+install -d -m 700 -o "$(stat -c %u "$APP_DIR")" -g "$(stat -c %g "$APP_DIR")" "$BACKUP_DIR"
+dump="$BACKUP_DIR/pre-deploy-$(date +%Y%m%d-%H%M%S)-${rev:0:7}.dump"
+compose exec -T postgres pg_dump -U postgres -Fc baaraboloda > "$dump"
+chmod 600 "$dump"; chown --reference="$BACKUP_DIR" "$dump"
+log "sauvegarde : $dump ($(du -h "$dump" | cut -f1))"
+ls -1t "$BACKUP_DIR"/pre-deploy-*.dump | tail -n +$((KEEP_BACKUPS + 1)) | xargs -r rm --
+
+old_previous_id=$(image_id "$PREVIOUS_IMAGE")
+[ -n "$running_id" ] && docker tag "$running_id" "$PREVIOUS_IMAGE"
+docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+
+if compose up -d --no-deps --wait --wait-timeout 300 app; then
+  rm -f "$STATE_DIR/failed"
+  echo "$rev" > "$STATE_DIR/deployed"
+  # Libère l'avant-dernière image (sans -f : ignorée si encore utilisée ou taguée).
+  if [ -n "$old_previous_id" ] && [ "$old_previous_id" != "$running_id" ] && [ "$old_previous_id" != "$new_id" ]; then
+    docker image rm "$old_previous_id" >/dev/null 2>&1 || true
+  fi
+  log "OK : ${rev:0:7} déployée et healthy"
+  exit 0
+fi
+
+log "ÉCHEC : ${rev:0:7} n'est pas healthy, retour à l'image précédente"
+compose logs --no-color --tail 60 app || true
+echo "$new_id" > "$STATE_DIR/failed"
+if [ -n "$running_id" ]; then
+  docker tag "$PREVIOUS_IMAGE" "$LOCAL_IMAGE"
+  compose up -d --no-deps --wait --wait-timeout 300 app && log "rollback OK"
+fi
+log "Si une migration a été appliquée, la sauvegarde $dump permet de restaurer la base."
+exit 1
