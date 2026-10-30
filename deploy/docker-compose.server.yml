@@ -11,6 +11,10 @@ services:
     stop_grace_period: 45s
     ports:
       - '127.0.0.1:${APP_PORT:-18080}:8080'
+    # Le routeur ne fait pas de NAT loopback : le serveur mail de l'hôte est joint
+    # directement, sous son nom (le certificat TLS reste valide).
+    extra_hosts:
+      - 'mail.cratechnologie.com:host-gateway'
     environment:
       SPRING_PROFILES_ACTIVE: prod,postgresql
       DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-baaraboloda}
