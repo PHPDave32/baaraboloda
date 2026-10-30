@@ -39,7 +39,14 @@
               "src/main/webapp/robots.txt",
               "src/main/webapp/swagger-ui"
             ],
-            "styles": ["src/main/webapp/content/scss/vendor.scss", "src/main/webapp/content/scss/global.scss"],
+            "styles": [
+              "node_modules/@fontsource/poppins/400.css",
+              "node_modules/@fontsource/poppins/500.css",
+              "node_modules/@fontsource/poppins/600.css",
+              "node_modules/@fontsource/poppins/700.css",
+              "src/main/webapp/content/scss/vendor.scss",
+              "src/main/webapp/content/scss/global.scss"
+            ],
             "scripts": [],
             "define": {
               "SERVER_API_URL": "''"

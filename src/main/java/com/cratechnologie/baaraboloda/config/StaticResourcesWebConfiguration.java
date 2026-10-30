@@ -15,7 +15,16 @@ import tech.jhipster.config.JHipsterProperties;
 public class StaticResourcesWebConfiguration implements WebMvcConfigurer {
 
     protected static final String[] RESOURCE_LOCATIONS = { "classpath:/static/", "classpath:/static/content/", "classpath:/static/i18n/" };
-    protected static final String[] RESOURCE_PATHS = { "/*.js", "/*.css", "/*.svg", "/*.png", "*.ico", "/content/**", "/i18n/*" };
+    protected static final String[] RESOURCE_PATHS = {
+        "/*.js",
+        "/*.css",
+        "/*.svg",
+        "/*.png",
+        "*.ico",
+        "/content/**",
+        "/media/**",
+        "/i18n/*",
+    };
 
     private final JHipsterProperties jhipsterProperties;
 
