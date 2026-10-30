@@ -24,6 +24,11 @@ RUN groupadd --gid 10001 baaraboloda \
     && mkdir -p /app/.data \
     && chown 10001:10001 /app/.data
 COPY --from=backend /tmp/application.jar /app/application.jar
+# Commit exposé par /management/info (deploy.commit) : la CI s'en sert pour
+# confirmer que le serveur sert bien la nouvelle version.
+ARG GIT_COMMIT=unknown
+ENV MANAGEMENT_INFO_ENV_ENABLED=true \
+    INFO_DEPLOY_COMMIT=${GIT_COMMIT}
 USER 10001:10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/application.jar"]

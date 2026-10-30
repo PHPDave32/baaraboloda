@@ -147,6 +147,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Résumé
@@ -157,3 +158,29 @@ jobs:
             echo
             echo "Le serveur la déploiera automatiquement dans les 2 minutes."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Le serveur déploie seul (pull). Ce job se contente d'observer le site public
+  # jusqu'à ce qu'il serve ce commit, pour rendre le résultat visible dans GitHub
+  # (onglet Actions + page Environments → production).
+  deploy:
+    name: Déploiement production
+    needs: image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://baaraboloda.crademo.com
+    steps:
+      - name: Attendre que le serveur serve ce commit
+        run: |
+          for i in $(seq 1 60); do
+            live=$(curl -fsS --max-time 10 https://baaraboloda.crademo.com/management/info | jq -r '.deploy.commit // empty' || true)
+            echo "[$i/60] en ligne : ${live:0:7}"
+            if [ "$live" = "$GITHUB_SHA" ]; then
+              echo "### ✅ \`${GITHUB_SHA::7}\` est en production" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Après 15 min, le serveur ne sert toujours pas ${GITHUB_SHA::7}. Causes possibles : la version ne démarrait pas (retour automatique à la précédente), un push plus récent l'a remplacée, ou le timer est suspendu. Voir 'sudo journalctl -u baaraboloda-deploy -n 30' sur le serveur."
+          exit 1
